@@ -1,75 +1,98 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { UserProvider } from "./context/UserContext";
+import ProtectedRoute from "./pages/AuthPages/ProtectedRoute.jsx";
 
-function App() {
-    const [users, setUsers] = useState([]);
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [role, setRole] = useState("admin"); // ✅ Default role is valid
+// Layouts
+import AppLayout from "./layout/AppLayout";
+import { ScrollToTop } from "./components/common/ScrollToTop";
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+// Auth Pages
+import SignIn from "./pages/AuthPages/SignIn";
+import SignUp from "./pages/AuthPages/SignUp";
 
-    const fetchUsers = () => {
-        axios.get("http://localhost:5000/api/users")
-            .then(response => setUsers(response.data))
-            .catch(error => console.error("Error fetching users:", error));
-    };
+// Roles
+import AdminDashboard from "./roles/Admin/AdminDashboard.jsx";
+import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
+import SafetyEngineerDashboard from "./roles/SafetyEngineer/SafetyEngineerDashboard.jsx";
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+// Other Pages
+import Home from "./pages/Dashboard/Home";
+import NotFound from "./pages/OtherPage/NotFound";
+import UserProfiles from "./pages/UserProfiles";
+import Calendar from "./pages/Calendar";
+import Blank from "./pages/Blank";
 
-        if (!name || !email || !role) {
-            alert("All fields are required!");
-            return;
-        }
+// UI Elements
+import Alerts from "./pages/UiElements/Alerts";
+import Avatars from "./pages/UiElements/Avatars";
+import Badges from "./pages/UiElements/Badges";
+import Buttons from "./pages/UiElements/Buttons";
+import Images from "./pages/UiElements/Images";
+import Videos from "./pages/UiElements/Videos";
 
-        axios.post(
-            "http://localhost:5000/api/users",
-            { name, email, role },
-            { headers: { "Content-Type": "application/json" } } // ✅ Ensure correct format
-        )
-        .then(() => {
-            setName("");
-            setEmail("");
-            setRole("admin"); // ✅ Reset to a valid role
-            fetchUsers(); // Refresh user list
-        })
-        .catch(error => {
-            if (error.response) {
-                console.error("Error adding user:", error.response.data);
-                alert(error.response.data.error); // Show error message to user
-            } else {
-                console.error("Unknown error:", error.message);
-            }
-        });
-    };
+// Charts
+import LineChart from "./pages/Charts/LineChart";
+import BarChart from "./pages/Charts/BarChart";
 
-    return (
-        <div>
-            <h1>User Management</h1>
+// Tables & Forms
+import BasicTables from "./pages/Tables/BasicTables";
+import FormElements from "./pages/Forms/FormElements";
 
-            <form onSubmit={handleSubmit}>
-                <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-                <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                <select value={role} onChange={(e) => setRole(e.target.value)}>
-                    <option value="admin">Admin</option>
-                    <option value="software engineer">Software Engineer</option>
-                    <option value="safety engineer">Safety Engineer</option>
-                </select>
+export default function App() {
+  return (
+    <UserProvider>
+      <Router>
+        <ScrollToTop />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
 
-                <button type="submit">Add User</button>
-            </form>
+          {/* Protected Routes */}
+          <Route element={<AppLayout />}>
+            <Route index path="/" element={<Home />} />
 
-            <h2>Users List</h2>
-            <ul>
-                {users.map(user => (
-                    <li key={user.id}>{user.name} - {user.email} ({user.role})</li>
-                ))}
-            </ul>
-        </div>
-    );
+
+
+            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="/AdminDashboard" element={<AdminDashboard />} />
+            </Route>
+
+
+
+            <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
+              <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={["safetyengineer"]} />}>
+              <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
+            </Route>
+
+            {/* Other Pages */}
+            <Route path="/profile" element={<UserProfiles />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/blank" element={<Blank />} />
+
+            {/* UI Elements */}
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/avatars" element={<Avatars />} />
+            <Route path="/badge" element={<Badges />} />
+            <Route path="/buttons" element={<Buttons />} />
+            <Route path="/images" element={<Images />} />
+            <Route path="/videos" element={<Videos />} />
+
+            {/* Charts */}
+            <Route path="/line-chart" element={<LineChart />} />
+            <Route path="/bar-chart" element={<BarChart />} />
+
+            {/* Tables & Forms */}
+            <Route path="/form-elements" element={<FormElements />} />
+            <Route path="/basic-tables" element={<BasicTables />} />
+          </Route>
+
+          {/* 404 Not Found */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+    </UserProvider>
+  );
 }
-
-export default App;
