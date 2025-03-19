@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
-import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
 
 export default function SignInForm() {
@@ -14,56 +13,52 @@ export default function SignInForm() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useUser(); // 🔹 Handles user login context
+  const { login } = useUser(); // Handles user login context
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
 
   const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!email || !password) {
       setMessage("Email and Password are required.");
       return;
     }
-  
+
     setLoading(true);
     setMessage("");
-  
-    const loginData = { email, password };
-  
+
     try {
       const response = await fetch("http://localhost:5000/api/Auth/Login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData),
+        body: JSON.stringify({ email, password }),
       });
-  
+
       const result = await response.json();
-  
-      if (response.ok) {
-        // Store JWT token
-        localStorage.setItem("token", result.token);
-  
-        // Extract role and login
+
+      if (response.ok && result.token) {
+        localStorage.setItem("token", result.token); // Store JWT token
+        login(result.token); // Update context
+
         const userRole = result.user?.role?.trim().toLowerCase();
-        login({ token: result.token, role: userRole }); // Set user data in context
-  
-        // Role-based navigation
-        if (userRole === "admin") {
-          navigate("/AdminDashboard");
-        } else if (userRole === "site engineer") {
-          navigate("/SiteEngineerDashboard");
-        } else if (userRole === "safety engineer") {
-          navigate("/SafetyEngineerDashboard");
-        } else {
-          setMessage("Unauthorized role.");
-        }
+
+        console.log("Login successful, role:", userRole);
+
+        // Redirect user based on role
+        const roleRoutes = {
+          admin: "/AdminDashboard",
+          "site engineer": "/SiteEngineerDashboard",
+          "safety engineer": "/SafetyEngineerDashboard",
+        };
+
+        navigate(roleRoutes[userRole] || "/unauthorized", { replace: true });
       } else {
         setMessage(result.message || "Login failed.");
       }
     } catch (error) {
+      console.error("Login error:", error);
       setMessage("An error occurred during login.");
     } finally {
       setLoading(false);

@@ -1,39 +1,50 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 
 const UserContext = createContext();
 
-
-
-
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        return jwtDecode(token);
+      } catch (error) {
+        console.error("Invalid token on load:", error);
+        localStorage.removeItem("token");
+        return null;
+      }
+    }
+    return null;
+  });
 
   useEffect(() => {
-    // Retrieve the user from localStorage
-    const storedUser = localStorage.getItem("user");
-
-    if (storedUser) {
+    const token = localStorage.getItem("token");
+    if (token) {
       try {
-        // Only parse if it's a valid string
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        const decodedUser = jwtDecode(token);
+        setUser(decodedUser);
       } catch (error) {
-        console.error("Error parsing user data from localStorage", error);
-        setUser(null); // If parsing fails, set user as null
+        console.error("Error decoding token:", error);
+        setUser(null);
       }
     }
   }, []);
 
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData)); // Persist the user data
+  const login = (token) => {
+    try {
+      localStorage.setItem("token", token);
+      setUser(jwtDecode(token));
+    } catch (error) {
+      console.error("Error decoding token on login:", error);
+      setUser(null);
+    }
   };
-  
+
   const logout = () => {
+    localStorage.removeItem("token");
     setUser(null);
-    localStorage.removeItem("user"); // Clear user data
   };
-  
 
   return (
     <UserContext.Provider value={{ user, login, logout }}>

@@ -10,8 +10,14 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 
-// Roles
+// admin
 import AdminDashboard from "./roles/Admin/AdminDashboard.jsx";
+import AdminBOM from "./roles/Admin/AdminBOM.jsx";
+import AdminBOQ from "./roles/Admin/AdminBOQ.jsx";
+
+
+
+
 import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
 import SafetyEngineerDashboard from "./roles/SafetyEngineer/SafetyEngineerDashboard.jsx";
 
@@ -56,6 +62,8 @@ export default function App() {
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
+              <Route path="/AdminBOM" element={<AdminBOM />} />
+              <Route path="/AdminBOQ" element={<AdminBOQ />} />
             </Route>
 
 

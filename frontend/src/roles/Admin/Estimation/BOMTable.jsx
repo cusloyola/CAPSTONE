@@ -63,22 +63,41 @@ const BOMTable = () => {
   // ✅ Function to auto-update values when a cell changes
   const onCellValueChanged = (params) => {
     console.log("Edited Cell:", params);
-
-    const updatedRowData = rowData.map((row) =>
-      row.id === params.data.id
-        ? {
-            ...params.data,
-            materialAmount: params.data.quantity * params.data.materialUC || 0,
-            laborAmount: params.data.quantity * params.data.laborUC || 0,
-            totalAmount:
-              (params.data.quantity * params.data.materialUC || 0) +
-              (params.data.quantity * params.data.laborUC || 0),
+  
+    const updatedRowData = rowData.map((row) => {
+      if (row.id === params.data.id) {
+        // Base computations for predefined columns
+        let updatedRow = {
+          ...params.data,
+          materialAmount: params.data.quantity * params.data.materialUC || 0,
+          laborAmount: params.data.quantity * params.data.laborUC || 0,
+        };
+  
+        // Dynamically compute for any new cost-related columns
+        columnDefs.forEach((col) => {
+          if (col.children) {
+            col.children.forEach((child) => {
+              if (child.field.endsWith("UC")) {
+                const baseField = child.field.replace("UC", "Amount");
+                updatedRow[baseField] = params.data.quantity * params.data[child.field] || 0;
+              }
+            });
           }
-        : row
-    );
+        });
+  
+        // Update totalAmount (Sum of all "Amount" fields)
+        updatedRow.totalAmount = Object.keys(updatedRow)
+          .filter((key) => key.endsWith("Amount"))
+          .reduce((sum, key) => sum + updatedRow[key], 0);
+  
+        return updatedRow;
+      }
+      return row;
+    });
   
     setRowData(updatedRowData);
   };
+  
   
 
   // ✅ Modal State
@@ -107,27 +126,35 @@ const BOMTable = () => {
   // ✅ Function to add a new column
   const addColumn = () => {
     let newColumns = [...columnDefs];
-
-    if (subheaderCount === 2) {
-      newColumns.push({
-        headerName: columnName,
-        children: [
-          { field: `${columnName.toLowerCase()}UC`, headerName: "U/C", width: 120, editable: true },
-          { field: `${columnName.toLowerCase()}Amount`, headerName: "Amount", width: 120, editable: false }
-        ]
-      });
+  
+    const totalIndex = newColumns.findIndex(col => col.field === "totalAmount");
+  
+    const newColumn =
+      subheaderCount === 2
+        ? {
+            headerName: columnName,
+            children: [
+              { field: `${columnName.toLowerCase()}UC`, headerName: "U/C", width: 120, editable: true },
+              { field: `${columnName.toLowerCase()}Amount`, headerName: "Amount", width: 120, editable: false }
+            ]
+          }
+        : {
+            field: columnName.toLowerCase(),
+            headerName: columnName,
+            width: 150,
+            editable: true
+          };
+  
+    if (totalIndex !== -1) {
+      newColumns.splice(totalIndex, 0, newColumn); // Insert before totalAmount
     } else {
-      newColumns.push({
-        field: columnName.toLowerCase(),
-        headerName: columnName,
-        width: 150,
-        editable: true
-      });
+      newColumns.push(newColumn);
     }
-
+  
     setColumnDefs(newColumns);
     setIsModalOpen(false);
   };
+  
 
   return (
     <div className="p-4">

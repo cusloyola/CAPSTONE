@@ -45,8 +45,8 @@ const navItems = [
     name: "Cost Estimation",
     subItems:
     [
-      { name: "BOM", path: "", pro: false, }, 
-      { name: "BOQ", path: "", pro: false }, 
+      { name: "BOM", path: "/AdminBOM", pro: false, }, 
+      { name: "BOQ", path: "AdminBOQ", pro: false }, 
     ],
   },
   {
