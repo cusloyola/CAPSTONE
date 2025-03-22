@@ -627,3 +627,17 @@ span.flatpickr-weekday,
   outline: none !important;
 }
 
+.ag-cell.ag-cell-value[role="gridcell"][colspan="2"] {
+  font-weight: bold;
+  background-color: #f0f0f0;
+}
+
+.subtotal-row .ag-cell {
+  background-color: #e0e0e0;  /* Subtotal background */
+  text-align: center;         /* Center the text */
+}
+
+.subtotal-row .ag-cell[col-id="laborAmount"],
+.subtotal-row .ag-cell[col-id="totalAmount"] {
+  border-left: none;  /* Remove the border between Labor Cost and Total Amount */
+}

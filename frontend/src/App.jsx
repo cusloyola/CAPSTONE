@@ -17,8 +17,10 @@ import AdminBOQ from "./roles/Admin/AdminBOQ.jsx";
 
 
 
-
+// site
 import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
+import SiteProgressTracking from "./roles/SiteEngineer/SiteProgressTacking.jsx"
+
 import SafetyEngineerDashboard from "./roles/SafetyEngineer/SafetyEngineerDashboard.jsx";
 
 // Other Pages
@@ -70,6 +72,8 @@ export default function App() {
 
             <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
               <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
+              <Route path="/SiteProgressTracking" element={<SiteProgressTracking />} />
+              
             </Route>
             <Route element={<ProtectedRoute allowedRoles={["safetyengineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />

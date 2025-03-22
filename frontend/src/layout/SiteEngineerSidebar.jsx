@@ -20,14 +20,14 @@ import SidebarWidget from "./SidebarWidget";
 const navItems = [
  
   {
+    icon: <BoxCubeIcon />,
+    name: "Site Progress",
+    subItems: [{ name: "Site Progress", path: "/SiteProgressTracking", pro: false }],
+  },
+  {
     icon: <GridIcon />,
     name: "DashboardOriginal",
     subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Project Management",
-    subItems: [{ name: "Projects", path: "/admin/projects", pro: false }],
   },
   {
     icon: <BoxCubeIcon />,
@@ -39,11 +39,7 @@ const navItems = [
     name: "Inventory",
     subItems: [{ name: "Stocks", path: "/admin/inventory", pro: false }],
   },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
+   ,
   {
     icon: <UserCircleIcon />,
     name: "User Profile",

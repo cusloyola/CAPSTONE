@@ -1,209 +1,248 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ModuleRegistry } from "ag-grid-community";
-import { AllCommunityModule, ClientSideRowModelModule } from "ag-grid-community";
+import { AllCommunityModule } from "ag-grid-community";
 import { provideGlobalGridOptions } from 'ag-grid-community';
+import BOMTableModal from './BOMTableModal';
+// import { computeTotalCost, computeTotalAmount} from '../../../utils/calculationsUtils';
+import { getColumnDefs, addRow, onCellValueChanged } from '../../../utils/tableUtils';
+import { loadRowData, saveRowData } from "../../../utils/storageUtils";
+
+
+
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
+
+
+
 
 // ✅ Register AG Grid Modules
 ModuleRegistry.registerModules([AllCommunityModule]);
 provideGlobalGridOptions({ theme: "legacy" });
 
 
+
+
 const BOMTable = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [rowData, setRowData] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [columnDefs] = useState(getColumnDefs());
+
+
+
+
   // ✅ Styling for Excel-like appearance
   const tableStyles = `
     .excel-grid .ag-cell {
-      border: 0.5px solid gray !important; 
+      border: 0.5px solid gray !important;
       padding: 8px;
     }
-    .excel-grid .ag-header-cell, 
+    .excel-grid .ag-header-cell,
     .excel-grid .ag-header-group-cell {
-      background-color: #e0e0e0 !important; 
-      color: black !important; 
-      border: 0.5px solid gray !important; 
+      background-color: #e0e0e0 !important;
+      color: black !important;
+      border: 0.5px solid gray !important;
       font-weight: bold;
       text-align: center;
     }
   `;
 
-  
 
-  // ✅ State for row data
-  const [rowData, setRowData] = useState([
-    { id: 1, scopeOfWorks: "Foundation", quantity: 10, unit: "m3", materialUC: 500, laborUC: 200, materialAmount: 5000, laborAmount: 2000, totalAmount: 7000 },
-    { id: 2, scopeOfWorks: "Walls", quantity: 20, unit: "m2", materialUC: 300, laborUC: 150, materialAmount: 6000, laborAmount: 3000, totalAmount: 9000 }
-  ]);
 
-  // ✅ State for column definitions
-  const [columnDefs, setColumnDefs] = useState([
-    { field: "id", headerName: "No", width: 80, editable: false },
-    { field: "scopeOfWorks", headerName: "Scope of Works", width: 200, editable: true },
-    { field: "quantity", headerName: "Quantity", width: 120, editable: true },
-    { field: "unit", headerName: "Unit", width: 100, editable: true },
-    { 
-      headerName: "Material Cost",
-      children: [
-        { field: "materialUC", headerName: "U/C", width: 120, editable: true },
-        { field: "materialAmount", headerName: "Amount", width: 120, editable: false }
-      ]
-    },
-    { 
-      headerName: "Labor Cost",
-      children: [
-        { field: "laborUC", headerName: "U/C", width: 120, editable: true },
-        { field: "laborAmount", headerName: "Amount", width: 120, editable: false }
-      ]
-    },
-    { field: "totalAmount", headerName: "Total Amount", width: 140, editable: false }
-  ]);
 
-  // ✅ Function to auto-update values when a cell changes
-  const onCellValueChanged = (params) => {
-    console.log("Edited Cell:", params);
-  
-    const updatedRowData = rowData.map((row) => {
-      if (row.id === params.data.id) {
-        // Base computations for predefined columns
-        let updatedRow = {
-          ...params.data,
-          materialAmount: params.data.quantity * params.data.materialUC || 0,
-          laborAmount: params.data.quantity * params.data.laborUC || 0,
-        };
-  
-        // Dynamically compute for any new cost-related columns
-        columnDefs.forEach((col) => {
-          if (col.children) {
-            col.children.forEach((child) => {
-              if (child.field.endsWith("UC")) {
-                const baseField = child.field.replace("UC", "Amount");
-                updatedRow[baseField] = params.data.quantity * params.data[child.field] || 0;
-              }
-            });
-          }
-        });
-  
-        // Update totalAmount (Sum of all "Amount" fields)
-        updatedRow.totalAmount = Object.keys(updatedRow)
-          .filter((key) => key.endsWith("Amount"))
-          .reduce((sum, key) => sum + updatedRow[key], 0);
-  
-        return updatedRow;
-      }
-      return row;
-    });
-  
-    setRowData(updatedRowData);
-  };
-  
-  
-
-  // ✅ Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [rowCount, setRowCount] = useState(1);
+  const [isSubtotalRow, setIsSubtotalRow] = useState(false);
   const [modalType, setModalType] = useState(""); // 'row' or 'column'
   const [columnName, setColumnName] = useState("");
   const [subheaderCount, setSubheaderCount] = useState(1);
+  const [isMainTitleRow, setIsMainTitleRow] = useState(false);
 
-  // ✅ Function to add a new row
-  const addRow = () => {
-    const newRow = {
-      id: rowData.length + 1,
-      scopeOfWorks: "",
-      quantity: 0,
-      unit: "",
-      materialUC: 0,
-      laborUC: 0,
-      materialAmount: 0,
-      laborAmount: 0,
-      totalAmount: 0
-    };
-    setRowData([...rowData, newRow]);
-    setIsModalOpen(false);
+
+
+
+ // ✅ Load row data from localStorage when the component mounts
+useEffect(() => {
+  const savedRowData = localStorage.getItem("rowData");
+  if (savedRowData) {
+    setRowData(JSON.parse(savedRowData)); // Set the row data if it exists in localStorage
+  }
+}, []); // Runs only once when the component mounts
+
+// ✅ Save row data to localStorage whenever rowData changes
+useEffect(() => {
+  if (rowData.length > 0) {
+    localStorage.setItem("rowData", JSON.stringify(rowData));
+  }
+}, [rowData]); // Runs every time rowData changes
+
+
+  // Handle Add Row
+  const handleAddRow = (isSubtotalRow, isMainTitleRow, rowCount) => {
+    addRow(rowData, isSubtotalRow, isMainTitleRow, rowCount, setRowData, setIsModalOpen);
   };
 
-  // ✅ Function to add a new column
-  const addColumn = () => {
-    let newColumns = [...columnDefs];
-  
-    const totalIndex = newColumns.findIndex(col => col.field === "totalAmount");
-  
-    const newColumn =
-      subheaderCount === 2
-        ? {
-            headerName: columnName,
-            children: [
-              { field: `${columnName.toLowerCase()}UC`, headerName: "U/C", width: 120, editable: true },
-              { field: `${columnName.toLowerCase()}Amount`, headerName: "Amount", width: 120, editable: false }
-            ]
-          }
-        : {
-            field: columnName.toLowerCase(),
-            headerName: columnName,
-            width: 150,
-            editable: true
-          };
-  
-    if (totalIndex !== -1) {
-      newColumns.splice(totalIndex, 0, newColumn); // Insert before totalAmount
-    } else {
-      newColumns.push(newColumn);
-    }
-  
-    setColumnDefs(newColumns);
-    setIsModalOpen(false);
+
+
+
+  // Handle Cell Value Changes
+  const handleCellValueChanged = (params) => {
+    onCellValueChanged(params, setRowData);
   };
-  
+
+
+
+
+
 
   return (
     <div className="p-4">
       <style>{tableStyles}</style>
 
+
+
+
       {/* ✅ Buttons to Open Modal */}
       <div className="flex space-x-4 mb-4">
         <button
-          onClick={() => { setModalType("row"); setIsModalOpen(true); }}
+          onClick={() => {
+            setModalType("row");
+            setIsModalOpen(true);
+          }}
           className="bg-blue-500 text-white px-4 py-2 rounded"
         >
           ➕ Add Row
         </button>
 
+
+
+
         <button
-          onClick={() => { setModalType("column"); setIsModalOpen(true); }}
+          onClick={() => {
+            setModalType("column");
+            setIsModalOpen(true);
+          }}
           className="bg-green-500 text-white px-4 py-2 rounded"
         >
           ➕ Add Column
         </button>
       </div>
 
+
+
+
       {/* ✅ Grid */}
       <div className="border border-gray-300">
-        <div className="ag-theme-alpine ag-theme-legacy excel-grid" style={{ height: 500, width: "100%" }}>
-          <AgGridReact
-            key={columnDefs.length} // ✅ Ensure re-render when adding new columns
-            rowData={rowData}
-            columnDefs={columnDefs}
-            defaultColDef={{
-              resizable: true,
-              sortable: true,
-              filter: true,
-              editable: true,
-              singleClickEdit: true
-            }}
-            onCellValueChanged={onCellValueChanged} // ✅ Auto-calculate formulas
-          />
+        <div className="ag-theme-alpine ag-theme-legacy excel-grid" style={{ height: 1500, width: "100%" }}>
+
+
+
+        <AgGridReact
+  rowData={rowData}
+  columnDefs={columnDefs}
+  defaultColDef={{
+    resizable: true,
+    sortable: true,
+    filter: true,
+    editable: true,
+    singleClickEdit: true,
+  }}
+  onCellValueChanged={(params) => onCellValueChanged(params, setRowData)}
+/>
+
+
+ 
         </div>
       </div>
 
+
+
+
       {/* ✅ Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded shadow-lg w-96">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96">
             <h2 className="text-lg font-semibold mb-4">
               {modalType === "row" ? "Add a New Row" : "Add a New Column"}
             </h2>
 
+
+
+
+            {modalType === "row" && (
+              <>
+                <label className="block mb-2">
+                  <input
+                    type="radio"
+                    name="rowType"
+                    value="regular"
+                    checked={!isSubtotalRow && !isMainTitleRow}
+                    onChange={() => {
+                      setIsSubtotalRow(false);
+                      setIsMainTitleRow(false);
+                    }}
+                    className="mr-2"
+                  />
+                  Regular Row
+                </label>
+
+
+
+
+                <label className="block mb-2">
+                  <input
+                    type="radio"
+                    name="rowType"
+                    value="mainTitle"
+                    checked={isMainTitleRow}
+                    onChange={() => {
+                      setIsMainTitleRow(true);
+                      setIsSubtotalRow(false);
+                    }}
+                    className="mr-2"
+                  />
+                  Main Title (Fixed No)
+                </label>
+
+
+
+
+                <label className="block mb-4">
+                  <input
+                    type="radio"
+                    name="rowType"
+                    value="subtotal"
+                    checked={isSubtotalRow}
+                    onChange={() => {
+                      setIsSubtotalRow(true);
+                      setIsMainTitleRow(false);
+                    }}
+                    className="mr-2"
+                  />
+                  Subtotal Row
+                </label>
+
+
+
+
+                <label className="block mb-4">
+                  Number of Rows:
+                  <input
+                    type="number"
+                    value={isSubtotalRow || isMainTitleRow ? 1 : rowCount}
+                    onChange={(e) => setRowCount(parseInt(e.target.value) || 1)}
+                    className="w-full p-2 border rounded mt-1"
+                    disabled={isSubtotalRow || isMainTitleRow} // Disable if subtotal or main title
+                  />
+                </label>
+              </>
+            )}
+
+
+
+
+            {/* ✅ Add Column Form */}
             {modalType === "column" && (
               <>
                 <label className="block mb-2">
@@ -215,6 +254,9 @@ const BOMTable = () => {
                     className="w-full p-2 border rounded mt-1"
                   />
                 </label>
+
+
+
 
                 <label className="block mb-4">
                   Subheaders:
@@ -230,9 +272,21 @@ const BOMTable = () => {
               </>
             )}
 
+
+
+
+            {/* ✅ Buttons */}
             <div className="flex justify-end space-x-2">
-              <button onClick={() => setIsModalOpen(false)} className="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
-              <button onClick={modalType === "row" ? addRow : addColumn} className="bg-blue-500 text-white px-4 py-2 rounded">Confirm</button>
+              <button onClick={() => setIsModalOpen(false)} className="bg-gray-500 text-white px-4 py-2 rounded">
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAddRow(isSubtotalRow, isMainTitleRow, rowCount)} // Add Row Handler
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                disabled={modalType === "column" && !columnName.trim()} // Prevent empty column names
+              >
+                Confirm
+              </button>
             </div>
           </div>
         </div>
@@ -241,4 +295,16 @@ const BOMTable = () => {
   );
 };
 
+
+
+
 export default BOMTable;
+
+
+
+
+
+
+
+
+

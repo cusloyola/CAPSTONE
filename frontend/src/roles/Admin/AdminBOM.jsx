@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { loginUser, getProtectedData } from "../../api"; // ✅ Correct way for named exports
-import BOMTable from "./Estimation/BOMTable"; // Import the BOMTable component
+import { loginUser, getProtectedData } from "../../api"; 
+import BOMTable from "./Estimation/BOMTable"; 
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
 const AdminBOM = () => {
-  const { user } = useUser(); // Get user data (including token)
-  const [data, setData] = useState([]); // ✅ Restore state
+  const { user } = useUser(); // Get user
+  const [data, setData] = useState([]); 
   const navigate = useNavigate();
 
   // Redirect unauthorized users
@@ -61,4 +61,4 @@ const AdminBOM = () => {
   );
 };
 
-export default AdminBOM; // ✅ Ensure default export
+export default AdminBOM; 
