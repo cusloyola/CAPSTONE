@@ -54,7 +54,7 @@ const navItems = [
     name: "Inventory & Resources",
     subItems:
     [
-      { name: "Materials", path: "", pro: false, }, 
+      { name: "Inventory Management", path: "/InventoryManagement", pro: false, }, 
       { name: "Vendor Details", path: "", pro: false }, 
     ],
   },

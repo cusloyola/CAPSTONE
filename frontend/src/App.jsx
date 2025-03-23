@@ -14,6 +14,8 @@ import SignUp from "./pages/AuthPages/SignUp";
 import AdminDashboard from "./roles/Admin/AdminDashboard.jsx";
 import AdminBOM from "./roles/Admin/AdminBOM.jsx";
 import AdminBOQ from "./roles/Admin/AdminBOQ.jsx";
+import InventortManagement from "./roles/Admin/InventoryManagement.jsx"
+
 
 
 
@@ -66,6 +68,7 @@ export default function App() {
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
               <Route path="/AdminBOM" element={<AdminBOM />} />
               <Route path="/AdminBOQ" element={<AdminBOQ />} />
+              <Route path="/InventoryManagement" element={<InventortManagement />} />
             </Route>
 
 
