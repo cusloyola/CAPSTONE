@@ -47,6 +47,9 @@ import BarChart from "./pages/Charts/BarChart";
 // Tables & Forms
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
+import ContractTemplate from "./roles/Admin/Contact Management/ContactTemplate.jsx";
+import LeaveContract from "./roles/Admin/Contact Management/LeaveContract.jsx";
+import EmploymentContract from "./roles/Admin/Contact Management/EmploymentContract.jsx";
 
 export default function App() {
   return (
@@ -69,6 +72,9 @@ export default function App() {
               <Route path="/AdminBOM" element={<AdminBOM />} />
               <Route path="/AdminBOQ" element={<AdminBOQ />} />
               <Route path="/InventoryManagement" element={<InventortManagement />} />
+              <Route path="/ContractTemplate" element={<ContractTemplate />} />
+              <Route path="/LeaveContract" element={<LeaveContract />} />
+              <Route path="/EmploymentContract" element={<EmploymentContract />} />
             </Route>
 
 

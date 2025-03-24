@@ -1,6 +1,8 @@
+console.log("verifyToken function:", typeof authenticateToken);
+
 const jwt = require("jsonwebtoken");
 
-const authenticateToken = (req, res, next) => {
+const verifyToken = (req, res, next) => {  // ✅ Rename authenticateToken to verifyToken
   const authHeader = req.header("Authorization");
 
   if (!authHeader) {
@@ -14,7 +16,7 @@ const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret_key"); // ✅ Ensure default key
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret_key");
     req.user = decoded;
     next();
   } catch (error) {
@@ -25,4 +27,5 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-module.exports = authenticateToken;
+// ✅ Fix the export
+module.exports = { verifyToken };

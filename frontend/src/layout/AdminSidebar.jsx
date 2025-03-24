@@ -71,7 +71,10 @@ const navItems = [
   {
     icon: <GridIcon />,
     name: "Contract Management",
-    subItems: [{ name: "Contract Template", path: "/", pro: false }],
+    subItems: [{ name: "Contract Template", path: "/ContractTemplate", pro: false },
+      { name: "Leave Application Contract", path: "/LeaveContract", pro: false },
+      { name: "Employee Application Contract", path: "/EmploymentContract", pro: false }
+    ],
   },
   {
     icon: <GridIcon />,
