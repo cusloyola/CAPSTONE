@@ -5,19 +5,22 @@ const ProtectedRoute = ({ allowedRoles }) => {
   const { user } = useUser();
   const location = useLocation();
 
-  console.log("ProtectedRoute - User:", user); // Log user for debugging
+  console.log("ProtectedRoute - User:", user);
 
   if (!user) {
-    console.log("User is not logged in. Redirecting to signin...");
-    return <Navigate to="/signin" state={{ from: location }} />;
+    console.log("⛔ User is not logged in. Redirecting to signin...");
+    return <Navigate to="/signin" state={{ from: location }} replace />;
   }
 
-  // Ensure role is compared correctly
-  console.log("Role mismatch - User Role:", user.role); // Log the user's role for debugging
+  // Normalize role comparison
+  const userRole = user.role?.toLowerCase();
+  const normalizedAllowedRoles = allowedRoles.map(role => role.toLowerCase());
 
-  if (!allowedRoles.includes(user.role?.toLowerCase())) {
-    console.log("Role mismatch - User Role:", user.role);
-    return <Navigate to="/unauthorized" />;
+  console.log(`🔍 Checking role - User Role: ${userRole}, Allowed Roles: ${normalizedAllowedRoles}`);
+
+  if (!normalizedAllowedRoles.includes(userRole)) {
+    console.log(`⛔ Role mismatch - User Role: ${user.role}`);
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <Outlet />;
