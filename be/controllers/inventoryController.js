@@ -13,8 +13,27 @@ const getAllInventory = (req, res) => {
         }
 
         console.log("📌 Sending Inventory Data:", results);
-        res.json(results);
+        return res.json(results);  // Make sure you're using res here
     });
 };
 
-module.exports = { getAllInventory };
+const addInventoryItem = (req, res) => {
+    const { item_name, description, category_id, unit, stock_quantity, reorder_level, location } = req.body;
+
+    if (!item_name || !description || !category_id || !unit || !stock_quantity || !reorder_level || !location) {
+        return res.status(400).json({ error: "All fields are required." });  // Make sure you're using res here
+    }
+
+    const query = "INSERT INTO inventory_items (item_name, description, category_id, unit, stock_quantity, reorder_level, location, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+    db.query(query, [item_name, description, category_id, unit, stock_quantity, reorder_level, location], (err, result) => {
+        if (err) {
+            console.error("❌ Error adding inventory item:", err);
+            return res.status(500).json({ error: "Failed to add inventory item." });  // Make sure you're using res here
+        }
+
+        console.log("📌 Item added:", result);
+        return res.status(201).json({ message: "Inventory item added successfully", itemId: result.insertId });  // And here
+    });
+};
+
+module.exports = { getAllInventory, addInventoryItem };
