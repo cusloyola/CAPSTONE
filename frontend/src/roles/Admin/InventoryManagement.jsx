@@ -6,6 +6,10 @@ const InventoryManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const [newItem, setNewItem] = useState({
     item_name: "",
     description: "",
@@ -15,6 +19,30 @@ const InventoryManagement = () => {
     reorder_level: "",
     location: "",
   });
+
+  const handleDeleteClick = (item) => {
+    setSelectedItem(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedItem) {
+      try {
+        await axios.delete(`http://localhost:5000/api/inventory/${selectedItem.id}`);
+        fetchInventory();
+        setIsDeleteModalOpen(false);
+        setSelectedItem(null);
+      } catch (err) {
+        console.error("Error deleting item:", err);
+        setError("Failed to delete item. Try again later.");
+      }
+    }
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedItem(null);
+  };
 
   useEffect(() => {
     fetchInventory();
@@ -45,7 +73,7 @@ const InventoryManagement = () => {
       ...prevState,
       [name]: value,
     }));
-    console.log("Input changed:", name, value);  // Log input changes
+    console.log("Input changed:", name, value); // Log input changes
   };
 
   // Handle form submission to add a new item
@@ -56,8 +84,8 @@ const InventoryManagement = () => {
     try {
       const response = await axios.post("http://localhost:5000/api/inventory", newItem);
       console.log("Item added:", response.data);
-      fetchInventory();  // Re-fetch inventory after adding
-      setShowModal(false);  // Close modal
+      fetchInventory(); // Re-fetch inventory after adding
+      setShowModal(false); // Close modal
     } catch (error) {
       console.error("Error details:", error);
       setError("Failed to add item. Try again later.");
@@ -72,7 +100,7 @@ const InventoryManagement = () => {
 
       <button
         onClick={() => setShowModal(true)}
-        style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}
+        style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer", borderRadius: "4px" }}
       >
         + Add Item
       </button>
@@ -210,7 +238,8 @@ const InventoryManagement = () => {
               <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Item Name</th>
               <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Stock Quantity</th>
               <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Reorder Level</th>
-              <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Created At</th>
+              <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Warehouse Location</th>
+              <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -219,18 +248,125 @@ const InventoryManagement = () => {
                 <td style={{ padding: "10px" }}>{item.item_name}</td>
                 <td style={{ padding: "10px" }}>{item.stock_quantity}</td>
                 <td style={{ padding: "10px" }}>{item.reorder_level}</td>
+                <td style={{ padding: "10px" }}>{item.location}</td>
                 <td style={{ padding: "10px" }}>
-                  {item.created_at ? new Date(item.created_at).toLocaleString() : "Not available"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>📭 No inventory items found.</p>
-      )}
-    </div>
-  );
+                  <button
+                  onClick={() => handleView(item)}
+                  style={{
+                    padding: "6px 12px",
+                    marginRight: "5px",
+                    backgroundColor: "#3498db",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => handleEdit(item)}
+                  style={{
+                    padding: "6px 12px",
+                    marginRight: "5px",
+                    backgroundColor: "#f1c40f",
+                    color: "black",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteClick(item)}
+                  style={{
+                    padding: "6px 12px",
+                    backgroundColor: "#e74c3c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    ) : (
+      <p>📭 No inventory items found.</p>
+    )}
+
+    {isDeleteModalOpen && (
+      <div
+        style={{
+          position: "fixed",
+          top: "0",
+          left: "0",
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            padding: "20px",
+            borderRadius: "5px",
+            width: "300px",
+            textAlign: "center",
+          }}
+        >
+          <h3>Confirm Delete</h3>
+          <p>Are you sure you want to delete this item?</p>
+          <div>
+            <button
+              onClick={confirmDelete}
+              style={{
+                padding: "10px 15px",
+                backgroundColor: "#e74c3c",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                marginRight: "10px",
+              }}
+            >
+              Confirm Delete
+            </button>
+            <button
+              onClick={closeDeleteModal}
+              style={{
+                padding: "10px 15px",
+                backgroundColor: "#3498db",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
+function handleView(item) {
+  console.log("view item", item);
+}
+
+function handleEdit(item) {
+  console.log("edit item", item)
+}
 };
 
 export default InventoryManagement;
