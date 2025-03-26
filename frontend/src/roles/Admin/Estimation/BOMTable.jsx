@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { MARKUP_PERCENTAGE, TABLE_STYLES } from './BOMTableConstants';
+
 import { AgGridReact } from "ag-grid-react";
 import { ModuleRegistry } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { provideGlobalGridOptions } from 'ag-grid-community';
 import BOMTableModal from './BOMTableModal';
-// import { computeTotalCost, computeTotalAmount} from '../../../utils/calculationsUtils';
+import { recalcComputedRows, handleDeleteRow } from '../../../utils/calculationsUtils';
 import { getColumnDefs, addRow, onCellValueChanged } from '../../../utils/tableUtils';
 import { loadRowData, saveRowData } from "../../../utils/storageUtils";
-
-
+import { handleGridKeyDown, handleDeleteAllRows, handleCellKeyDown } from "../../../utils/rowUtils";
 
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-
-
-
 
 // ✅ Register AG Grid Modules
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -23,86 +21,85 @@ provideGlobalGridOptions({ theme: "legacy" });
 
 
 
-
 const BOMTable = () => {
+  const gridApiRef = useRef(null);
+
+
   const [showModal, setShowModal] = useState(false);
   const [rowData, setRowData] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [columnDefs] = useState(getColumnDefs());
+ 
+  const tableStyles = TABLE_STYLES;
 
-
-
-
-  // ✅ Styling for Excel-like appearance
-  const tableStyles = `
-    .excel-grid .ag-cell {
-      border: 0.5px solid gray !important;
-      padding: 8px;
-    }
-    .excel-grid .ag-header-cell,
-    .excel-grid .ag-header-group-cell {
-      background-color: #e0e0e0 !important;
-      color: black !important;
-      border: 0.5px solid gray !important;
-      font-weight: bold;
-      text-align: center;
-    }
-  `;
-
-
-
-
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState(""); // "row" or "column"
   const [rowCount, setRowCount] = useState(1);
   const [isSubtotalRow, setIsSubtotalRow] = useState(false);
-  const [modalType, setModalType] = useState(""); // 'row' or 'column'
+  const [isMainTitleRow, setIsMainTitleRow] = useState(false);
   const [columnName, setColumnName] = useState("");
   const [subheaderCount, setSubheaderCount] = useState(1);
-  const [isMainTitleRow, setIsMainTitleRow] = useState(false);
+  const [specialRowType, setSpecialRowType] = useState("regular");
+  const [markupPercentage, setMarkupPercentage] = useState(MARKUP_PERCENTAGE);
+  const [computedRowType, setComputedRowType] = useState("subtotal");
+  const [undoStack, setUndoStack] = useState([]); // Stack to store previous rowData states for undo
 
 
+  // ✅ Load row data from localStorage when the component mounts
+  useEffect(() => {
+    const savedRowData = localStorage.getItem("rowData");
+    if (savedRowData) {
+      setRowData(JSON.parse(savedRowData)); // Set the row data if it exists in localStorage
+    }
+  }, []); // Runs only once when the component mounts
 
 
- // ✅ Load row data from localStorage when the component mounts
-useEffect(() => {
-  const savedRowData = localStorage.getItem("rowData");
-  if (savedRowData) {
-    setRowData(JSON.parse(savedRowData)); // Set the row data if it exists in localStorage
-  }
-}, []); // Runs only once when the component mounts
-
-// ✅ Save row data to localStorage whenever rowData changes
-useEffect(() => {
-  if (rowData.length > 0) {
-    localStorage.setItem("rowData", JSON.stringify(rowData));
-  }
-}, [rowData]); // Runs every time rowData changes
-
+  // ✅ Save row data to localStorage whenever rowData changes
+  useEffect(() => {
+    if (rowData.length > 0) {
+      localStorage.setItem("rowData", JSON.stringify(rowData));
+    }
+  }, [rowData]); // Runs every time rowData changes
 
   // Handle Add Row
-  const handleAddRow = (isSubtotalRow, isMainTitleRow, rowCount) => {
-    addRow(rowData, isSubtotalRow, isMainTitleRow, rowCount, setRowData, setIsModalOpen);
+  const handleAddRow = (isSubtotalRowFlag, isMainTitleRowFlag, rowCount) => {
+    addRow(
+      rowData,
+      isSubtotalRowFlag,
+      isMainTitleRowFlag,
+      rowCount,
+      setRowData,
+      setIsModalOpen,
+      markupPercentage,
+      computedRowType // NEW parameter
+    );
   };
 
 
+  // // Handle cell value changes
+  // const handleCellValueChanged = (params) => {
+  //   onCellValueChanged(params, setRowData);
+  // };
+  
 
-
-  // Handle Cell Value Changes
-  const handleCellValueChanged = (params) => {
-    onCellValueChanged(params, setRowData);
+  const onGridReady = (params) => {
+    gridApiRef.current = params.api;
+    console.log("✅ Grid API Set:", gridApiRef.current); // Debug log
   };
 
-
-
-
-
+  const onRowDragEnd = (event) => {
+    let newRowData = [];
+    event.api.forEachNodeAfterFilterAndSort((node) => {
+      newRowData.push(node.data);
+    });
+    const updatedData = recalcComputedRows(newRowData, markupPercentage);
+    setRowData(updatedData);
+    saveRowData(updatedData);
+  };
 
   return (
     <div className="p-4">
       <style>{tableStyles}</style>
-
-
-
-
       {/* ✅ Buttons to Open Modal */}
       <div className="flex space-x-4 mb-4">
         <button
@@ -115,9 +112,6 @@ useEffect(() => {
           ➕ Add Row
         </button>
 
-
-
-
         <button
           onClick={() => {
             setModalType("column");
@@ -127,37 +121,75 @@ useEffect(() => {
         >
           ➕ Add Column
         </button>
+
+        <button
+          onClick={() => {
+            // Also provide an Undo button if needed
+            setUndoStack((prevStack) => {
+              if (prevStack.length === 0) return prevStack;
+              const lastState = prevStack[prevStack.length - 1];
+              setRowData(lastState);
+              return prevStack.slice(0, prevStack.length - 1);
+            });
+          }}
+          className="bg-yellow-500 text-white px-4 py-2 rounded "
+        >
+          Undo (Ctrl+Z)
+        </button>
+
+
+        <button
+         onClick={() => handleDeleteAllRows(setRowData, setUndoStack)()}
+          className="bg-red-500 text-white px-4 py-2 rounded "
+        >
+          Delete All Rows
+        </button>
       </div>
-
-
 
 
       {/* ✅ Grid */}
-      <div className="border border-gray-300">
-        <div className="ag-theme-alpine ag-theme-legacy excel-grid" style={{ height: 1500, width: "100%" }}>
+      <div className="border border-gray-300" tabIndex="0"   onKeyDown={(event) =>
+        handleGridKeyDown(event, gridApiRef.current, rowData, setRowData, setUndoStack, undoStack)
+      }    >
+        <div className="ag-theme-alpine ag-theme-legacy excel-grid" style={{ height: 1500, width: "100%" }}  >
 
-
-
-        <AgGridReact
-  rowData={rowData}
-  columnDefs={columnDefs}
-  defaultColDef={{
-    resizable: true,
-    sortable: true,
-    filter: true,
-    editable: true,
-    singleClickEdit: true,
-  }}
-  onCellValueChanged={(params) => onCellValueChanged(params, setRowData)}
-/>
-
-
- 
+          <AgGridReact
+            rowData={rowData}
+            columnDefs={columnDefs}
+            defaultColDef={{
+              resizable: true,
+              sortable: true,
+              filter: true,
+              editable: true,
+              singleClickEdit: true,
+            }}
+            rowSelection="single"
+            suppressRowClickSelection={true}
+            enableClickSelection={false}
+            onRowDoubleClicked={(params) => params.node.setSelected(true)}
+            onGridReady={onGridReady}
+            onCellKeyDown={handleCellKeyDown}
+            suppressBrowserContextMenu={true}
+            rowDragManaged={true}   // Enables managed row dragging
+            animateRows={true}        // Optional: adds a nice animation during drag
+            onRowDragEnd={onRowDragEnd}  // <-- this is the key
+            onCellValueChanged={(params) => onCellValueChanged(params, setRowData)}
+          />
         </div>
       </div>
 
-
-
+      {/* Markup input (for computed rows) */}
+      <div className="mt-4">
+        <label>
+          Markup Percentage:{" "}
+          <input
+            type="number"
+            value={markupPercentage}
+            onChange={(e) => setMarkupPercentage(parseFloat(e.target.value) || 0)}
+            className="border p-1"
+          />
+        </label>
+      </div>
 
       {/* ✅ Modal */}
       {isModalOpen && (
@@ -166,9 +198,6 @@ useEffect(() => {
             <h2 className="text-lg font-semibold mb-4">
               {modalType === "row" ? "Add a New Row" : "Add a New Column"}
             </h2>
-
-
-
 
             {modalType === "row" && (
               <>
@@ -187,9 +216,6 @@ useEffect(() => {
                   Regular Row
                 </label>
 
-
-
-
                 <label className="block mb-2">
                   <input
                     type="radio"
@@ -206,25 +232,82 @@ useEffect(() => {
                 </label>
 
 
-
-
-                <label className="block mb-4">
+                <label className="block mb-2">
                   <input
                     type="radio"
                     name="rowType"
                     value="subtotal"
-                    checked={isSubtotalRow}
+                    checked={isSubtotalRow && computedRowType === "subtotal"}
                     onChange={() => {
                       setIsSubtotalRow(true);
                       setIsMainTitleRow(false);
+                      setComputedRowType("subtotal");
                     }}
                     className="mr-2"
                   />
                   Subtotal Row
                 </label>
 
+                <label className="block mb-2">
+                  <input
+                    type="radio"
+                    name="rowType"
+                    value="total"
+                    checked={isSubtotalRow && computedRowType === "total"}
+                    onChange={() => {
+                      setIsSubtotalRow(true);
+                      setIsMainTitleRow(false);
+                      setComputedRowType("total");
+                    }}
+                    className="mr-2"
+                  />
+                  Total (Sum of All Subtotals)
+                </label>
+
+                <label className="block mb-2">
+                  <input
+                    type="radio"
+                    name="rowType"
+                    value="markup"
+                    checked={isSubtotalRow && computedRowType === "markup"}
+                    onChange={() => {
+                      setIsSubtotalRow(true);
+                      setIsMainTitleRow(false);
+                      setComputedRowType("markup");
+                    }}
+                    className="mr-2"
+                  />
+                  Markup (Based on Total)
+                </label>
 
 
+                {isSubtotalRow && computedRowType === "markup" && (
+                  <label className="block mb-2">
+                    Markup Percentage:
+                    <input
+                      type="number"
+                      value={markupPercentage}
+                      onChange={(e) => setMarkupPercentage(parseFloat(e.target.value) || 0)}
+                      className="border p-2 ml-2"
+                    />
+                  </label>
+                )}
+
+                <label className="block mb-2">
+                  <input
+                    type="radio"
+                    name="rowType"
+                    value="grandTotal"
+                    checked={isSubtotalRow && computedRowType === "grandTotal"}
+                    onChange={() => {
+                      setIsSubtotalRow(true);
+                      setIsMainTitleRow(false);
+                      setComputedRowType("grandTotal");
+                    }}
+                    className="mr-2"
+                  />
+                  Grand Total (Total + Markup)
+                </label>
 
                 <label className="block mb-4">
                   Number of Rows:
@@ -239,9 +322,6 @@ useEffect(() => {
               </>
             )}
 
-
-
-
             {/* ✅ Add Column Form */}
             {modalType === "column" && (
               <>
@@ -254,9 +334,6 @@ useEffect(() => {
                     className="w-full p-2 border rounded mt-1"
                   />
                 </label>
-
-
-
 
                 <label className="block mb-4">
                   Subheaders:
@@ -271,9 +348,6 @@ useEffect(() => {
                 </label>
               </>
             )}
-
-
-
 
             {/* ✅ Buttons */}
             <div className="flex justify-end space-x-2">
@@ -294,17 +368,4 @@ useEffect(() => {
     </div>
   );
 };
-
-
-
-
 export default BOMTable;
-
-
-
-
-
-
-
-
-
