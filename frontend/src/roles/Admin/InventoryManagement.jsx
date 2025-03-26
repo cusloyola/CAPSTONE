@@ -23,6 +23,9 @@ const InventoryManagement = () => {
     const [showViewModal, setShowViewModal] = useState(false);
     const [viewedItem, setViewedItem] = useState(null);
 
+    const [searchTerm, setSearchTerm] = useState(""); // Add search term state
+    const [filteredInventory, setFilteredInventory] = useState([]);
+
     const handleViewItemInfo = async (item) => {
         try {
             const response = await axios.get(
@@ -107,6 +110,15 @@ const InventoryManagement = () => {
         fetchInventory();
     }, []);
 
+
+    useEffect(() => {
+        setFilteredInventory(
+            inventory.filter((item) =>
+                item.item_name.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+        );
+    }, [inventory, searchTerm]);
+
     const fetchInventory = async () => {
         setLoading(true);
         setError("");
@@ -174,6 +186,14 @@ const InventoryManagement = () => {
             >
                 + Add Item
             </button>
+
+            <input
+                type="text"
+                placeholder="Search items..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "500px",  borderRadius: "10px" }}
+            />
 
             {showModal && (
                 <div
@@ -300,7 +320,7 @@ const InventoryManagement = () => {
             <h3>Inventory List</h3>
             {loading ? (
                 <p>⏳ Loading inventory...</p>
-            ) : inventory.length > 0 ? (
+            ) : filteredInventory.length > 0 ? (
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                     <thead>
                         <tr style={{ backgroundColor: "#f4f4f4", textAlign: "left" }}>
@@ -312,7 +332,7 @@ const InventoryManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {inventory.map((item) => (
+                    {filteredInventory.map((item) => (
                             <tr key={item.item_id} style={{ borderBottom: "1px solid #ddd" }}>
                                 <td style={{ padding: "10px" }}>{item.item_name}</td>
                                 <td style={{ padding: "10px" }}>{item.stock_quantity}</td>
@@ -367,7 +387,18 @@ const InventoryManagement = () => {
                     </tbody>
                 </table>
             ) : (
-                <p>📭 No inventory items found.</p>
+                <p style={{
+                    textAlign: 'center',
+                    fontSize: '1.2em',
+                    fontWeight: 'bold',
+                    color: 'red', // or '#FF0000' for a more explicit red
+                    padding: '20px',
+                    margin: '20px auto',
+                    width: '80%',
+                    maxWidth: '600px',
+                  }}>
+                    📭 No matching inventory items found!
+                  </p>
             )}
 
 {showViewModal && viewedItem && (
