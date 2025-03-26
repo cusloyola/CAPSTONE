@@ -50,7 +50,6 @@ import FormElements from "./pages/Forms/FormElements";
 // import ContractTemplate from "./roles/Admin/Contact Management/ContactTemplate.jsx";
 // import LeaveContract from "./roles/Admin/Contact Management/LeaveContract.jsx";
 // import EmploymentContract from "./roles/Admin/Contact Management/EmploymentContract.jsx";
-import ContractTemplate from "./roles/Admin/Contract Management/ContractTemplate.jsx";
 import LeaveContract from "./roles/Admin/Contract Management/LeaveContract.jsx";
 import EmploymentContract from "./roles/Admin/Contract Management/EmploymentContract.jsx";
 

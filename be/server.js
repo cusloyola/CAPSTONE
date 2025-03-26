@@ -23,12 +23,14 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
 const contractRoutes = require("./routes/contractRoutes");
+const leaveContractRoutes = require("./routes/leaveContractRoutes");
 
 // ✅ Use Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/contracts", contractRoutes);
+app.use("/api/leave-contract", leaveContractRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {
