@@ -1,7 +1,7 @@
 const db = require("../config/db");
 
 const getAllInventory = (req, res) => {
-    db.query("SELECT * FROM inventory_items", (err, results) => {
+    db.query("SELECT * FROM inventory_items WHERE isDeleted = 0", (err, results) => {
         if (err) {
             console.error("❌ Error fetching inventory:", err);
             return res.status(500).json({ error: "Server error while fetching inventory" });
@@ -20,7 +20,7 @@ const addInventoryItem = (req, res) => {
     if (!item_name || !description || !category_id || !unit || !stock_quantity || !reorder_level || !location) {
         return res.status(400).json({ error: "All fields are required." });
     }
-    const query = "INSERT INTO inventory_items (item_name, description, category_id, unit, stock_quantity, reorder_level, location, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+    const query = "INSERT INTO inventory_items (item_name, description, category_id, unit, stock_quantity, reorder_level, location, created_at, isDeleted) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 0)";
     db.query(query, [item_name, description, category_id, unit, stock_quantity, reorder_level, location], (err, result) => {
         if (err) {
             console.error("❌ Error adding inventory item:", err);
@@ -31,4 +31,20 @@ const addInventoryItem = (req, res) => {
     });
 };
 
-module.exports = { getAllInventory, addInventoryItem };
+const deleteInventoryItem = (req, res) => {
+    const itemId = req.params.id;
+    const query = "UPDATE inventory_items SET isDeleted = 1 WHERE item_id = ?";
+    db.query(query, [itemId], (err, result) => {
+        if (err) {
+            console.error("❌ Error soft deleting inventory item:", err);
+            return res.status(500).json({ error: "Failed to soft delete inventory item." });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Inventory item not found." });
+        }
+        console.log("📌 Item soft deleted:", result);
+        return res.json({ message: "Inventory item soft deleted successfully." });
+    });
+};
+
+module.exports = { getAllInventory, addInventoryItem, deleteInventoryItem };
