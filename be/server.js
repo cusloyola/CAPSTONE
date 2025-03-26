@@ -28,7 +28,7 @@ const leaveContractRoutes = require("./routes/leaveContractRoutes");
 // ✅ Use Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/inventory", inventoryRoutes);
+app.use("/api/inventory", inventoryRoutes); // No changes needed here, assuming your inventoryRoutes is correctly setup
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
 
