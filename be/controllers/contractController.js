@@ -24,7 +24,7 @@ const downloadContract = async (req, res) => {
             return res.status(400).json({ error: "File name is required." });
         }
 
-        const filePath = path.join(__dirname, "../generated", fileName);
+        const filePath = path.join(__dirname, "../generated/employment_contracts", fileName);
 
         // Ensure file exists
         try {
