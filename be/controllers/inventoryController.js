@@ -47,4 +47,20 @@ const deleteInventoryItem = (req, res) => {
     });
 };
 
-module.exports = { getAllInventory, addInventoryItem, deleteInventoryItem };
+const getInventoryItemById = (req, res) => {
+    const itemId = req.params.id;
+    const query = "SELECT * FROM inventory_items WHERE item_id = ? AND isDeleted = 0";
+    db.query(query, [itemId], (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching inventory item:", err);
+            return res.status(500).json({ error: "Server error while fetching inventory item" });
+        }
+        if (!results || results.length === 0) {
+            return res.status(404).json({ message: "Inventory item not found." });
+        }
+        console.log("📌 Sending Inventory Item Data:", results[0]);
+        return res.json(results[0]); // Send the first item from the results array
+    });
+};
+
+module.exports = { getAllInventory, addInventoryItem, deleteInventoryItem, getInventoryItemById };
