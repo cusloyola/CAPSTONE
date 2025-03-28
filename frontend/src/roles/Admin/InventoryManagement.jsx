@@ -23,8 +23,19 @@ const InventoryManagement = () => {
     const [showViewModal, setShowViewModal] = useState(false);
     const [viewedItem, setViewedItem] = useState(null);
 
-    const [searchTerm, setSearchTerm] = useState(""); // Add search term state
+    const [searchTerm, setSearchTerm] = useState("");
     const [filteredInventory, setFilteredInventory] = useState([]);
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editItem, setEditItem] = useState({
+        item_name: "",
+        description: "",
+        category_id: "",
+        unit: "",
+        stock_quantity: "",
+        reorder_level: "",
+        location: "",
+    });
 
     const handleViewItemInfo = async (item) => {
         try {
@@ -44,7 +55,6 @@ const InventoryManagement = () => {
         setViewedItem(null);
     };
 
-    
     const deleteItem = async (itemId) => {
         try {
             await axios.delete(`http://localhost:5000/api/inventory/${itemId}`);
@@ -67,20 +77,6 @@ const InventoryManagement = () => {
             setError("Item not found. Please refresh the inventory list.");
         }
     };
-
-    const handleViewItem = async (item) => {
-        try {
-          const response = await axios.get(
-            `http://localhost:5000/api/inventory/${item.item_id}`
-          );
-          // Open a modal or display the data in your component's state
-          setViewedItem(response.data);
-          setShowViewModal(true);
-        } catch (error) {
-          console.error("Error fetching item details:", error);
-        }
-      };
-      
 
     const confirmDelete = async () => {
         console.log("confirmDelete: selectedItem:", selectedItem);
@@ -109,7 +105,6 @@ const InventoryManagement = () => {
     useEffect(() => {
         fetchInventory();
     }, []);
-
 
     useEffect(() => {
         setFilteredInventory(
@@ -172,8 +167,62 @@ const InventoryManagement = () => {
         }
     };
 
-
+    const handleEdit = async (item) => {
+        try {
+            console.log("handleEdit: Fetching item details for edit:", item.item_id);
+            const response = await axios.get(
+                `http://localhost:5000/api/inventory/${item.item_id}`
+            );
+            console.log("handleEdit: Item details fetched:", response.data);
+            setEditItem(response.data);
+            setIsEditModalOpen(true);
+        } catch (error) {
+            console.error("handleEdit: Error fetching item details for edit:", error);
+            setError("Failed to fetch item details for edit.");
+        }
+    };
     
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        console.log("handleEditChange: Input changed -", name, value);
+        setEditItem((prevState) => ({
+            ...prevState,
+            [name]: value,
+        }));
+    };
+    
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        console.log("handleEditSubmit: Attempting to update item:", editItem.item_id, editItem);
+        try {
+            const response = await axios.put(`http://localhost:5000/api/inventory/${editItem.item_id}`, editItem);
+            console.log("handleEditSubmit: Item updated successfully:", response.data);
+            fetchInventory();
+            setIsEditModalOpen(false);
+            setSuccessMessage("Item updated successfully!");
+            setShowSuccessModal(true);
+        } catch (error) {
+            console.error("handleEditSubmit: Error updating item:", error);
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.error("handleEditSubmit: Response data:", error.response.data);
+                console.error("handleEditSubmit: Response status:", error.response.status);
+                console.error("handleEditSubmit: Response headers:", error.response.headers);
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.error("handleEditSubmit: Request made, no response received:", error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.error("handleEditSubmit: Error setting up request:", error.message);
+            }
+    
+            setError("Failed to update item.");
+        }
+    };
+
     return (
         <div>
             <h2>Inventory Management</h2>
@@ -192,7 +241,7 @@ const InventoryManagement = () => {
                 placeholder="Search items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "500px",  borderRadius: "10px" }}
+                style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "500px", borderRadius: "10px" }}
             />
 
             {showModal && (
@@ -332,16 +381,15 @@ const InventoryManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                    {filteredInventory.map((item) => (
+                        {filteredInventory.map((item) => (
                             <tr key={item.item_id} style={{ borderBottom: "1px solid #ddd" }}>
                                 <td style={{ padding: "10px" }}>{item.item_name}</td>
                                 <td style={{ padding: "10px" }}>{item.stock_quantity}</td>
                                 <td style={{ padding: "10px" }}>{item.reorder_level}</td>
                                 <td style={{ padding: "10px" }}>{item.location}</td>
                                 <td style={{ padding: "10px" }}>
-                                <button
-                                    onClick={() => handleViewItemInfo(item)}
-
+                                    <button
+                                        onClick={() => handleViewItemInfo(item)}
                                         style={{
                                             padding: "6px 12px",
                                             marginRight: "5px",
@@ -391,83 +439,17 @@ const InventoryManagement = () => {
                     textAlign: 'center',
                     fontSize: '1.2em',
                     fontWeight: 'bold',
-                    color: 'red', // or '#FF0000' for a more explicit red
+                    color: 'red',
                     padding: '20px',
                     margin: '20px auto',
                     width: '80%',
                     maxWidth: '600px',
-                  }}>
+                }}>
                     📭 No matching inventory items found!
-                  </p>
+                </p>
             )}
 
-{showViewModal && viewedItem && (
-    <div
-        style={{
-            position: "fixed",
-            top: "0",
-            left: "0",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-        }}
-    >
-        <div
-            style={{
-                backgroundColor: "white",
-                padding: "20px",
-                borderRadius: "8px",
-                width: "400px", // Increased width for better spacing
-                textAlign: "left", // Align text to the left for better readability
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)", // Add a subtle shadow
-            }}
-        >
-            <h3 style={{ marginBottom: "15px", textAlign: "center" }}>Item Details</h3> {/* Center the title */}
-            <p style={{ marginBottom: "8px" }}>
-                <strong>Item Name:</strong> {viewedItem.item_name}
-            </p>
-            <p style={{ marginBottom: "8px" }}>
-                <strong>Description:</strong> {viewedItem.description}
-            </p>
-            <p style={{ marginBottom: "8px" }}>
-                <strong>Category ID:</strong> {viewedItem.category_id}
-            </p>
-            <p style={{ marginBottom: "8px" }}>
-                <strong>Unit:</strong> {viewedItem.unit}
-            </p>
-            <p style={{ marginBottom: "8px" }}>
-                <strong>Stock Quantity:</strong> {viewedItem.stock_quantity}
-            </p>
-            <p style={{ marginBottom: "8px" }}>
-                <strong>Reorder Level:</strong> {viewedItem.reorder_level}
-            </p>
-            <p style={{ marginBottom: "15px" }}>
-                <strong>Location:</strong> {viewedItem.location}
-            </p>
-            <div style={{ textAlign: "center" }}> {/* Center the button container */}
-                <button
-                    onClick={closeViewModal}
-                    style={{
-                        padding: "12px 20px",
-                        backgroundColor: "#4CAF50",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "16px", // Increased font size for better visibility
-                    }}
-                >
-                    OK
-                </button>
-            </div>
-        </div>
-    </div>
-)}
-
-            {isDeleteModalOpen && (
+            {showViewModal && viewedItem && (
                 <div
                     style={{
                         position: "fixed",
@@ -485,90 +467,270 @@ const InventoryManagement = () => {
                         style={{
                             backgroundColor: "white",
                             padding: "20px",
-                            borderRadius: "5px",
-                            width: "300px",
-                            textAlign: "center",
+                            borderRadius: "8px",
+                            width: "400px",
+                            textAlign: "left",
+                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
                         }}
                     >
-                        <h3>Confirm Delete</h3>
-                        <p>Are you sure you want to delete this item?</p>
-                        <div>
+                        <h3 style={{ marginBottom: "15px", textAlign: "center" }}>Item Details</h3>
+                        <p style={{ marginBottom: "8px" }}>
+                            <strong>Item Name:</strong> {viewedItem.item_name}
+                        </p>
+                        <p style={{ marginBottom: "8px" }}>
+                            <strong>Description:</strong> {viewedItem.description}
+                        </p>
+                        <p style={{ marginBottom: "8px" }}>
+                            <strong>Category ID:</strong> {viewedItem.category_id}
+                        </p>
+                        <p style={{ marginBottom: "8px" }}>
+                            <strong>Unit:</strong> {viewedItem.unit}
+                        </p>
+                        <p style={{ marginBottom: "8px" }}>
+                            <strong>Stock Quantity:</strong> {viewedItem.stock_quantity}
+                        </p>
+                        <p style={{ marginBottom: "8px" }}>
+                            <strong>Reorder Level:</strong> {viewedItem.reorder_level}
+                        </p>
+                        <p style={{ marginBottom: "15px" }}>
+                            <strong>Location:</strong> {viewedItem.location}
+                        </p>
+                        <div style={{ textAlign: "center" }}>
                             <button
-                                onClick={confirmDelete}
+                                onClick={closeViewModal}
                                 style={{
-                                    padding: "10px 15px",
-                                    backgroundColor: "#e74c3c",
+                                    padding: "12px 20px",
+                                    backgroundColor: "#4CAF50",
                                     color: "white",
                                     border: "none",
                                     borderRadius: "4px",
                                     cursor: "pointer",
-                                    marginRight: "10px",
+                                    fontSize: "16px",
                                 }}
-                            >
-                                Confirm Delete
-                            </button>
+                                >
+                                    OK
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {isDeleteModalOpen && (
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: "0",
+                            left: "0",
+                            width: "100%",
+                            height: "100%",
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        <div
+                            style={{
+                                backgroundColor: "white",
+                                padding: "20px",
+                                borderRadius: "5px",
+                                width: "300px",
+                                textAlign: "center",
+                            }}
+                        >
+                            <h3>Confirm Delete</h3>
+                            <p>Are you sure you want to delete this item?</p>
+                            <div>
+                                <button
+                                    onClick={confirmDelete}
+                                    style={{
+                                        padding: "10px 15px",
+                                        backgroundColor: "#e74c3c",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer",
+                                        marginRight: "10px",
+                                    }}
+                                >
+                                    Confirm Delete
+                                </button>
+                                <button
+                                    onClick={closeDeleteModal}
+                                    style={{
+                                        padding: "10px 15px",
+                                        backgroundColor: "#3498db",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {showSuccessModal && (
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: "0",
+                            left: "0",
+                            width: "100%",
+                            height: "100%",
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    >
+                        <div
+                            style={{
+                                backgroundColor: "white",
+                                padding: "20px",
+                                borderRadius: "5px",
+                                width: "300px",
+                                textAlign: "center",
+                            }}
+                        >
+                            <h3>Success!</h3>
+                            <p>{successMessage}</p>
                             <button
-                                onClick={closeDeleteModal}
-                                style={{
-                                    padding: "10px 15px",
-                                    backgroundColor: "#3498db",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                }}
+                                onClick={() => setShowSuccessModal(false)}
+                                style={{ padding: "10px 15px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
                             >
-                                Cancel
+                                OK
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {showSuccessModal && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: "0",
-                        left: "0",
-                        width: "100%",
-                        height: "100%",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }}
-                >
+                {isEditModalOpen && (
                     <div
                         style={{
-                            backgroundColor: "white",
-                            padding: "20px",
-                            borderRadius: "5px",
-                            width: "300px",
-                            textAlign: "center",
+                            position: "fixed",
+                            top: "0",
+                            left: "0",
+                            width: "100%",
+                            height: "100%",
+                            backgroundColor: "rgba(0,0,0,0.5)",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
                         }}
                     >
-                        <h3>Success!</h3>
-                        <p>{successMessage}</p>
-                        <button
-                            onClick={() => setShowSuccessModal(false)}
-                            style={{ padding: "10px 15px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
+                        <div
+                            style={{
+                                backgroundColor: "white",
+                                padding: "20px",
+                                borderRadius: "5px",
+                                width: "400px",
+                            }}
                         >
-                            OK
-                        </button>
+                            <h3>Edit Item</h3>
+                            <form onSubmit={handleEditSubmit}>
+                                <div>
+                                    <label>Item Name</label>
+                                    <input
+                                        type="text"
+                                        name="item_name"
+                                        value={editItem.item_name}
+                                        onChange={handleEditChange}
+                                        required
+                                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                    />
+                                </div>
+                                <div>
+                                    <label>Description</label>
+                                    <textarea
+                                        name="description"
+                                        value={editItem.description}
+                                        onChange={handleEditChange}
+                                        required
+                                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                    />
+                                </div>
+                                <div>
+                                    <label>Category ID</label>
+                                    <input
+                                        type="number"
+                                        name="category_id"
+                                        value={editItem.category_id}
+                                        onChange={handleEditChange}
+                                        required
+                                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                    />
+                                </div>
+                                <div>
+                                    <label>Unit</label>
+                                    <input
+                                        type="text"
+                                        name="unit"
+                                        value={editItem.unit}
+                                        onChange={handleEditChange}
+                                        required
+                                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                    />
+                                </div>
+                                <div>
+                                    <label>Stock Quantity</label>
+                                    <input
+                                        type="number"
+                                        name="stock_quantity"
+                                        value={editItem.stock_quantity}
+                                        onChange={handleEditChange}
+                                        required
+                                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                    />
+                                </div>
+                                <div>
+                                    <label>Reorder Level</label>
+                                    <input
+                                        type="number"
+                                        name="reorder_level"
+                                        value={editItem.reorder_level}
+                                        onChange={handleEditChange}
+                                        required
+                                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                    />
+                                </div>
+                                <div>
+                                    <label>Location</label>
+                                    <input
+                                        type="text"
+                                        name="location"
+                                        value={editItem.location}
+                                        onChange={handleEditChange}
+                                        required
+                                        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                    />
+                                </div>
+                                <div>
+                                    <button type="submit" style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}>
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                style={{
+                                    padding: "5px 10px",
+                                    backgroundColor: "#f44336",
+                                    color: "white",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    marginTop: "10px",
+                                }}
+                            >
+                                Close</button>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
-    );
+                )}
 
-    function handleView(item) {
-        console.log("view item", item);
+            </div>
+        );
     }
-
-    function handleEdit(item) {
-        console.log("edit item", item);
-    }
-};
-
-export default InventoryManagement;
+    export default InventoryManagement;

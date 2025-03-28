@@ -63,4 +63,31 @@ const getInventoryItemById = (req, res) => {
     });
 };
 
-module.exports = { getAllInventory, addInventoryItem, deleteInventoryItem, getInventoryItemById };
+const updateInventoryItem = (req, res) => {
+    console.log("updateInventoryItem: Request received for item ID:", req.params.id);
+    console.log("updateInventoryItem: Request body:", req.body);
+
+    const itemId = req.params.id;
+    const { item_name, description, category_id, unit, stock_quantity, reorder_level, location } = req.body;
+
+    const query = "UPDATE inventory_items SET item_name = ?, description = ?, category_id = ?, unit = ?, stock_quantity = ?, reorder_level = ?, location = ? WHERE item_id = ? AND isDeleted = 0"; //updated_at removed.
+
+    db.query(query, [item_name, description, category_id, unit, stock_quantity, reorder_level, location, itemId], (err, result) => {
+        if (err) {
+            console.error("updateInventoryItem: Database error:", err);
+            return res.status(500).json({ error: "Failed to update inventory item." });
+        }
+
+        console.log("updateInventoryItem: Database result:", result);
+
+        if (result.affectedRows === 0) {
+            console.log("updateInventoryItem: Item not found or deleted");
+            return res.status(404).json({ message: "Inventory item not found or already deleted." });
+        }
+
+        return res.json({ message: "Inventory item updated successfully." });
+    });
+};
+
+
+module.exports = { getAllInventory, addInventoryItem, deleteInventoryItem, getInventoryItemById, updateInventoryItem };
