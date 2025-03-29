@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import LowStockInventory from "./InventoryMonitoring";
+
 
 const InventoryManagement = () => {
     const [inventory, setInventory] = useState([]);
@@ -225,8 +227,14 @@ const InventoryManagement = () => {
 
     return (
         <div>
-            <h2>Inventory Management</h2>
+         <h1>
+  <span style={{ fontSize: '1.5em' }}>Inventory Management</span>
+</h1>
 
+            <div className="low-stock-wrapper" style={{ marginBottom: '10px', maxHeight: '300px' }}>
+  <LowStockInventory />
+</div>
+<br></br><br></br><br></br>
             {error && <p style={{ color: "red" }}>⚠️ {error}</p>}
 
             <button
@@ -243,6 +251,7 @@ const InventoryManagement = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "500px", borderRadius: "10px" }}
             />
+
 
             {showModal && (
                 <div
@@ -370,7 +379,7 @@ const InventoryManagement = () => {
             {loading ? (
                 <p>⏳ Loading inventory...</p>
             ) : filteredInventory.length > 0 ? (
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", backgroundColor: "white" }}>
                     <thead>
                         <tr style={{ backgroundColor: "#f4f4f4", textAlign: "left" }}>
                             <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Item Name</th>

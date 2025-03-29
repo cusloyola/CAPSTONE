@@ -15,6 +15,8 @@ import AdminDashboard from "./roles/Admin/AdminDashboard.jsx";
 import AdminBOM from "./roles/Admin/AdminBOM.jsx";
 import AdminBOQ from "./roles/Admin/AdminBOQ.jsx";
 import InventortManagement from "./roles/Admin/InventoryManagement.jsx"
+import AdminBOMMM from "./roles/Admin/InventoryMonitoring.jsx"
+import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 
 
 
@@ -74,6 +76,7 @@ export default function App() {
               <Route path="/AdminBOM" element={<AdminBOM />} />
               <Route path="/AdminBOQ" element={<AdminBOQ />} />
               <Route path="/InventoryManagement" element={<InventortManagement />} />
+              <Route path="/InventoryMonitoring" element={<LowStockInventory />} />
               <Route path="/LeaveContract" element={<LeaveContract />} />
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
             </Route>
