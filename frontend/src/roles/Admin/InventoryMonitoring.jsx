@@ -30,36 +30,36 @@ const LowStockInventory = () => {
   className="bg-white rounded-2xl shadow-md p-6 max-h-80 overflow-y-auto w-full mr-4"
   style={{ maxWidth: '1000px' }}
 >
-  <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-4">
+  <h2 className="text-2xl font-semibold mb-6 text-black-800 border-b pb-4">
     Inventory Information
   </h2>
   <div className="flex flex-wrap -mx-4">
-    <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
       <strong>Total Items:</strong> 1500 
     </p>
  
     
-    <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
     <strong>Company:</strong> Global Logistics Inc.
   </p>
-  <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+  <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
       <strong>Total Categories:</strong> 10
     </p>
     
-    <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
     <strong>Contact Person:</strong> Mr. Robert Reyes
   </p>
-  <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+  <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
       <strong>Items Out of Stock:</strong> 50
     </p>   
-    <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
     <strong>Email:</strong> robert.reyes@globallogistics.com
   </p>
     
-    <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
       <strong>Total Number of Stocks:</strong> 3000
     </p>
-    <p className="text-base font-medium text-gray-600 w-1/2 px-4 py-2">
+    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
         <strong>Warehouse Location:</strong> Valenzuela City, Philippines
     </p>
 

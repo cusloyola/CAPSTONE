@@ -3,6 +3,7 @@ import axios from "axios";
 import LowStockInventory from "./InventoryMonitoring";
 
 
+
 const InventoryManagement = () => {
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -39,6 +40,7 @@ const InventoryManagement = () => {
         location: "",
     });
 
+    
     const handleViewItemInfo = async (item) => {
         try {
             const response = await axios.get(
@@ -225,10 +227,12 @@ const InventoryManagement = () => {
         }
     };
 
+
+    
     return (
         <div>
          <h1>
-  <span style={{ fontSize: '1.5em' }}>Inventory Management</span>
+  <span style={{ marginLeft:"25px", fontSize: '1.75em' }}><strong>Inventory Management</strong></span>
 </h1>
 
             <div className="low-stock-wrapper" style={{ marginBottom: '10px', maxHeight: '300px' }}>
@@ -239,7 +243,7 @@ const InventoryManagement = () => {
 
             <button
                 onClick={() => setShowModal(true)}
-                style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer", borderRadius: "4px" }}
+                style={{ padding: "10px", marginLeft: "20px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer", borderRadius: "4px" }}
             >
                 + Add Item
             </button>
@@ -249,9 +253,28 @@ const InventoryManagement = () => {
                 placeholder="Search items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "500px", borderRadius: "10px" }}
+                style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "750px", borderRadius: "10px" }}
             />
 
+          
+            
+            <select
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  style={{
+    padding: "8px",
+    margin: "10px 0",
+    marginLeft: "10px",
+    width: "590px", // Adjust width as needed
+    borderRadius: "10px",
+  }}
+>
+  <option value="">All Categories</option>
+  <option value="Aluminum ">Steel & Metal Materials</option>
+  <option value="Clothing">Concrete</option>
+
+  {/* Add more categories as needed */}
+</select>
 
             {showModal && (
                 <div
@@ -375,74 +398,90 @@ const InventoryManagement = () => {
                 </div>
             )}
 
-            <h3>Inventory List</h3>
-            {loading ? (
+<h3 style={{ marginTop: '10px' ,marginLeft: '30px', fontSize: '1.5em' }}> <strong> Inventory List</strong></h3>            {loading ? (
                 <p>⏳ Loading inventory...</p>
             ) : filteredInventory.length > 0 ? (
-                <table style={{ width: "100%", borderCollapse: "collapse", backgroundColor: "white" }}>
-                    <thead>
-                        <tr style={{ backgroundColor: "#f4f4f4", textAlign: "left" }}>
-                            <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Item Name</th>
-                            <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Stock Quantity</th>
-                            <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Reorder Level</th>
-                            <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Warehouse Location</th>
-                            <th style={{ padding: "10px", borderBottom: "2px solid #ddd" }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredInventory.map((item) => (
-                            <tr key={item.item_id} style={{ borderBottom: "1px solid #ddd" }}>
-                                <td style={{ padding: "10px" }}>{item.item_name}</td>
-                                <td style={{ padding: "10px" }}>{item.stock_quantity}</td>
-                                <td style={{ padding: "10px" }}>{item.reorder_level}</td>
-                                <td style={{ padding: "10px" }}>{item.location}</td>
-                                <td style={{ padding: "10px" }}>
-                                    <button
-                                        onClick={() => handleViewItemInfo(item)}
-                                        style={{
-                                            padding: "6px 12px",
-                                            marginRight: "5px",
-                                            backgroundColor: "#3498db",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        View
-                                    </button>
-                                    <button
-                                        onClick={() => handleEdit(item)}
-                                        style={{
-                                            padding: "6px 12px",
-                                            marginRight: "5px",
-                                            backgroundColor: "#f1c40f",
-                                            color: "black",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(item)}
-                                        style={{
-                                            padding: "6px 12px",
-                                            backgroundColor: "#e74c3c",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            //     <div
+            //     className="bg-white rounded-2xl shadow-md p-6 "
+            //     style={{ width: '1450px', height: '600px', marginLeft: '25px', marginTop:"20px" }} // Adjust pixel values as needed
+            //   >
+            <table style={{ marginTop: "20px", width: "100%", height: "600px", borderCollapse: "collapse", borderRadius: "10px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", display: "block", overflowY: "auto" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#e0e0e0", textAlign: "left" }}>
+                <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Item Name</th>
+                <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Stock Quantity</th>
+                <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Reorder Level</th>
+                <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Warehouse Location</th>
+                <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "180px" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredInventory.map((item) => (
+              <tr key={item.item_id} style={{ borderBottom: "1px solid #eee", backgroundColor: "white" }}>
+  <td style={{ padding: "12px 15px", color: "black", width: "25%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.item_name}</td>
+  <td style={{ padding: "12px 15px", color: "black", width: "15%", textAlign: 'nowrap' }}>{item.stock_quantity}</td>
+  <td style={{ padding: "12px 15px", color: "black", width: "15%", textAlign: 'nowrap' }}>{item.reorder_level}</td>
+  <td style={{ padding: "12px 15px", color: "black", width: "27.5%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.location}</td>
+  <td style={{ padding: "12px 15px", width: "17.5%" }}>
+    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                      <button
+                        onClick={() => handleViewItemInfo(item)}
+                        style={{
+                            width: "75px",
+                          padding: "8px 12px",
+                          backgroundColor: "#3498db",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "5px",
+                          cursor: "pointer",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                          flex: '1',
+                          marginRight: '5px',
+                        }}
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleEdit(item)}
+                        style={{
+                            width: "75px",
+                          padding: "8px 12px",
+                          backgroundColor: "#f1c40f",
+                          color: "black",
+                          border: "none",
+                          borderRadius: "5px",
+                          cursor: "pointer",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                          flex: '1',
+                          marginRight: '5px',
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(item)}
+                        style={{
+                            width: "75px",
+                          padding: "8px 12px",
+                          backgroundColor: "#e74c3c",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "5px",
+                          cursor: "pointer",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                          flex: '1',
+                          marginRight: '5px',
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+            //   </div>
             ) : (
                 <p style={{
                     textAlign: 'center',
