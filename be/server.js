@@ -25,9 +25,11 @@ const inventoryRoutes = require("./routes/inventoryRoutes");
 const contractRoutes = require("./routes/contractRoutes");
 const leaveContractRoutes = require("./routes/leaveContractRoutes");
 const inventoryInformationRoutes = require("./routes/inventoryInformationRoutes");
+const userManagementController = require("./routes/userManagementRoutes")
 
 
 // ✅ Use Routes
+app.use("/api/user-accounts", userManagementController);
 app.use("/api/inventory-information", inventoryInformationRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
