@@ -37,8 +37,8 @@ const navItems = [
 
   {
     icon: <GridIcon />,
-    name: "User Accounts",
-    subItems: [{ name: "Overview", path: "/Ecommerce", pro: false }],
+    name: "User Management",
+    subItems: [{ name: "User Accounts", path: "/UserManagement", pro: false }],
   },
   {
     icon: <GridIcon />,
