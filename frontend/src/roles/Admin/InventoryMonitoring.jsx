@@ -1,86 +1,92 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const LowStockInventory = () => {
-  const sampleItems = [
-    { item_id: 1, item_name: "Screws", stock_quantity: 10 },
-    { item_id: 2, item_name: "Nuts", stock_quantity: 5 },
-    { item_id: 3, item_name: "Bolts", stock_quantity: 8 },
-    { item_id: 4, item_name: "Washers", stock_quantity: 0 },
-    { item_id: 5, item_name: "Hammers", stock_quantity: 2 },
-    { item_id: 6, item_name: "Pipes", stock_quantity: 1 },
-    { item_id: 7, item_name: "Wires", stock_quantity: 15 },
-    { item_id: 8, item: "Bricks", stock_quantity: 0 },
-    { item_id: 9, item_name: "Cement", stock_quantity: 3 },
-    { item_id: 10, item_name: "Tiles", stock_quantity: 7 },
-    { item_id: 11, item_name: "Another Item", stock_quantity: 2 },
-    { item_id: 12, item_name: "Yet Another Item", stock_quantity: 0 },
-    { item_id: 13, item_name: "And Another", stock_quantity: 11 },
-    { item_id: 14, item_name: "Last One", stock_quantity: 1 },
-  ];
+  const [lowestStocks, setLowestStocks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const sortedItems = sampleItems
-    .sort((a, b) => a.stock_quantity - b.stock_quantity)
-    .slice(0, 5);
+  useEffect(() => {
+    const fetchLowestStocks = async () => {
+      setLoading(true);
+      setError(null);
+      console.log("[LowStockInventory] Fetching lowest stocks from: http://localhost:5000/api/inventory-information/lowest-stocks");
 
-  const warehouseLocation = "Valenzuela City, Philippines";
+      try {
+        const response = await axios.get("http://localhost:5000/api/inventory-information/lowest-stocks");
+        console.log("[LowStockInventory] Fetched lowest stocks successfully:", response.data);
+        setLowestStocks(response.data);
+        console.log("[LowStockInventory] Lowest stocks state updated:", response.data);
+      } catch (err) {
+        console.error("[LowStockInventory] Error fetching lowest stocks:", err);
+        if (axios.isAxiosError(err)) {
+          console.error("[LowStockInventory] Axios error details:", err.response ? err.response.data : err.message);
+        }
+        setError("Failed to fetch lowest stocks. Try again later.");
+      } finally {
+        setLoading(false);
+        console.log("[LowStockInventory] Fetch operation completed.");
+      }
+    };
+
+    fetchLowestStocks();
+  }, []);
+
+  const inventoryInfo = (
+    <div className="bg-white rounded-2xl shadow-md p-6 max-h-80 overflow-y-auto w-full mr-4" style={{ maxWidth: "1000px" }}>
+      <h2 className="text-2xl font-semibold mb-6 text-black-800 border-b pb-4">Inventory Information</h2>
+      <div className="flex flex-wrap -mx-4">
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Total Items:</strong> 1500</p>
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Company:</strong> Global Logistics Inc.</p>
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Total Categories:</strong> 10</p>
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Contact Person:</strong> Mr. Robert Reyes</p>
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Items Out of Stock:</strong> 50</p>
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Email:</strong> robert.reyes@globallogistics.com</p>
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Total Number of Stocks:</strong> 3000</p>
+        <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2"><strong>Warehouse Location:</strong> Valenzuela City, Philippines</p>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="p-6 flex">
+        {inventoryInfo}
+        <p>Loading lowest stock items...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 flex">
+        {inventoryInfo}
+        <p>Error: {error}</p>
+      </div>
+    );
+  }
+
+  if (lowestStocks.length === 0) {
+    return (
+      <div className="p-6 flex">
+        {inventoryInfo}
+        <div className="bg-white rounded-2xl shadow-md p-6 max-h-80 overflow-y-auto w-full">
+          <p>No depleted items to display.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 flex">
-  <div
-  className="bg-white rounded-2xl shadow-md p-6 max-h-80 overflow-y-auto w-full mr-4"
-  style={{ maxWidth: '1000px' }}
->
-  <h2 className="text-2xl font-semibold mb-6 text-black-800 border-b pb-4">
-    Inventory Information
-  </h2>
-  <div className="flex flex-wrap -mx-4">
-    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-      <strong>Total Items:</strong> 1500 
-    </p>
- 
-    
-    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-    <strong>Company:</strong> Global Logistics Inc.
-  </p>
-  <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-      <strong>Total Categories:</strong> 10
-    </p>
-    
-    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-    <strong>Contact Person:</strong> Mr. Robert Reyes
-  </p>
-  <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-      <strong>Items Out of Stock:</strong> 50
-    </p>   
-    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-    <strong>Email:</strong> robert.reyes@globallogistics.com
-  </p>
-    
-    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-      <strong>Total Number of Stocks:</strong> 3000
-    </p>
-    <p className="text-base font-medium text-black-600 w-1/2 px-4 py-2">
-        <strong>Warehouse Location:</strong> Valenzuela City, Philippines
-    </p>
-
-  </div>
-</div>
-
+      {inventoryInfo}
       <div className="bg-white rounded-2xl shadow-md p-6 max-h-80 overflow-y-auto w-full max-w-md">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-4">
-          Top 5 Lowest Stocks
-        </h2>
-        {sortedItems.map((item) => (
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-4">Top 5 Lowest Stocks</h2>
+        {lowestStocks.map((item) => (
           <div key={item.item_id}>
-            <p className="font-semibold text-lg text-gray-900">
-              {item.item_name}
-            </p>
-            <p className="text-base font-medium text-red-600">
-              Total Stocks: {item.stock_quantity === 0 ? "Depleted" : item.stock_quantity}
-            </p>
-            {item.item_id !== sortedItems[sortedItems.length - 1].item_id && (
-              <hr className="my-4 border-gray-200" />
-            )}
+            <p className="font-semibold text-lg text-gray-900">{item.item_name}</p>
+            <p className="text-base font-medium text-red-600">Total Stocks: {item.stock_quantity === 0 ? "Depleted" : item.stock_quantity}</p>
+            {item.item_id !== lowestStocks[lowestStocks.length - 1]?.item_id && <hr className="my-4 border-gray-200" />}
           </div>
         ))}
       </div>

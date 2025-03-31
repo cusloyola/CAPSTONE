@@ -90,4 +90,5 @@ const updateInventoryItem = (req, res) => {
 };
 
 
+
 module.exports = { getAllInventory, addInventoryItem, deleteInventoryItem, getInventoryItemById, updateInventoryItem };
