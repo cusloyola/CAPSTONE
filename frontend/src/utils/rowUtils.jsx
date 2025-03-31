@@ -45,15 +45,15 @@ export const addRow = (
   
 
   // rowUtils.jsx
-  export const handleDeleteAllRows = (setRowData, setUndoStack) => {
-    return () => {
-      console.log("Deleting all rows..."); // Check if this logs in the console
-      setUndoStack((prev) => [...prev, JSON.parse(localStorage.getItem("rowData")) ?? []]);
-      setRowData([]);
-      localStorage.setItem("rowData", JSON.stringify([]));
-    };
-  };
-  
+  export const handleDeleteAllRows = (setRowData, setUndoStack, currentRowData) => () => {
+    setUndoStack((prevStack) => {
+        console.log("handleDeleteAllRows: Previous rowData:", currentRowData);
+        return [...prevStack, currentRowData];
+    });
+    setRowData([]);
+};
+
+
 export const handleCellKeyDown = (params, rowData, setRowData, setUndoStack, recalcComputedRows, markupPercentage) => {
   if (params.event.key === "Backspace") {
     const selectedRows = params.api.getSelectedRows();

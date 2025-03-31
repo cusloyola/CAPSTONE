@@ -27,6 +27,11 @@ const leaveContractRoutes = require("./routes/leaveContractRoutes");
 const inventoryInformationRoutes = require("./routes/inventoryInformationRoutes");
 
 
+
+const bomRoutes = require("./routes/bomRoutes");
+
+
+
 // ✅ Use Routes
 app.use("/api/inventory-information", inventoryInformationRoutes);
 app.use("/api/auth", authRoutes);
@@ -35,6 +40,9 @@ app.use("/api/inventory", inventoryRoutes);
 // No changes needed here, assuming your inventoryRoutes is correctly setup
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
+
+app.use("/api/bom", bomRoutes);
+
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {
