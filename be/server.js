@@ -28,6 +28,11 @@ const inventoryInformationRoutes = require("./routes/inventoryInformationRoutes"
 const userManagementController = require("./routes/userManagementRoutes")
 
 
+
+const bomRoutes = require("./routes/bomRoutes");
+
+
+
 // ✅ Use Routes
 app.use("/api/user-accounts", userManagementController);
 app.use("/api/inventory-information", inventoryInformationRoutes);
@@ -37,6 +42,9 @@ app.use("/api/inventory", inventoryRoutes);
 // No changes needed here, assuming your inventoryRoutes is correctly setup
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
+
+app.use("/api/bom", bomRoutes);
+
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

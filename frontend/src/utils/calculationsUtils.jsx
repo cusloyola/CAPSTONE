@@ -66,15 +66,15 @@ export const recalcComputedRows = (allRows, markupPercentage) => {
 // This assumes you already have recalcComputedRows defined (see previous snippet)
 // and markupPercentage available.
 
-export const handleDeleteRow = (rowId) => {
-  // Remove the row with the specified id from the data
-  const updatedData = rowData.filter((row) => row.id !== rowId);
+// export const handleDeleteRow = (rowId) => {
+//   // Remove the row with the specified id from the data
+//   const updatedData = rowData.filter((row) => row.id !== rowId);
   
-  // Recalculate computed rows (e.g., Subtotal) using the updated data.
-  // recalcComputedRows returns raw data with a new Subtotal row appended.
-  const recalculatedData = recalcComputedRows(updatedData, markupPercentage);
+//   // Recalculate computed rows (e.g., Subtotal) using the updated data.
+//   // recalcComputedRows returns raw data with a new Subtotal row appended.
+//   const recalculatedData = recalcComputedRows(updatedData, markupPercentage);
   
-  // Update state and localStorage with the recalculated data
-  setRowData(recalculatedData);
-  localStorage.setItem("rowData", JSON.stringify(recalculatedData));
-};
+//   // Update state and localStorage with the recalculated data
+//   setRowData(recalculatedData);
+//   localStorage.setItem("rowData", JSON.stringify(recalculatedData));
+// };

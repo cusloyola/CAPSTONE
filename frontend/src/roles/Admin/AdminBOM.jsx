@@ -1,64 +1,96 @@
-import React, { useEffect, useState } from "react";
-import { loginUser, getProtectedData } from "../../api"; 
-import BOMTable from "./Estimation/BOMTable"; 
+import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
+import api from "../../api";
+import CreateBOMModal from "./Estimation/createBOM";
+
 
 const AdminBOM = () => {
-  const { user } = useUser(); // Get user
-  const [data, setData] = useState([]); 
-  const navigate = useNavigate();
+    const { user } = useUser();
+    const [bomList, setBOMList] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const navigate = useNavigate();
 
-  // Redirect unauthorized users
-  useEffect(() => {
-    if (!user || user.role.toLowerCase() !== "admin") {
-      navigate("/unauthorized"); // Redirect if not an admin
-    }
-  }, [user, navigate]);
 
-  // Fetch BOM data from API on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await api.get("/bom", {
-          headers: {
-            Authorization: `Bearer ${user?.token}`, // 🔒 Include JWT token
-          },
-        });
-        setData(response.data);
-      } catch (error) {
-        console.error("Error fetching BOM data:", error);
-      }
-    };
+    // 🔹 Redirect if user is not an admin
+    useEffect(() => {
+        if (!user || user.role.toLowerCase() !== "admin") {
+            navigate("/unauthorized");
+        }
+    }, [user, navigate]);
 
-    if (user?.token) {
-      fetchData(); // Fetch data only if token exists
-    }
-  }, [user?.token]);
 
-  // Function to save updated BOM data
-  const saveData = async () => {
-    try {
-      await api.post("/bom", { data }, {
-        headers: {
-          Authorization: `Bearer ${user?.token}`, // 🔒 Include JWT token
-        },
-      });
-      alert("BOM data saved successfully!");
-    } catch (error) {
-      console.error("Error saving BOM data:", error);
-    }
-  };
+    useEffect(() => {
+        const fetchBOMList = async () => {
+            console.log("🔄 Fetching BOM List...");
 
-  return (
-    <div>
-      <h2 className="text-xl font-bold mb-2">Admin Estimation</h2>
-      <button onClick={saveData} className="bg-green-500 text-white p-2 mb-2 rounded">
-        Save Data
-      </button>
-      <BOMTable data={data} setData={setData} /> {/* ✅ Now it has `data` and `setData` */}
-    </div>
-  );
+
+            try {
+                // ✅ Get token from local storage directly
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    console.warn("⚠️ No token found in localStorage!");
+                    return;
+                }
+
+
+                const response = await api.get("/bom", {
+                    headers: { Authorization: `Bearer ${token}` }, // ✅ Use token
+                });
+
+
+                console.log("✅ BOM List Response:", response.data);
+                setBOMList(response.data);
+            } catch (error) {
+                console.error("❌ Error fetching BOM list:", error);
+            }
+        };
+
+
+        fetchBOMList(); // Call the function when the component mounts
+    }, []); // Run only once on mount
+
+
+    // 🔹 Handle BOM selection
+const handleBOMClick = (bom) => {
+    navigate(`/Estimation/BOMTable/${bom.bom_id}`); // Navigate to the correct path for BOMTable
 };
 
-export default AdminBOM; 
+
+    return (
+        <div>
+            <h2 className="text-xl font-bold mb-2">Admin Estimation</h2>
+            <button onClick={() => setIsModalOpen(true)} className="bg-green-500 text-white p-2 mb-2 rounded">
+                + New BOM
+            </button>
+            <CreateBOMModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onBOMCreated={() => window.location.reload()} />
+
+
+            {/* BOM Containers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {bomList.length > 0 ? (
+                    bomList.map((bom) => (
+                        <div
+                            key={bom.bom_id}
+                            className="border border-gray-300 p-4 rounded-lg shadow cursor-pointer hover:bg-gray-100 transition"
+                            onClick={() => handleBOMClick(bom)}
+                        >
+                            <h3 className="font-semibold">{bom.project_name}</h3>
+                            <p className="text-sm text-gray-600">{bom.location}</p>
+                            <p className="text-sm text-gray-500">{bom.subject}</p>
+                            <p className="text-sm text-gray-400">Owner: {bom.owner}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-center text-gray-500">No BOM records found.</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+export default AdminBOM;
+
+
+

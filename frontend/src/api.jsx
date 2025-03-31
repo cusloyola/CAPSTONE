@@ -1,4 +1,29 @@
+import axios from 'axios';
+
 const API_URL = "http://localhost:5000/api";
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Now you can use `api` for the requests
+
+
+// ✅ Automatically attach JWT token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+
+
+
 
 export const loginUser = async (email, password) => {
     try {
@@ -40,3 +65,5 @@ export const getProtectedData = async () => {
         throw error;
     }
 };
+
+export default api;

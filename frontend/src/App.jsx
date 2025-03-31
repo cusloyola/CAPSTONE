@@ -50,11 +50,9 @@ import BarChart from "./pages/Charts/BarChart";
 // Tables & Forms
 import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
-// import ContractTemplate from "./roles/Admin/Contact Management/ContactTemplate.jsx";
-// import LeaveContract from "./roles/Admin/Contact Management/LeaveContract.jsx";
-// import EmploymentContract from "./roles/Admin/Contact Management/EmploymentContract.jsx";
 import LeaveContract from "./roles/Admin/Contract Management/LeaveContract.jsx";
 import EmploymentContract from "./roles/Admin/Contract Management/EmploymentContract.jsx";
+
 
 export default function App() {
   return (
@@ -69,7 +67,6 @@ export default function App() {
           {/* Protected Routes */}
           <Route element={<AppLayout />}>
             <Route index path="/" element={<Home />} />
-
 
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>

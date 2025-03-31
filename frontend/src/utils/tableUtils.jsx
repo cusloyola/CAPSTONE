@@ -126,23 +126,37 @@ export const addRow = (
 };
 
 
+export const onCellValueChanged = (params, prevRowData, setRowData) => {
+  const { colDef, newValue, data } = params;
+  const updatedRowData = prevRowData.map(row => {
+      if (row.id === data.id) {
+          let updatedRow = { ...row, [colDef.field]: newValue };
 
-export const onCellValueChanged = (params, setRowData) => {
-  setRowData(prevRowData =>
-    prevRowData.map((row) => {
-      if (row.id === params.data.id) {
-        const updatedRow = { ...row };
+          if (colDef.field === 'quantity' || colDef.field === 'materialUC' || colDef.field === 'laborUC') {
+              const quantity = parseFloat(updatedRow.quantity) || 0;
+              const materialUC = parseFloat(updatedRow.materialUC) || 0;
+              const laborUC = parseFloat(updatedRow.laborUC) || 0;
 
-        // Update calculations only for the edited row
-        updatedRow.materialAmount = parseNumber(updatedRow.quantity) * parseNumber(updatedRow.materialUC);
-        updatedRow.laborAmount = parseNumber(updatedRow.quantity) * parseNumber(updatedRow.laborUC);
-        updatedRow.totalAmount = computeTotalAmount(updatedRow); // Ensure computeTotalAmount is imported or defined
+              updatedRow = {
+                  ...updatedRow,
+                  materialAmount: quantity * materialUC,
+                  laborAmount: quantity * laborUC,
+                  totalAmount: (quantity * materialUC) + (quantity * laborUC)
+              };
+          }
 
-        return updatedRow;
+          return updatedRow;
       }
       return row;
-    })
-  );
+  });
+
+  if (typeof setRowData === 'function') {
+      setRowData(updatedRowData);
+  } else {
+    console.error("setRowData is not a function in tableUtils.jsx");
+  }
+
+  return updatedRowData;
 };
 
 export const getColumnDefs = () => [
@@ -151,10 +165,9 @@ export const getColumnDefs = () => [
     headerName: "No",
     width: 80,
     editable: false,
-    rowDrag: true, // Enables drag handle for row reordering
+    rowDrag: true,
     suppressMenu: true,
     suppressSorting: true,
-    // Generates a row number. If the row is computed (isSubtotal true), it returns an empty string.
     valueGetter: (params) => {
       const gridApi = params.api;
       if (!gridApi) return "";
@@ -169,25 +182,9 @@ export const getColumnDefs = () => [
       return params.data?.isMainTitle ? mainTitleCount + 1 : "";
     },
   },
-  { 
-    field: "scopeOfWorks", 
-    headerName: "Scope of Works", 
-    width: 350, 
-    editable: true 
-  },
-  {
-    field: "quantity",
-    headerName: "Quantity",
-    width: 120,
-    editable: true,
-    cellRenderer: (params) => (params.value ? params.value : ""),
-  },
-  { 
-    field: "unit", 
-    headerName: "Unit", 
-    width: 100, 
-    editable: true 
-  },
+  { field: "scopeOfWorks", headerName: "Scope of Works", width: 350, editable: true },
+  { field: "quantity", headerName: "Quantity", width: 120, editable: true },
+  { field: "unit", headerName: "Unit", width: 100, editable: true },
   {
     headerName: "Material Cost",
     children: [
@@ -196,17 +193,14 @@ export const getColumnDefs = () => [
         headerName: "U/C",
         width: 120,
         editable: true,
-        // If this row is computed, do not display a value; otherwise, format the value.
-        cellRenderer: (params) =>
-          params.data?.isSubtotal ? "" : formatNumber(params.value || ""),
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.materialUC || 0),
       },
       {
         field: "materialAmount",
         headerName: "Amount",
         width: 120,
         editable: false,
-        cellRenderer: (params) =>
-          params.data?.isSubtotal ? "" : formatNumber(params.value || ""),
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.materialAmount || 0),
       },
     ],
   },
@@ -218,29 +212,14 @@ export const getColumnDefs = () => [
         headerName: "U/C",
         width: 120,
         editable: true,
-        cellRenderer: (params) =>
-          params.data?.isSubtotal ? "" : formatNumber(params.value || ""),
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.laborUC || 0),
       },
       {
         field: "laborAmount",
         headerName: "Amount",
         width: 120,
         editable: false,
-        cellRenderer: (params) => {
-          // For computed rows, display the computedType label along with the computed total value in bold.
-          if (params.data?.isSubtotal) {
-            return (
-              <span style={{ fontWeight: "bold" }}>
-                {params.data.computedType}: {formatNumber(params.data.totalAmount || "")}
-              </span>
-            );
-          }
-          return formatNumber(params.value || "");
-        },
-        cellRendererParams: {
-          // For computed rows, span two columns.
-          colSpan: (params) => (params.data?.isSubtotal ? 2 : 1),
-        },
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.laborAmount || 0),
       },
     ],
   },
@@ -248,29 +227,24 @@ export const getColumnDefs = () => [
     headerName: "Total Amount",
     field: "totalAmount",
     valueGetter: (params) => {
-      // If the row is computed, just return the stored totalAmount (formatted).
       if (params.data?.isSubtotal) {
-        return formatNumber(params.data.totalAmount || "");
+        return formatNumber(params.data.totalAmount || 0);
       }
-      // Otherwise, calculate the total amount based on quantity, material unit cost, and labor amount.
-      const quantity = parseNumber(params.data.quantity) || 0;
-      const materialUC = parseNumber(params.data.materialUC) || 0;
-      const laborAmount = parseNumber(params.data.laborAmount) || 0;
+      const quantity = parseNumber(params.data?.quantity) || 0;
+      const materialUC = parseNumber(params.data?.materialUC) || 0;
+      const laborAmount = parseNumber(params.data?.laborAmount) || 0;
       let totalAmount = materialUC * quantity + laborAmount;
-      return totalAmount ? formatNumber(totalAmount) : "";
+      return formatNumber(totalAmount || 0);
     },
-    cellStyle: (params) =>
-      params.data?.isSubtotal ? { textAlign: "left", fontWeight: "bold" } : {},
+    cellStyle: (params) => params.data?.isSubtotal ? { textAlign: "left", fontWeight: "bold" } : {},
     cellRendererParams: {
       colSpan: (params) => (params.data?.isSubtotal ? 2 : 1),
     },
   },
 ];
 
-
 export const deleteRow = (rowData, rowId, setRowData) => {
   const updatedData = rowData.filter(row => row.id !== rowId);
   setRowData(updatedData);
-  // Optionally, update localStorage
   localStorage.setItem("rowData", JSON.stringify(updatedData));
 };
