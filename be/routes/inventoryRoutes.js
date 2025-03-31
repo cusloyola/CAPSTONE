@@ -9,7 +9,6 @@ const {
   getLowestStockItems,
 } = require("../controllers/inventoryController");
 
-console.log("inventoryRoutes.js loaded"); // Log that the route file is loaded
 
 router.get("/", (req, res, next) => {
   console.log("GET /api/inventory/ requested");

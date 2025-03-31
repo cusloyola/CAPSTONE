@@ -9,8 +9,6 @@ const {
   getTotalCategoriesCount
 } = require("../controllers/inventoryInformationController"); // Import both functions
 
-console.log("inventoryInformationRoutes.js loaded"); // Log that the route file is loaded
-
 router.get("/information", (req, res, next) => {
   console.log("GET /api/inventory-information/information requested");
   next();

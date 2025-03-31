@@ -25,6 +25,7 @@ const inventoryRoutes = require("./routes/inventoryRoutes");
 const contractRoutes = require("./routes/contractRoutes");
 const leaveContractRoutes = require("./routes/leaveContractRoutes");
 const inventoryInformationRoutes = require("./routes/inventoryInformationRoutes");
+const eventRoutes = require('./routes/eventRoutes');
 
 
 
@@ -40,6 +41,8 @@ app.use("/api/inventory", inventoryRoutes);
 // No changes needed here, assuming your inventoryRoutes is correctly setup
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
+
+app.use('/api/events', eventRoutes);
 
 app.use("/api/bom", bomRoutes);
 

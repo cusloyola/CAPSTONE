@@ -23,7 +23,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.14.0",
     "pizzip": "^3.1.8",
-    "sequelize": "^6.37.6"
+    "sequelize": "^6.37.7"
   },
   "description": "",
   "devDependencies": {

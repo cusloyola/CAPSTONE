@@ -30,7 +30,7 @@ const navItems = [
       [
         { name: "Task Scheduling", path: "", pro: false, }, //path : /AdminDashboard - name ng file
         { name: "Status Updates", path: "", pro: false }, 
-        { name: "Calendar", path: "", pro: false },
+        { name: "Calendar", path: "/AdminCalendar", pro: false },
       ],
 
   },

@@ -76,8 +76,8 @@ export default function App() {
               <Route path="/InventoryMonitoring" element={<LowStockInventory />} />
               <Route path="/LeaveContract" element={<LeaveContract />} />
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
-
-            </Route>
+              <Route path="/AdminCalendar" element={<Calendar />} />
+              </Route>
 
 
 
@@ -92,7 +92,6 @@ export default function App() {
 
             {/* Other Pages */}
             <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
             <Route path="/blank" element={<Blank />} />
 
             {/* UI Elements */}
