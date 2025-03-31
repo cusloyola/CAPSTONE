@@ -20,6 +20,9 @@ import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 
 import UserManagement from "./roles/Admin/UserManagement.jsx";
 
+// toast
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 // site
@@ -64,6 +67,8 @@ export default function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
 
+
+
           {/* Protected Routes */}
           <Route element={<AppLayout />}>
             <Route index path="/" element={<Home />} />
@@ -78,14 +83,14 @@ export default function App() {
               <Route path="/LeaveContract" element={<LeaveContract />} />
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
               <Route path="/UserManagement" element={<UserManagement />} />              <Route path="/AdminCalendar" element={<Calendar />} />
-              </Route>
+            </Route>
 
 
 
             <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
               <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
               <Route path="/SiteProgressTracking" element={<SiteProgressTracking />} />
-              
+
             </Route>
             <Route element={<ProtectedRoute allowedRoles={["safetyengineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
@@ -116,6 +121,8 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
+      {/*TOAST*/}
+      <ToastContainer position="top-right" autoClose={3000} />
     </UserProvider>
   );
 }

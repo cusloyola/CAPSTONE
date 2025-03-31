@@ -6,8 +6,12 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { EventInput, DateSelectArg, EventClickArg } from "@fullcalendar/core";
 import { Modal } from "../components/ui/modal";
 import { useModal } from "../hooks/useModal";
+
 import PageMeta from "../components/common/PageMeta.jsx";
 import api from '../api.jsx';
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+
 
 interface CalendarEvent extends EventInput {
   extendedProps: {
@@ -34,29 +38,34 @@ const Calendar: React.FC = () => {
     Warning: "warning",
   };
 
+  const addOneDay = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate()+1);  // Do not add an extra day, use as is
+    return date.toISOString();
+  };
+
+
+
   // Fetch events from backend on mount
+  const fetchEvents = async () => {
+    try {
+      const response = await api.get("/events");
+      const formattedEvents = response.data.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        start: new Date(event.start_date).toISOString(),
+        end: addOneDay(event.end_date),
+        extendedProps: { calendar: event.event_level },
+      }));
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await api.get("/events");  // Make sure the backend is returning events
-        const formattedEvents = response.data.map((event: any) => ({
-          id: event.id,
-          title: event.title,
-          start: new Date(event.start_date).toISOString(),
-          end: new Date(event.end_date).toISOString(),
-          extendedProps: {
-            calendar: event.event_level,
-          },
-        }));
-        setEvents(formattedEvents);  // Set formatted events to state
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      }
-    };
-
-    fetchEvents();  // Fetch events when component mounts (or page reloads)
+    fetchEvents();
   }, []);
-
 
   // Helper function to update the event in FullCalendar and React state
   const updateEventInCalendar = (calendarApi: any, updatedEvent: CalendarEvent) => {
@@ -70,11 +79,19 @@ const Calendar: React.FC = () => {
   };
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
+    setSelectedEvent(null); // Ensure modal knows this is "Add Event"
     resetModalFields();
-    setEventStartDate(selectInfo.startStr);
-    setEventEndDate(selectInfo.endStr || selectInfo.startStr);
+
+    // Format start and end dates as MM/DD/YYYY
+    const formattedStartDate = new Date(selectInfo.startStr).toLocaleDateString('en-US');
+    const formattedEndDate = new Date(selectInfo.endStr || selectInfo.startStr).toLocaleDateString('en-US');
+
+    setEventStartDate(formattedStartDate);
+    setEventEndDate(formattedEndDate);
+
     openModal();
   };
+
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = clickInfo.event;
@@ -102,110 +119,133 @@ const Calendar: React.FC = () => {
   };
 
 
+  const formatToISODate = (dateStr: string): string => {
+    const [month, day, year] = dateStr.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  };
 
 
-  const handleAddOrUpdateEvent = async () => {
-    // Call validation function before proceeding
+
+  const handleAddEvent = async () => {
     if (!validateEventFields()) return;
-
-    // Clear previous error messages before proceeding
     setErrorMessage(null);
 
-    console.log({
-      eventTitle,
-      eventStartDate,
-      eventEndDate,
-      eventLevel,
-    });
+    try {
+      const startISO = formatToISODate(eventStartDate);
+      const endISO = formatToISODate(eventEndDate);
 
-    // Check if we are updating an existing event
-    if (selectedEvent && selectedEvent.id) {
-      // Update existing event
-      try {
-        // Send the update to the backend
-        await api.put(`/events/${selectedEvent.id}`, {
-          title: eventTitle,
-          start_date: eventStartDate,
-          end_date: eventEndDate,
-          event_level: eventLevel,
-        });
+      const response = await api.post("/events", {
+        title: eventTitle,
+        start_date: startISO,
+        end_date: endISO,
+        event_level: eventLevel,
+      });
 
-        // Update FullCalendar's internal event
-        const calendarApi = calendarRef.current?.getApi();
-        const calendarEvent = calendarApi?.getEventById(String(selectedEvent.id));
+      const addedEvent = {
+        id: response.data.id,
+        title: eventTitle,
+        start: startISO,
+        end: addOneDay(endISO),  // Adjust for FullCalendar display
+        extendedProps: { calendar: eventLevel },
+      };
 
-        if (calendarEvent) {
-          // Update the event properties in FullCalendar
-          calendarEvent.setProp('title', eventTitle);
-          calendarEvent.setStart(eventStartDate);
-          calendarEvent.setEnd(eventEndDate);
-          calendarEvent.setExtendedProp('calendar', eventLevel);
-        }
-
-        // Update the React state to reflect the changes in the event
-        setEvents((prevEvents) =>
-          prevEvents.map((event) =>
-            event.id === selectedEvent.id
-              ? { ...event, title: eventTitle, start: eventStartDate, end: eventEndDate, extendedProps: { calendar: eventLevel } }
-              : event
-          )
-        );
-
-        // Ensure FullCalendar re-renders with the updated event
-        if (calendarApi) {
-          calendarApi.refetchEvents(); // Trigger FullCalendar to re-render and reflect the updated event
-        }
-
-      } catch (error) {
-        console.error("Error updating event:", error);
-        setErrorMessage("Failed to update event. Please try again later.");
-      }
-    } else {
-      // Add new event
-      try {
-        const response = await api.post("/events", {
-          title: eventTitle,
-          start_date: eventStartDate,
-          end_date: eventEndDate,
-          event_level: eventLevel,
-        });
-
-        const addedEvent = {
-          id: response.data.id,
-          title: eventTitle,
-          start: eventStartDate,
-          end: eventEndDate,
-          extendedProps: { calendar: eventLevel },
-        };
-
-        const calendarApi = calendarRef.current?.getApi();
-        if (calendarApi) {
-          // Add the new event to FullCalendar
-          calendarApi.addEvent(addedEvent);
-        }
-
-        // Update React's state with the new event
-        setEvents((prevEvents) => [...prevEvents, addedEvent]);
-
-      } catch (error) {
-        console.error("Error adding event:", error);
-        setErrorMessage("Failed to add event. Please try again later.");
-      }
+      calendarRef.current?.getApi().addEvent(addedEvent);
+      setEvents((prev) => [...prev, addedEvent]);
+      toast.success("Event added successfully");
+    } catch (error) {
+      console.error("Error adding event:", error);
+      setErrorMessage("Failed to add event. Please try again later.");
+      toast.error("Add failed. Try again.");
     }
 
     closeModal();
     resetModalFields();
   };
 
+
+  const handleUpdateEvent = async () => {
+    if (!validateEventFields()) return;
+    if (!selectedEvent?.id) return;
+    setErrorMessage(null);
+
+    try {
+      const startISO = formatToISODate(eventStartDate);
+      const endISO = formatToISODate(eventEndDate);
+
+      await api.put(`/events/${selectedEvent.id}`, {
+        title: eventTitle,
+        start_date: startISO,
+        end_date: endISO,
+        event_level: eventLevel,
+      });
+
+      const updatedEvent = {
+        ...selectedEvent,
+        title: eventTitle,
+        start: startISO,
+        end: addOneDay(endISO),
+        extendedProps: { calendar: eventLevel },
+      };
+
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) updateEventInCalendar(calendarApi, updatedEvent);
+
+      setEvents((prev) =>
+        prev.map((event) =>
+          event.id === selectedEvent.id ? updatedEvent : event
+        )
+      );
+
+      toast.success("Event updated successfully");
+    } catch (error) {
+      console.error("Error updating event:", error);
+      setErrorMessage("Failed to update event. Please try again later.");
+      toast.error("Update failed.");
+    }
+
+    closeModal();
+    resetModalFields();
+    fetchEvents();
+  };
+
+  const handleAddOrUpdateEvent = async () => {
+    selectedEvent?.id ? await handleUpdateEvent() : await handleAddEvent();
+  };
+
   // General event validation function
-  const validateEventFields = () => {
+  const validateEventFields = (): boolean => {
     if (!eventTitle || !eventStartDate || !eventEndDate) {
       setErrorMessage("Please fill in all fields: title, start date, and end date.");
       return false;
     }
+
+    const isValidDate = (dateStr: string) => {
+      const regex = /^(0?[1-9]|1[0-2])\/(0?[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+      if (!regex.test(dateStr)) return false;
+
+      const date = new Date(dateStr);
+      return !isNaN(date.getTime());
+    };
+
+    if (!isValidDate(eventStartDate)) {
+      setErrorMessage("Start date is invalid. Use MM/DD/YYYY format.");
+      return false;
+    }
+
+    if (!isValidDate(eventEndDate)) {
+      setErrorMessage("End date is invalid. Use MM/DD/YYYY format.");
+      return false;
+    }
+
+    const start = new Date(eventStartDate);
+    const end = new Date(eventEndDate);
+    if (start > end) {
+      setErrorMessage("Start date cannot be after end date.");
+      return false;
+    }
+
     return true;
   };
-
 
   // Function to handle deletion and show confirmation modal
   const handleDeleteEvent = async () => {
@@ -227,9 +267,12 @@ const Calendar: React.FC = () => {
           setEvents((prevEvents) =>
             prevEvents.filter((event) => event.id !== selectedEvent.id)
           );
+          toast.success("Event deleted successfully"); // ✅ Toast after successful delete
+
         } catch (error) {
           console.error("Error deleting event:", error);
           setErrorMessage("Failed to delete event. Please try again later.");
+          toast.error(errorMessage);
         }
 
         closeModal();
@@ -247,8 +290,9 @@ const Calendar: React.FC = () => {
     setEventEndDate("");
     setEventLevel("");
     setSelectedEvent(null);
-    setErrorMessage(null); // Reset error message
+    setErrorMessage(null);
   };
+
 
   return (
     <>
@@ -425,27 +469,41 @@ const Calendar: React.FC = () => {
         <Modal
           isOpen={showDeleteConfirmModal}
           onClose={() => setShowDeleteConfirmModal(false)}
-          className="max-w-[500px] p-6 lg:p-10"
+          className="max-w-md p-6 lg:p-8"
         >
-          <div className="text-center">
-            <h5 className="mb-4 font-semibold text-lg text-gray-800 dark:text-gray-400">
-              Are you sure you want to delete this event?
+          <div className="text-center space-y-5">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-red-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4m-4 0a1 1 0 00-1 1v1h6V4a1 1 0 00-1-1m-4 0h4" />
+              </svg>
+            </div>
+
+            <h5 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Delete Event?
             </h5>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              This action cannot be undone.
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              This action is irreversible. Are you sure you want to proceed?
             </p>
-            <div className="flex justify-center gap-3">
+
+            <div className="mt-6 flex justify-center gap-4">
               <button
                 onClick={() => setShowDeleteConfirmModal(false)}
-                className="btn btn-secondary"
+                className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteEvent}
-                className="btn btn-danger"
+                className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
               >
-                Confirm Deletion
+                Confirm Delete
               </button>
             </div>
           </div>
