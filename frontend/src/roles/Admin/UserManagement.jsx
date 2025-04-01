@@ -520,6 +520,109 @@ function UserManagement() {
                     </div>
                 </div>
             )}
+            {isEditModalOpen && editUser && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: "0",
+                        left: "0",
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: "white",
+                            padding: "20px",
+                            borderRadius: "5px",
+                            width: "400px",
+                        }}
+                    >
+                        <h3>Edit User</h3>
+                        <form onSubmit={handleEditSubmit}>
+                            <div>
+                                <label>Full Name</label>
+                                <input
+                                    type="text"
+                                    name="full_name"
+                                    value={editUser.full_name}
+                                    onChange={handleEditChange}
+                                    required
+                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                />
+                            </div>
+                            <div>
+                                <label>Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={editUser.email}
+                                    onChange={handleEditChange}
+                                    required
+                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                />
+                            </div>
+                            <div>
+                                <label>Phone Number</label>
+                                <input
+                                    type="text"
+                                    name="phone_number"
+                                    value={editUser.phone_number}
+                                    onChange={handleEditChange}
+                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                />
+                            </div>
+                            <div>
+                                <label>Role</label>
+                                <select
+                                    name="role"
+                                    value={editUser.role}
+                                    onChange={handleEditChange}
+                                    required
+                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                >
+                                    <option value="">Select Role</option>
+                                    <option value="Admin">Admin</option>
+                                    <option value="Site Engineer">Site Engineer</option>
+                                    <option value="Safety Engineer">Safety Engineer</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Password</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={editUser.password}
+                                    onChange={handleEditChange}
+                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+                                />
+                            </div>
+
+                            <div>
+                                <button type="submit" style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}>
+                                    Update User</button>
+                            </div>
+                        </form>
+                        <button
+                            onClick={() => setIsEditModalOpen(false)}
+                            style={{
+                                padding: "5px 10px",
+                                backgroundColor: "#f44336",
+                                color: "white",
+                                border: "none",
+                                cursor: "pointer",
+                                marginTop: "10px",
+                            }}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
