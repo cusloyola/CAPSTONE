@@ -55,6 +55,7 @@ import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import LeaveContract from "./roles/Admin/Contract Management/LeaveContract.jsx";
 import EmploymentContract from "./roles/Admin/Contract Management/EmploymentContract.jsx";
+import BOMTable from "./roles/Admin/Estimation/BOMTable.jsx";
 
 
 export default function App() {
@@ -82,12 +83,9 @@ export default function App() {
               <Route path="/InventoryMonitoring" element={<LowStockInventory />} />
               <Route path="/LeaveContract" element={<LeaveContract />} />
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
-<<<<<<< Updated upstream
-              <Route path="/UserManagement" element={<UserManagement />} />              <Route path="/AdminCalendar" element={<Calendar />} />
-=======
-
-
->>>>>>> Stashed changes
+              <Route path="/UserManagement" element={<UserManagement />} />            
+              <Route path="/AdminCalendar" element={<Calendar />} />
+              <Route path="/Estimation/BOMTable/:bomId" element={<BOMTable />} />  {/* Updated to include :bomId */}
             </Route>
 
 
