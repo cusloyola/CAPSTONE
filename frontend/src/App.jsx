@@ -82,7 +82,12 @@ export default function App() {
               <Route path="/InventoryMonitoring" element={<LowStockInventory />} />
               <Route path="/LeaveContract" element={<LeaveContract />} />
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
+<<<<<<< Updated upstream
               <Route path="/UserManagement" element={<UserManagement />} />              <Route path="/AdminCalendar" element={<Calendar />} />
+=======
+
+
+>>>>>>> Stashed changes
             </Route>
 
 

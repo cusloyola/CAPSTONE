@@ -95,9 +95,6 @@ const createBOM = async (req, res) => {
 
 };
 
-
-
-// Backend (saveBOM function)
 const saveBOM = async (req, res) => {
     console.log("📌 Request received: POST /api/bom/save", req.body);
 
@@ -108,112 +105,119 @@ const saveBOM = async (req, res) => {
     }
 
     if (!rowData || rowData.length === 0) {
-        try {
-            await db.query('DELETE FROM bom_details WHERE bom_id = ?', [bom_id]);
+        // Delete all rows for the BOM if rowData is empty
+        db.query('DELETE FROM bom_details WHERE bom_id = ?', [bom_id], (err, results) => {
+            if (err) {
+                console.error('❌ Error deleting rows:', err);
+                return res.status(500).json({ error: "Error deleting rows." });
+            }
             console.log(`✅ All rows deleted for bom_id: ${bom_id}`);
             return res.status(200).json({ message: "All rows deleted successfully." });
-        } catch (error) {
-            console.error('❌ Error deleting rows:', error);
-            return res.status(500).json({ error: "Error deleting rows." });
+        });
+        return;
+    }
+
+    let errors = [];
+    let successfulUpdates = 0;
+    let successfulInserts = 0;
+
+    // Log the full rowData received
+    console.log("Received rowData:", rowData);
+
+    for (const row of rowData) {
+        let { row_id, scope_of_works, quantity, unit, mc_uc, lc_uc, total_cost, row_type } = row;
+
+        // Log the row data before processing
+        console.log(`🔍 Processing row:`, row);
+
+        // Validation
+        if (typeof row_id !== 'number' || isNaN(row_id)) {
+            errors.push(`Invalid row_id: ${row_id}`);
+            continue; // Skip to the next row
+        }
+
+        row_id = parseInt(row_id);
+
+        scope_of_works = scope_of_works || '';  // Ensure it's not undefined or null
+
+        quantity = parseInt(quantity) || 0;
+        mc_uc = parseFloat(mc_uc) || 0;
+        lc_uc = parseFloat(lc_uc) || 0;
+        total_cost = parseFloat(total_cost) || 0;
+
+        // Check if the row exists
+        const checkQuery = "SELECT row_id FROM bom_details WHERE row_id = ? AND bom_id = ?";
+
+        try {
+            const checkResults = await new Promise((resolve, reject) => {
+                db.query(checkQuery, [row_id, bom_id], (err, results) => {
+                    if (err) reject(err);
+                    else resolve(results);
+                });
+            });
+
+            if (checkResults.length > 0) {
+                // Update existing row
+                const updateQuery = `
+                    UPDATE bom_details
+                    SET scope_of_works = ?, quantity = ?, unit = ?, mc_uc = ?, lc_uc = ?, total_cost = ?, row_type = ?, date = ?
+                    WHERE row_id = ? AND bom_id = ?;
+                `;
+
+                console.log("📝 Running UPDATE query:", updateQuery, [
+                    scope_of_works, quantity, unit, mc_uc, lc_uc, total_cost, row_type, date, row_id, bom_id
+                ]);
+
+                const updateResult = await new Promise((resolve, reject) => {
+                    db.query(updateQuery, [scope_of_works, quantity, unit, mc_uc, lc_uc, total_cost, row_type, date, row_id, bom_id], (err, result) => {
+                        if (err) reject(err);
+                        else resolve(result);
+                    });
+                });
+
+                console.log(`✅ Update successful for row_id=${row_id}:`, updateResult);
+                successfulUpdates++;
+            } else {
+                // Insert new row
+                const insertQuery = `
+                    INSERT INTO bom_details (bom_id, user_id, row_id, scope_of_works, quantity, unit, mc_uc, lc_uc, total_cost, row_type, date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                `;
+
+                // Log the query before running it
+                console.log("📝 Running INSERT query:", insertQuery, [
+                    bom_id, user_id, row_id, scope_of_works, quantity, unit, mc_uc, lc_uc, total_cost, row_type, date
+                ]);
+
+                const insertResult = await new Promise((resolve, reject) => {
+                    db.query(insertQuery, [bom_id, user_id, row_id, scope_of_works, quantity, unit, mc_uc, lc_uc, total_cost, row_type, date], (err, result) => {
+                        if (err) reject(err);
+                        else resolve(result);
+                    });
+                });
+
+                console.log(`✅ Insert successful for row_id=${row_id}:`, insertResult);
+                successfulInserts++;
+            }
+        } catch (err) {
+            console.error(`❌ Error processing row (row_id=${row_id}):`, err);
+            errors.push(err);
         }
     }
 
-    try {
-        const updateOrInsertPromises = rowData.map(row => {
-            return new Promise((resolve, reject) => {
-                let { row_id, scope_of_works, quantity, unit, materialUC, laborUC, total_cost, row_type, subtotal_cost } = row;
-
-                row_id = parseInt(row_id);
-
-                console.log(`Processing row: row_id=${row_id}, scope_of_works="${scope_of_works}"`);
-
-                const checkQuery = "SELECT row_id FROM bom_details WHERE row_id = ? AND bom_id = ?";
-                console.log(`Executing query: ${checkQuery} with params [${row_id}, ${bom_id}]`);
-
-                db.query(checkQuery, [row_id, bom_id], (err, checkResults) => {
-                    if (err) {
-                        console.error(`❌ Error checking BOM row (row_id=${row_id}):`, err);
-                        reject(err);
-                        return;
-                    }
-
-                    if (checkResults.length > 0) {
-                        // Row exists, perform an UPDATE
-                        let updateQuery = `
-                            UPDATE bom_details
-                            SET scope_of_works = ?, quantity = ?, unit = ?, mc_uc = ?, lc_uc = ?, total_cost = ?, row_type = ?, date = ?
-                            WHERE row_id = ? AND bom_id = ?;
-                        `;
-                        console.log(`Executing query: ${updateQuery} with params [${scope_of_works}, ${quantity}, ${unit}, ${materialUC}, ${laborUC}, ${total_cost}, ${row_type}, ${date}, ${row_id}, ${bom_id}]`);
-                        console.log(`UPDATE param types: [${typeof scope_of_works}, ${typeof quantity}, ${typeof unit}, ${typeof materialUC}, ${typeof laborUC}, ${typeof total_cost}, ${typeof row_type}, ${typeof date}, ${typeof row_id}, ${typeof bom_id}]`);
-
-                        db.query(updateQuery, [scope_of_works, quantity, unit, materialUC, laborUC, total_cost, row_type, date, row_id, bom_id], (updateErr, updateResults) => {
-                            if (updateErr) {
-                                console.error(`❌ Error updating BOM row (row_id=${row_id}):`, updateErr);
-                                console.error("❌ Full updateErr object:", updateErr);
-                                reject(updateErr);
-                            } else {
-                                console.log(`✅ BOM row updated successfully (row_id=${row_id})`);
-
-                                // Update bom_subtotals if subtotal_cost is provided
-                                if (subtotal_cost !== undefined) {
-                                    const subtotalQuery = `
-                                        INSERT INTO bom_subtotals (bom_id, subtotal_cost) VALUES (?, ?)
-                                        ON DUPLICATE KEY UPDATE subtotal_cost = ?;
-                                    `;
-
-                                    db.query(subtotalQuery, [bom_id, subtotal_cost, subtotal_cost], (subtotalErr, subtotalResults) => {
-                                        if (subtotalErr) {
-                                            console.error(`❌ Error updating bom_subtotals:`, subtotalErr);
-                                            reject(subtotalErr);
-                                        } else {
-                                            console.log(`✅ bom_subtotals updated successfully for bom_id=${bom_id}`);
-                                            resolve();
-                                        }
-                                    });
-                                } else {
-                                    resolve();
-                                }
-                            }
-                        });
-                    } else {
-                        // Row doesn't exist, perform an INSERT
-                        const insertQuery = `
-                            INSERT INTO bom_details (bom_id, user_id, row_id, scope_of_works, quantity, unit, mc_uc, lc_uc, total_cost, row_type, date)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-                        `;
-                        console.log(`Executing query: ${insertQuery} with params [${bom_id}, ${user_id}, ${row_id}, ${scope_of_works}, ${quantity}, ${unit}, ${materialUC}, ${laborUC}, ${total_cost}, ${row_type}, ${date}]`);
-                        console.log(`INSERT param types: [${typeof bom_id}, ${typeof user_id}, ${typeof row_id}, ${typeof scope_of_works}, ${typeof quantity}, ${typeof unit}, ${typeof materialUC}, ${typeof laborUC}, ${typeof total_cost}, ${typeof row_type}, ${typeof date}]`);
-
-                        db.query(insertQuery, [bom_id, user_id, row_id, scope_of_works, quantity, unit, materialUC, laborUC, total_cost, row_type, date], (insertErr, insertResults) => {
-                            if (insertErr) {
-                                console.error(`❌ Error inserting BOM row (row_id=${row_id}):`, insertErr);
-                                console.error("❌ Full insertErr object:", insertErr); // Log full error
-                                reject(insertErr);
-                            } else {
-                                console.log(`✅ BOM row inserted successfully (row_id=${row_id})`);
-                                resolve();
-                            }
-                        });
-                    }
-                });
-            });
+    if (errors.length > 0) {
+        console.error("❌ Errors during BOM row processing:", errors);
+        return res.status(500).json({ error: "Errors occurred during BOM row processing." });
+    } else {
+        return res.json({
+            message: "BOM rows updated/inserted successfully!",
+            successfulUpdates,
+            successfulInserts
         });
-
-        Promise.all(updateOrInsertPromises)
-            .then(() => res.json({ message: "BOM rows updated/inserted successfully!" }))
-            .catch(err => {
-                console.error("❌ Error processing all BOM rows:", err);
-                console.error("❌ Full Error Object", err);
-                res.status(500).json({ error: "Error updating/inserting BOM rows", details: err });
-            });
-
-    } catch (error) {
-        console.error("❌ Error processing BOM rows:", error);
-        console.error("❌ Full Error Object", error);
-        res.status(500).json({ error: "Error processing BOM rows" });
     }
 };
+
+
 
 const getBOMData = (req, res) => {
     const bomId = req.params.bomId;
@@ -229,30 +233,29 @@ const getBOMData = (req, res) => {
     }
 
     const query = `
-   SELECT 
-    bl.bom_id,
-    COALESCE(bl.title, 'Untitled') AS bom_name, 
-    bl.created_at, 
-    COALESCE(bd.no, 0) AS no,
-    bd.row_id, -- Include row_id
-    bd.scope_of_works, 
-    bd.quantity, 
-    bd.unit, 
-    bd.mc_uc, 
-    bd.lc_uc, 
-    bd.mc_amount, 
-    bd.lc_amount, 
-    bd.row_total, 
-    COALESCE(bsc.subtotal_cost, 0) AS subtotal_cost
-FROM 
-    bom_list AS bl
-LEFT JOIN 
-    bom_details AS bd ON bl.bom_id = bd.bom_id
-LEFT JOIN 
-    bom_subtotals AS bsc ON bl.bom_id = bsc.bom_id
-WHERE 
-    bl.bom_id = ?;
-
+        SELECT 
+            bl.bom_id,
+            COALESCE(bl.title, 'Untitled') AS bom_name, 
+            bl.created_at, 
+            COALESCE(bd.no, 0) AS no,
+            bd.row_id, 
+            bd.scope_of_works, 
+            bd.quantity, 
+            bd.unit, 
+            bd.mc_uc, 
+            bd.lc_uc, 
+            bd.mc_amount, 
+            bd.lc_amount, 
+            bd.row_total, 
+            COALESCE(bsc.subtotal_cost, 0) AS subtotal_cost
+        FROM 
+            bom_list AS bl
+        LEFT JOIN 
+            bom_details AS bd ON bl.bom_id = bd.bom_id
+        LEFT JOIN 
+            bom_subtotals AS bsc ON bl.bom_id = bsc.bom_id
+        WHERE 
+            bl.bom_id = ?;
     `;
 
     db.query(query, [bomId], (err, results) => {
@@ -275,21 +278,18 @@ WHERE
             subtotal_cost: results[0].subtotal_cost,
         };
 
-        const bomDetails = results
-    .filter(row => row.scope_of_works !== null) // 🔥 Prevents empty BOMs
-    .map(row => ({
-        row_id: row.row_id, // Ensure row_id is included
-        no: row.no || 0,
-        scope_of_works: row.scope_of_works,
-        quantity: row.quantity,
-        unit: row.unit,
-        mc_uc: row.mc_uc,
-        lc_uc: row.lc_uc,
-        mc_amount: row.mc_amount,
-        lc_amount: row.lc_amount,
-        row_total: row.row_total,
-    }));
-
+        const bomDetails = results.map(row => ({
+            row_id: row.row_id,
+            no: row.no || 0,
+            scope_of_works: row.scope_of_works,
+            quantity: row.quantity,
+            unit: row.unit,
+            mc_uc: row.mc_uc,
+            lc_uc: row.lc_uc,
+            mc_amount: row.mc_amount,
+            lc_amount: row.lc_amount,
+            row_total: row.row_total,
+        }));
 
         res.json({
             bomList,
@@ -297,8 +297,6 @@ WHERE
         });
     });
 };
-
-
 
 
 
@@ -341,10 +339,55 @@ const getBOMList = (req, res) => {
     
 };
 
+// backend/routes/bomRoutes.js
+
+const calculateBOMSubtotal = (req, res) => {
+    const { bomId } = req.params;
+
+    const query = `
+        SELECT
+            bd.mc_amount,
+            bd.lc_amount,
+            bd.row_type
+        FROM
+            bom_details AS bd
+        WHERE
+            bd.bom_id = ? AND bd.row_type != 'subtotal';
+    `;
+
+    db.query(query, [bomId], (err, results) => {
+        if (err) {
+            console.error("Error fetching BOM data:", err);
+            return res.status(500).json({ message: "Error fetching BOM data", error: err.message });
+        }
+
+        let subtotal = 0;
+        results.forEach(row => {
+            subtotal += row.mc_amount + row.lc_amount;
+        });
+
+        // Store the subtotal in the bom_subtotals table.
+        const insertQuery = `
+            INSERT INTO bom_subtotals (bom_id, subtotal_cost)
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE subtotal_cost = ?;
+        `;
+
+        db.query(insertQuery, [bomId, subtotal, subtotal], (insertErr) => {
+            if (insertErr) {
+                console.error("Error saving subtotal:", insertErr);
+                return res.status(500).json({ message: "Error saving subtotal", error: insertErr.message });
+            }
+
+            res.json({ subtotal_cost: subtotal });
+        });
+    });
+};
 
 
-
-module.exports = { getLatestBomId, saveBOM, getNextBomId, createBOM, getBOMList, getBOMData, deleteAllBom };
+module.exports = { getLatestBomId, saveBOM, getNextBomId, createBOM, getBOMList, getBOMData, deleteAllBom,
+    calculateBOMSubtotal
+ };
 
 
 

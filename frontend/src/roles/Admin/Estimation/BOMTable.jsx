@@ -8,7 +8,7 @@ import { ModuleRegistry } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { provideGlobalGridOptions } from 'ag-grid-community';
 import { recalcComputedRows } from '../../../utils/calculationsUtils';
-import { getColumnDefs, onCellValueChanged } from '../../../utils/tableUtils';
+import { getColumnDefs, onCellValueChanged, addRow } from '../../../utils/tableUtils';
 import { handleGridKeyDown, handleDeleteAllRows, handleCellKeyDown } from "../../../utils/rowUtils";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -39,7 +39,6 @@ const BOMTable = ({ user }) => {
     const [undoStack, setUndoStack] = useState([]);
     const [markupPercentage, setMarkupPercentage] = useState(MARKUP_PERCENTAGE);
 
-
     useEffect(() => {
         const fetchBOMData = async () => {
             setLoading(true);
@@ -61,7 +60,7 @@ const BOMTable = ({ user }) => {
                     if (data.bomDetails.length > 0) {
                         const transformedData = data.bomDetails
                             .map((detail, index) => ({
-                                row_id: String(detail.row_id || null), // Ensure row_id is string
+                                row_id: String(detail.row_id || null),
                                 no: detail.no || 0,
                                 scopeOfWorks: detail.scope_of_works || '',
                                 quantity: detail.quantity || 0,
@@ -71,12 +70,12 @@ const BOMTable = ({ user }) => {
                                 materialAmount: parseFloat(detail.mc_amount) || 0,
                                 laborAmount: parseFloat(detail.lc_amount) || 0,
                                 totalAmount: parseFloat(detail.row_total) || 0,
-                                // subtotalCost: parseFloat(detail.subtotal_cost) || 0,
                                 computedType: detail.row_type || 'Standard',
+                                subtotal_cost: parseFloat(detail.subtotal_cost) || 0, // Add subtotal_cost
+
                             }))
                             .filter(row => row.scopeOfWorks.trim() !== '' || row.quantity > 0);
     
-                        // Remove duplicates based on `row_id`
                         const uniqueData = [...new Map(transformedData.map(row => [row.row_id, row])).values()];
     
                         setRowData(uniqueData);
@@ -124,17 +123,18 @@ const BOMTable = ({ user }) => {
                 user_id: userId,
                 date: selectedDate.toISOString().split('T')[0],
                 rowData: rowData.map(row => ({
-                    row_id: String(row.row_id), // Explicitly convert row_id to string
+                    row_id: Number(row.row_id),
                     no: row.no,
                     scope_of_works: row.scopeOfWorks,
-                    quantity: row.quantity,
+                    quantity: Number(row.quantity),
                     unit: row.unit,
-                    materialUC: row.materialUC,
-                    laborUC: row.laborUC,
-                    materialAmount: row.materialAmount,
-                    laborAmount: row.laborAmount,
-                    total_cost: row.totalAmount,
+                    mc_uc: Number(row.materialUC),
+                    lc_uc: Number(row.laborUC),
+                    mc_amount: Number(row.materialAmount),
+                    lc_amount: Number(row.laborAmount),
+                    total_cost: Number(row.totalAmount),
                     row_type: row.computedType,
+                    subtotal_cost: row.computedType === 'subtotal' ? Number(row.totalAmount) : undefined,
                 })),
             };
     
@@ -152,61 +152,141 @@ const BOMTable = ({ user }) => {
         } finally {
             setIsSaving(false);
         }
+        console.log("Sending payload:", JSON.stringify(payload, null, 2));
     };
-
-    const handleAddRow = (isSubtotalRowFlag, isMainTitleRowFlag, rowCount = 1) => {
-        setRowData(prevRowData => {
-            const maxRowId = prevRowData.reduce((max, row) => {
-                const rowId = parseInt(row.row_id, 10);
-                return !isNaN(rowId) && rowId > max ? rowId : max;
-            }, 0);
     
-            const newRows = Array.from({ length: rowCount }, (_, index) => ({
-                row_id: (maxRowId + index + 1).toString(),
-                scopeOfWorks: '',
-                quantity: 0,
-                unit: 'unit',
-                materialUC: 0,
-                laborUC: 0,
-                materialAmount: 0,
-                laborAmount: 0,
-                totalAmount: 0,
-                computedType: 'Standard',
-            }));
+    const handleAddRow = async (isSubtotalRowFlag, isMainTitleRowFlag, rowCount = 1) => {
+        if (isSubtotalRowFlag) {
+            try {
+                // Call the backend to calculate the subtotal.
+                const response = await api.get(`/bom/calculate-bom-subtotal/${bomId}`);
+                const subtotal = response.data.subtotal_cost || 0;
     
-            const updatedRowData = [...prevRowData, ...newRows];
-            // const updatedData = recalcComputedRows(updatedRowData, markupPercentage); // Comment this out
-            console.log("handleAddRow new rowData:", updatedRowData);
-            return updatedRowData; // return updatedRowData, not updatedData
-        });
+                // Generate a unique row_id for the new subtotal row.
+                const maxRowId = rowData.reduce((max, row) => {
+                    const rowId = parseInt(row.row_id, 10);
+                    return !isNaN(rowId) && rowId > max ? rowId : max;
+                }, 0);
+    
+                const newRowId = (maxRowId + 1).toString();
+    
+                const newRow = {
+                    row_id: newRowId,
+                    scopeOfWorks: 'Subtotal',
+                    quantity: 0,
+                    unit: 'unit',
+                    materialUC: 0,
+                    laborUC: 0,
+                    materialAmount: 0,
+                    laborAmount: 0,
+                    totalAmount: subtotal,
+                    computedType: 'subtotal',
+                    subtotal_cost: subtotal,
+                };
+    
+                setRowData(prevRowData => [...prevRowData, newRow]);
+                console.log("handleAddRow new rowData:", [...prevRowData, newRow]);
+    
+            } catch (error) {
+                console.error("Error calculating subtotal:", error);
+                // Handle error (e.g., show a message to the user)
+            }
+        } else {
+            // Existing logic for adding regular rows
+            setRowData(prevRowData => {
+                const maxRowId = prevRowData.reduce((max, row) => {
+                    const rowId = parseInt(row.row_id, 10);
+                    return !isNaN(rowId) && rowId > max ? rowId : max;
+                }, 0);
+    
+                const newRows = Array.from({ length: rowCount }, (_, index) => ({
+                    row_id: (maxRowId + index + 1).toString(),
+                    scopeOfWorks: '',
+                    quantity: 0,
+                    unit: 'unit',
+                    materialUC: 0,
+                    laborUC: 0,
+                    materialAmount: 0,
+                    laborAmount: 0,
+                    totalAmount: 0,
+                    computedType: 'Standard',
+                }));
+    
+                const updatedRowData = [...prevRowData, ...newRows];
+                console.log("handleAddRow new rowData:", updatedRowData);
+                return updatedRowData;
+            });
+        }
     
         setIsModalOpen(false);
     };
-
-
     const onGridReady = (params) => {
         gridApiRef.current = params.api;
     };
-
+    
     const onRowDragEnd = (event) => {
         setRowData(prevRowData => {
             let newRowData = [];
             event.api.forEachNodeAfterFilterAndSort((node) => {
-                newRowData.push(node.data);
+                newRowData.push({...node.data});
             });
+    
             const updatedData = recalcComputedRows(newRowData, markupPercentage);
+    
             return updatedData;
         });
     };
-
+    
     const handleCellValueChange = (params) => {
         setRowData(prevRowData => {
-            const updatedRowData = onCellValueChanged(params, prevRowData, setRowData); // Pass setRowData
+            const updatedRowData = onCellValueChanged(params, prevRowData);
             console.log("handleCellValueChange updated rowData:", updatedRowData);
             saveData();
             return updatedRowData;
         });
     };
+    
+    const onCellValueChanged = (params, prevRowData) => {
+        const { rowIndex, colDef, value } = params;
+        const field = colDef.field;
+    
+        const updatedData = prevRowData.map((row, index) => {
+            if (index === rowIndex) {
+                const updatedRow = {
+                    ...row,
+                    [field]: value,
+                };
+               const materialAmount = updatedRow.quantity * updatedRow.materialUC;
+               const laborAmount = updatedRow.quantity * updatedRow.laborUC;
+               const totalAmount = materialAmount + laborAmount;
+    
+                return {
+                    ...updatedRow,
+                    materialAmount: materialAmount,
+                    laborAmount: laborAmount,
+                    totalAmount: totalAmount,
+                }
+            }
+            return row;
+        });
+        return updatedData;
+    };
+    
+    const recalcComputedRows = (data, markup) => {
+        // Your logic to recalc computed rows, ensuring immutability
+        return data.map(row => {
+            const materialAmount = row.quantity * row.materialUC;
+            const laborAmount = row.quantity * row.laborUC;
+            const totalAmount = materialAmount + laborAmount;
+            return {
+                ...row,
+                materialAmount: materialAmount,
+                laborAmount: laborAmount,
+                totalAmount: totalAmount,
+            }
+        });
+    };
+
 
     return (
         <div className="p-4">
