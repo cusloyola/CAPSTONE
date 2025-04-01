@@ -40,7 +40,7 @@ const Calendar: React.FC = () => {
 
   const addOneDay = (dateStr: string): string => {
     const date = new Date(dateStr);
-    date.setDate(date.getDate()+1);  // Do not add an extra day, use as is
+    date.setDate(date.getDate() + 1);  // Do not add an extra day, use as is
     return date.toISOString();
   };
 
@@ -50,6 +50,7 @@ const Calendar: React.FC = () => {
   const fetchEvents = async () => {
     try {
       const response = await api.get("/events");
+
       const formattedEvents = response.data.map((event: any) => ({
         id: event.id,
         title: event.title,
@@ -57,11 +58,17 @@ const Calendar: React.FC = () => {
         end: addOneDay(event.end_date),
         extendedProps: { calendar: event.event_level },
       }));
+      console.log("Formatted events:", formattedEvents);
+
       setEvents(formattedEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
   };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   useEffect(() => {
     fetchEvents();
@@ -95,14 +102,27 @@ const Calendar: React.FC = () => {
 
   const handleEventClick = (clickInfo: EventClickArg) => {
     const event = clickInfo.event;
+    console.log("Event clicked:", event);
 
-    // Convert the event start and end dates to local time
+    // Convert the event start and end dates to local time (ensure correct handling)
     const startDate = new Date(event.start?.toString() || "");
-    const endDate = new Date(event.end?.toString() || "");
+    let endDate = new Date(event.end?.toString() || "");
+
+    // Check if endDate is exactly midnight (start of the next day)
+    if (endDate.getHours() === 0 && endDate.getMinutes() === 0 && endDate.getSeconds() === 0) {
+      // Adjust end date to avoid showing an extra day
+      endDate = new Date(endDate.getTime() - 1);  // Subtract 1 millisecond to correct this
+    }
+
+    console.log("Local start date:", startDate);
+    console.log("Local end date:", endDate);
 
     // Format the dates to MM/DD/YY format for input[type="date"]
     const localStartDate = startDate.toLocaleDateString('en-US');  // MM/DD/YY format
     const localEndDate = endDate.toLocaleDateString('en-US');  // MM/DD/YY format
+
+    console.log("Formatted local start date:", localStartDate);
+    console.log("Formatted local end date:", localEndDate);
 
     // Set the selected event data to be displayed in the modal
     setSelectedEvent(event as unknown as CalendarEvent);
@@ -119,21 +139,24 @@ const Calendar: React.FC = () => {
   };
 
 
+
   const formatToISODate = (dateStr: string): string => {
     const [month, day, year] = dateStr.split('/');
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    return isoDate;
   };
-
-
 
   const handleAddEvent = async () => {
     if (!validateEventFields()) return;
     setErrorMessage(null);
 
     try {
+
+      // Format start and end dates
       const startISO = formatToISODate(eventStartDate);
       const endISO = formatToISODate(eventEndDate);
 
+      // Send the event to the API
       const response = await api.post("/events", {
         title: eventTitle,
         start_date: startISO,
@@ -141,19 +164,28 @@ const Calendar: React.FC = () => {
         event_level: eventLevel,
       });
 
+      // Format the added event to match FullCalendar's expected date format
       const addedEvent = {
         id: response.data.id,
         title: eventTitle,
         start: startISO,
-        end: addOneDay(endISO),  // Adjust for FullCalendar display
+        end: endISO,  // Correct end date to match FullCalendar's expectations
         extendedProps: { calendar: eventLevel },
       };
 
+      // Add the event to FullCalendar
       calendarRef.current?.getApi().addEvent(addedEvent);
+
+      // Update the state with the new event
       setEvents((prev) => [...prev, addedEvent]);
+
       toast.success("Event added successfully");
+
+      // Refetch events from the database to ensure correct data (especially end date)
+      await fetchEvents();  // Fetch all events to ensure that the calendar is in sync with the database
+
+
     } catch (error) {
-      console.error("Error adding event:", error);
       setErrorMessage("Failed to add event. Please try again later.");
       toast.error("Add failed. Try again.");
     }
@@ -198,7 +230,6 @@ const Calendar: React.FC = () => {
 
       toast.success("Event updated successfully");
     } catch (error) {
-      console.error("Error updating event:", error);
       setErrorMessage("Failed to update event. Please try again later.");
       toast.error("Update failed.");
     }
@@ -209,7 +240,11 @@ const Calendar: React.FC = () => {
   };
 
   const handleAddOrUpdateEvent = async () => {
-    selectedEvent?.id ? await handleUpdateEvent() : await handleAddEvent();
+    if (selectedEvent?.id) {
+      await handleUpdateEvent();
+    } else {
+      await handleAddEvent();
+    }
   };
 
   // General event validation function
@@ -243,7 +278,6 @@ const Calendar: React.FC = () => {
       setErrorMessage("Start date cannot be after end date.");
       return false;
     }
-
     return true;
   };
 
@@ -343,7 +377,7 @@ const Calendar: React.FC = () => {
 
             {errorMessage && (
               <div className="mt-4 text-red-500">
-                <strong>Error: </strong>{errorMessage}
+                {errorMessage}
               </div>
             )}
 
