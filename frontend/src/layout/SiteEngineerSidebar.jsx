@@ -51,38 +51,42 @@ const navItems = [
     subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
   },
   {
-    name: "Tables",
-    icon: <TableIcon />,
-    subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  },
-  {
-    name: "Pages",
-    icon: <PageIcon />,
+    name: "Request Material",
+    icon: <ListIcon />, // Assuming ListIcon is imported from a library like @mui/icons-material
     subItems: [
-      { name: "Blank Page", path: "/blank", pro: false },
-      { name: "404 Error", path: "/error-404", pro: false },
+        { name: "Submit Material Request", path: "/RequestMaterial", pro: false },
+        { name: "View Request History", path: "/ViewRequestHistory", pro: false }, // Added subItem
+        
     ],
-  },
+},
+  // {
+  //   name: "Pages",
+  //   icon: <PageIcon />,
+  //   subItems: [
+  //     { name: "Blank Page", path: "/blank", pro: false },
+  //     { name: "404 Error", path: "/error-404", pro: false },
+  //   ],
+  // },
   // Add more admin-specific items as needed...
 ];
 
 const othersItems = [
-  {
-    icon: <PieChartIcon />,
-    name: "Reports",
-    subItems: [
-      { name: "Sales Report", path: "/admin/sales-report", pro: false },
-      { name: "User Report", path: "/admin/user-report", pro: false },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
+  // {
+  //   icon: <PieChartIcon />,
+  //   name: "Reports",
+  //   subItems: [
+  //     { name: "Sales Report", path: "/admin/sales-report", pro: false },
+  //     { name: "User Report", path: "/admin/user-report", pro: false },
+  //   ],
+  // },
+  // {
+  //   icon: <PlugInIcon />,
+  //   name: "Authentication",
+  //   subItems: [
+  //     { name: "Sign In", path: "/signin", pro: false },
+  //     { name: "Sign Up", path: "/signup", pro: false },
+  //   ],
+  // },
 ];
 
 const SiteEngineerSidebar = () => {
@@ -323,7 +327,7 @@ const SiteEngineerSidebar = () => {
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
-            <div className="">
+            {/* <div className="">
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
                   !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
@@ -332,7 +336,7 @@ const SiteEngineerSidebar = () => {
                 {isExpanded || isHovered || isMobileOpen ? "Others" : <HorizontaLDots />}
               </h2>
               {renderMenuItems(othersItems, "others")}
-            </div>
+            </div> */}
           </div>
         </nav>
         {(isExpanded || isHovered || isMobileOpen) && <SidebarWidget />}

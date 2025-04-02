@@ -16,6 +16,14 @@ import AdminBOM from "./roles/Admin/AdminBOM.jsx";
 import AdminBOQ from "./roles/Admin/AdminBOQ.jsx";
 import InventortManagement from "./roles/Admin/InventoryManagement.jsx"
 
+
+// site
+import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
+import SiteProgressTracking from "./roles/SiteEngineer/SiteProgressTacking.jsx"
+import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
+import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
+
+
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 
 import UserManagement from "./roles/Admin/UserManagement.jsx";
@@ -25,9 +33,6 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
-// site
-import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
-import SiteProgressTracking from "./roles/SiteEngineer/SiteProgressTacking.jsx"
 
 import SafetyEngineerDashboard from "./roles/SafetyEngineer/SafetyEngineerDashboard.jsx";
 
@@ -93,6 +98,8 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
               <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
               <Route path="/SiteProgressTracking" element={<SiteProgressTracking />} />
+              <Route path="/RequestMaterial" element={<RequestMaterial />} />
+              <Route path="/ViewRequestHistory" element={<MaterialRequestHistory />} />
 
             </Route>
             <Route element={<ProtectedRoute allowedRoles={["safetyengineer"]} />}>
