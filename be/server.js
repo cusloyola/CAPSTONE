@@ -27,7 +27,7 @@ const leaveContractRoutes = require("./routes/leaveContractRoutes");
 const inventoryInformationRoutes = require("./routes/inventoryInformationRoutes");
 const userManagementController = require("./routes/userManagementRoutes")
 const eventRoutes = require('./routes/eventRoutes');
-
+const reportsRoutes = require("./routes/reportsRoutes");
 
 
 const bomRoutes = require("./routes/bomRoutes");
@@ -40,6 +40,7 @@ app.use("/api/inventory-information", inventoryInformationRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/reports", reportsRoutes); 
 // No changes needed here, assuming your inventoryRoutes is correctly setup
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);

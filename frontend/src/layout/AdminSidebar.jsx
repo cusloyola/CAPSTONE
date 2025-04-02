@@ -80,6 +80,11 @@ const navItems = [
     name: "HR Management ",
     subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   },
+  {
+    icon: <GridIcon />,
+    name: "Reports and Analytics",
+    subItems: [{ name: "Reports", path: "/Reports", pro: false }],
+  },
 
   // Add more admin-specific items as needed...
 ];
