@@ -21,7 +21,6 @@ const BOMTable = ({ user }) => {
     const { bomId } = useParams();
     const gridApiRef = useRef(null);
     const [isSaving, setIsSaving] = useState(false);
-
     const [rowData, setRowData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -35,73 +34,124 @@ const BOMTable = ({ user }) => {
     const [isMainTitleRow, setIsMainTitleRow] = useState(false);
     const [columnName, setColumnName] = useState("");
     const [subheaderCount, setSubheaderCount] = useState(1);
-    const [computedRowType, setComputedRowType] = useState("subtotal");
+    const [computedRowType, setComputedRowType] = useState("Standard"); // Default to Standard
     const [undoStack, setUndoStack] = useState([]);
     const [markupPercentage, setMarkupPercentage] = useState(MARKUP_PERCENTAGE);
 
-    useEffect(() => {
-        const fetchBOMData = async () => {
-            setLoading(true);
-            setError(null);
+    const fetchBOMData = async () => {
+        setLoading(true);
+        setError(null);
     
-            try {
-                console.log(`Fetching BOM data for BOM ID: ${bomId}`);
-                const response = await fetch(`http://localhost:5000/api/bom/${bomId}`);
-                console.log("Response Status:", response.status);
+        try {
+            console.log(`Fetching BOM data for BOM ID: ${bomId}`);
+            const response = await fetch(`http://localhost:5000/api/bom/${bomId}`);
+            console.log("Response Status:", response.status);
     
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch BOM data: ${response.status}`);
-                }
+            if (!response.ok) {
+                throw new Error(`Failed to fetch BOM data: ${response.status}`);
+            }
     
-                const data = await response.json();
-                console.log("Full BOM Data Response:", data);
+            const data = await response.json();
+            console.log("Full BOM Data Response:", data);
     
-                if (data.bomDetails && Array.isArray(data.bomDetails)) {
-                    if (data.bomDetails.length > 0) {
-                        const transformedData = data.bomDetails
-                            .map((detail, index) => ({
-                                row_id: String(detail.row_id || null),
-                                no: detail.no || 0,
-                                scopeOfWorks: detail.scope_of_works || '',
-                                quantity: detail.quantity || 0,
-                                unit: detail.unit || '',
-                                materialUC: detail.mc_uc || 0,
-                                laborUC: detail.lc_uc || 0,
-                                materialAmount: parseFloat(detail.mc_amount) || 0,
-                                laborAmount: parseFloat(detail.lc_amount) || 0,
-                                totalAmount: parseFloat(detail.row_total) || 0,
-                                computedType: detail.row_type || 'Standard',
-                                subtotal_cost: parseFloat(detail.subtotal_cost) || 0, // Add subtotal_cost
-
-                            }))
-                            .filter(row => row.scopeOfWorks.trim() !== '' || row.quantity > 0);
+            if (data.bomDetails && Array.isArray(data.bomDetails)) {
+                if (data.bomDetails.length > 0) {
+                    const transformedData = data.bomDetails
+                        .map((detail) => ({
+                            row_id: String(detail.row_id || null),
+                            no: detail.no || 0,
+                            scopeOfWorks: detail.scope_of_works || '',
+                            quantity: detail.quantity || 0,
+                            unit: detail.unit || '',
+                            materialUC: detail.mc_uc || 0,
+                            laborUC: detail.lc_uc || 0,
+                            materialAmount: parseFloat(detail.mc_amount) || 0,
+                            laborAmount: detail.row_type === 'subtotal' ? 'Subtotal' : (parseFloat(detail.lc_amount) || 0),
+                            totalAmount: parseFloat(detail.total_cost) || 0,
+                            computedType: detail.row_type || 'Standard',
+                        }))
+                        .filter(row => (row.computedType !== 'subtotal' && (row.scopeOfWorks && row.scopeOfWorks.trim() !== '') || row.quantity > 0 || row.materialUC !== 0 || row.laborUC !== 0 || row.materialAmount !== 0 || row.laborAmount !== 0 || row.totalAmount !== 0) || (row.computedType === 'subtotal' && (row.laborAmount !== 0 || row.totalAmount !== 0)));                        const uniqueData = [...new Map(transformedData.map(row => [row.row_id, row])).values()];
     
-                        const uniqueData = [...new Map(transformedData.map(row => [row.row_id, row])).values()];
+                    //Recalculate markup, total, and grand total.
+                    const recalculatedData = recalculateComputedRows(uniqueData, markupPercentage);
     
-                        setRowData(uniqueData);
-                        console.log("✅ Updated rowData (unique only):", uniqueData);
-                    } else {
-                        setRowData([]);
-                        console.log("⚠️ bomDetails is empty. Initializing with empty rowData.");
-                    }
+                    setRowData(recalculatedData);
+                    console.log("rowData after fetch:", recalculatedData);
+                    console.log("✅ Updated rowData (unique only):", recalculatedData);
                 } else {
                     setRowData([]);
-                    console.log("⚠️ bomDetails is empty or undefined. Initializing with empty rowData.");
-                    alert("There is no data for this BOM ID");
+                    console.log("⚠️ bomDetails is empty. Initializing with empty rowData.");
                 }
-            } catch (error) {
-                console.error("Error fetching BOM data:", error);
-                setError(error.message);
-            } finally {
-                setLoading(false);
+            } else {
+                setRowData([]);
+                console.log("⚠️ bomDetails is empty or undefined. Initializing with empty rowData.");
+                alert("There is no data for this BOM ID");
             }
-        };
-    
-        if (bomId) {
-            fetchBOMData();
+        } catch (error) {
+            console.error("Error fetching BOM data:", error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
         }
-    }, [bomId]);
+    };
     
+    const recalculateComputedRows = (data, markup) => {
+        let subtotal = 0;
+        let total = 0;
+        let markupAmount = 0;
+        let grandTotal = 0;
+    
+        const recalculatedData = data.map((row, index, arr) => {
+            if (row.computedType === 'subtotal') {
+                subtotal = 0;
+                for (let i = index - 1; i >= 0; i--) {
+                    if (arr[i].computedType === 'subtotal' || arr[i].computedType === 'total' || arr[i].computedType === 'markup' || arr[i].computedType === 'grandTotal') {
+                        break;
+                    }
+                    if (arr[i].computedType !== 'subtotal') {
+                        subtotal += arr[i].materialAmount + arr[i].laborAmount;
+                    }
+                }
+                total += subtotal; // Calculate total as we go
+                return {
+                    ...row,
+                    totalAmount: subtotal,
+                    subtotal_cost: subtotal,
+                    laborAmount: 'Subtotal',
+                    quantity: '', // Set quantity to an empty string
+                };
+            } else if (row.computedType === 'total') {
+                return {
+                    ...row,
+                    totalAmount: total,
+                    laborAmount: 'Total Cost',
+                    quantity: '', // Set quantity to an empty string
+                };
+            } else if (row.computedType === 'markup') {
+                markupAmount = total * (markup / 100);
+                grandTotal = total + markupAmount;
+    
+                console.log(`Markup computed: ${markupAmount}, Grand Total: ${grandTotal}`);
+    
+                return {
+                    ...row,
+                    totalAmount: markupAmount,
+                    laborAmount: 'Markup',
+                    quantity: '', // Set quantity to an empty string
+                };
+            } else if (row.computedType === 'grandTotal') {
+                return {
+                    ...row,
+                    totalAmount: grandTotal,
+                    laborAmount: 'Grand Total',
+                    quantity: '', // Set quantity to an empty string
+                };
+            }
+            return row;
+        });
+        return recalculatedData;
+    };
+
     const saveData = async () => {
         if (isSaving) return;
         setIsSaving(true);
@@ -118,24 +168,36 @@ const BOMTable = ({ user }) => {
         try {
             console.log("🚀 Saving rowData:", rowData);
     
+            const totalCostSum = rowData.reduce((sum, row) => sum + (row.totalAmount || 0), 0);
+    
             const payload = {
                 bom_id: bomId,
                 user_id: userId,
                 date: selectedDate.toISOString().split('T')[0],
-                rowData: rowData.map(row => ({
-                    row_id: Number(row.row_id),
-                    no: row.no,
-                    scope_of_works: row.scopeOfWorks,
-                    quantity: Number(row.quantity),
-                    unit: row.unit,
-                    mc_uc: Number(row.materialUC),
-                    lc_uc: Number(row.laborUC),
-                    mc_amount: Number(row.materialAmount),
-                    lc_amount: Number(row.laborAmount),
-                    total_cost: Number(row.totalAmount),
-                    row_type: row.computedType,
-                    subtotal_cost: row.computedType === 'subtotal' ? Number(row.totalAmount) : undefined,
-                })),
+                rowData: rowData
+            .filter(row => row.computedType === 'subtotal' || (row.computedType !== 'subtotal' && (
+                row.quantity !== 0 ||
+                row.unit !== "" ||
+                row.materialUC !== 0 ||
+                row.laborUC !== 0 ||
+                row.materialAmount !== 0 ||
+                row.laborAmount !== 0 ||
+                row.totalAmount !== 0 ||
+                row.scopeOfWorks !== ""
+            )) || (row.computedType === 'subtotal' && (row.laborAmount !== 0 || row.totalAmount !== 0)))
+            .map(row => ({
+                row_id: Number(row.row_id),
+                no: row.no,
+                scope_of_works: row.scopeOfWorks,
+                quantity: Number(row.quantity),
+                unit: row.unit,
+                mc_uc: Number(row.materialUC),
+                lc_uc: Number(row.laborUC),
+                mc_amount: Number(row.materialAmount),
+                lc_amount: Number(row.laborAmount),
+                total_cost: Number(row.totalAmount),
+                row_type: row.computedType,
+            })),
             };
     
             console.log("Sending payload to backend:", payload);
@@ -145,121 +207,133 @@ const BOMTable = ({ user }) => {
             });
     
             console.log("✅ BOM data saved successfully:", response.data);
-            console.log("rowData being sent to backend:", rowData);
-    
+            fetchBOMData();
         } catch (error) {
             console.error("❌ Error saving BOM data:", error.response?.data || error.message);
         } finally {
             setIsSaving(false);
         }
-        console.log("Sending payload:", JSON.stringify(payload, null, 2));
     };
+
     
     const handleAddRow = async (isSubtotalRowFlag, isMainTitleRowFlag, rowCount = 1) => {
+        let updatedRowData = [...rowData];
+
         if (isSubtotalRowFlag) {
-            try {
-                // Call the backend to calculate the subtotal.
-                const response = await api.get(`/bom/calculate-bom-subtotal/${bomId}`);
-                const subtotal = response.data.subtotal_cost || 0;
-    
-                // Generate a unique row_id for the new subtotal row.
-                const maxRowId = rowData.reduce((max, row) => {
-                    const rowId = parseInt(row.row_id, 10);
-                    return !isNaN(rowId) && rowId > max ? rowId : max;
-                }, 0);
-    
-                const newRowId = (maxRowId + 1).toString();
-    
-                const newRow = {
-                    row_id: newRowId,
-                    scopeOfWorks: 'Subtotal',
-                    quantity: 0,
-                    unit: 'unit',
-                    materialUC: 0,
-                    laborUC: 0,
-                    materialAmount: 0,
-                    laborAmount: 0,
-                    totalAmount: subtotal,
-                    computedType: 'subtotal',
-                    subtotal_cost: subtotal,
-                };
-    
-                setRowData(prevRowData => [...prevRowData, newRow]);
-                console.log("handleAddRow new rowData:", [...prevRowData, newRow]);
-    
-            } catch (error) {
-                console.error("Error calculating subtotal:", error);
-                // Handle error (e.g., show a message to the user)
+            let subtotal = 0;
+            updatedRowData.forEach(row => {
+                if (row.computedType !== 'subtotal' && row.computedType !== 'total' && row.computedType !== 'markup' && row.computedType !== 'grandTotal') {
+                    subtotal += row.materialAmount + row.laborAmount;
+                }
+            });
+
+            let totalCost = 0;
+            if (computedRowType === 'total') {
+                updatedRowData.forEach(row => {
+                    if (row.computedType === 'subtotal') {
+                        totalCost += row.totalAmount;
+                    }
+                });
             }
+
+            let markupAmount = 0;
+            if (computedRowType === 'markup') {
+                totalCost = updatedRowData.find(row => row.computedType === 'total')?.totalAmount || 0;
+                markupAmount = totalCost * (markupPercentage / 100);
+            }
+
+            let grandTotal = 0;
+            if (computedRowType === 'grandTotal') {
+                totalCost = updatedRowData.find(row => row.computedType === 'total')?.totalAmount || 0;
+                markupAmount = updatedRowData.find(row => row.computedType === 'markup')?.laborAmount || 0;
+                grandTotal = totalCost + markupAmount;
+            }
+
+            const maxRowId = updatedRowData.reduce((max, row) => parseInt(row.row_id, 10) > max ? parseInt(row.row_id, 10) : max, 0);
+            const newRowId = (maxRowId + 1).toString();
+
+            const newRow = {
+                row_id: newRowId,
+                scopeOfWorks: computedRowType === 'subtotal' ? '' : computedRowType === 'total' ? '' : computedRowType === 'markup' ? 'Markup' : computedRowType === 'grandTotal' ? 'Grand Total' : 'Subtotal',
+                materialUC: 0,
+                laborUC: 0,
+                materialAmount: 0,
+                laborAmount: computedRowType === 'subtotal' ? subtotal : computedRowType === 'total' ? totalCost : computedRowType === 'markup' ? markupAmount : computedRowType === 'grandTotal' ? grandTotal : 0,
+                totalAmount: computedRowType === 'subtotal' ? subtotal : computedRowType === 'total' ? totalCost : computedRowType === 'markup' ? markupAmount : computedRowType === 'grandTotal' ? grandTotal : 0,
+                computedType: computedRowType,
+                isSubtotal: true,
+                subtotal_cost: computedRowType === 'subtotal' ? subtotal : 0,
+            };
+
+            updatedRowData.push(newRow);
         } else {
-            // Existing logic for adding regular rows
-            setRowData(prevRowData => {
-                const maxRowId = prevRowData.reduce((max, row) => {
-                    const rowId = parseInt(row.row_id, 10);
-                    return !isNaN(rowId) && rowId > max ? rowId : max;
-                }, 0);
-    
-                const newRows = Array.from({ length: rowCount }, (_, index) => ({
-                    row_id: (maxRowId + index + 1).toString(),
+            for (let i = 0; i < rowCount; i++) {
+                const maxRowId = updatedRowData.reduce((max, row) => parseInt(row.row_id, 10) > max ? parseInt(row.row_id, 10) : max, 0);
+                const newRowId = (maxRowId + 1).toString();
+                updatedRowData.push({
+                    row_id: newRowId,
                     scopeOfWorks: '',
-                    quantity: 0,
-                    unit: 'unit',
                     materialUC: 0,
                     laborUC: 0,
                     materialAmount: 0,
                     laborAmount: 0,
                     totalAmount: 0,
                     computedType: 'Standard',
-                }));
-    
-                const updatedRowData = [...prevRowData, ...newRows];
-                console.log("handleAddRow new rowData:", updatedRowData);
-                return updatedRowData;
-            });
+                    isSubtotal: false,
+                });
+            }
         }
-    
+
+        setRowData(recalcComputedRows(updatedRowData, markupPercentage));
         setIsModalOpen(false);
+        setComputedRowType("Standard");
     };
+
+    useEffect(() => {
+        if (bomId) {
+            fetchBOMData();
+        }
+    }, [bomId]);
+
     const onGridReady = (params) => {
         gridApiRef.current = params.api;
     };
-    
+
     const onRowDragEnd = (event) => {
         setRowData(prevRowData => {
             let newRowData = [];
             event.api.forEachNodeAfterFilterAndSort((node) => {
-                newRowData.push({...node.data});
+                newRowData.push({ ...node.data });
             });
-    
+
             const updatedData = recalcComputedRows(newRowData, markupPercentage);
-    
             return updatedData;
         });
     };
-    
+
     const handleCellValueChange = (params) => {
         setRowData(prevRowData => {
             const updatedRowData = onCellValueChanged(params, prevRowData);
             console.log("handleCellValueChange updated rowData:", updatedRowData);
-            saveData();
+            saveData(updatedRowData);
             return updatedRowData;
         });
     };
-    
+
     const onCellValueChanged = (params, prevRowData) => {
         const { rowIndex, colDef, value } = params;
         const field = colDef.field;
-    
+
         const updatedData = prevRowData.map((row, index) => {
             if (index === rowIndex) {
                 const updatedRow = {
                     ...row,
                     [field]: value,
                 };
-               const materialAmount = updatedRow.quantity * updatedRow.materialUC;
-               const laborAmount = updatedRow.quantity * updatedRow.laborUC;
-               const totalAmount = materialAmount + laborAmount;
-    
+                const materialAmount = updatedRow.quantity * updatedRow.materialUC;
+                const laborAmount = updatedRow.quantity * updatedRow.laborUC;
+                const totalAmount = materialAmount + laborAmount;
+
                 return {
                     ...updatedRow,
                     materialAmount: materialAmount,
@@ -271,22 +345,37 @@ const BOMTable = ({ user }) => {
         });
         return updatedData;
     };
-    
+
     const recalcComputedRows = (data, markup) => {
-        // Your logic to recalc computed rows, ensuring immutability
-        return data.map(row => {
-            const materialAmount = row.quantity * row.materialUC;
-            const laborAmount = row.quantity * row.laborUC;
-            const totalAmount = materialAmount + laborAmount;
-            return {
-                ...row,
-                materialAmount: materialAmount,
-                laborAmount: laborAmount,
-                totalAmount: totalAmount,
+        return data.map((row, index, arr) => {
+            if (row.computedType === 'subtotal') {
+                let subtotal = 0;
+                for (let i = index - 1; i >= 0; i--) {
+                    if (arr[i].computedType === 'subtotal' || arr[i].computedType === 'total' || arr[i].computedType === 'markup' || arr[i].computedType === 'grandTotal') {
+                        break;
+                    }
+                    if (arr[i].computedType !== 'subtotal') {
+                        subtotal += arr[i].materialAmount + arr[i].laborAmount;
+                    }
+                }
+                return {
+                    ...row,
+                    totalAmount: subtotal,
+                    subtotal_cost: subtotal,
+                };
+            } else if (row.computedType === 'total') {
+                let totalCost = arr.reduce((sum, item) => {
+                    return item.computedType === 'subtotal' ? sum + item.totalAmount : sum;
+                }, 0);
+                return {
+                    ...row,
+                    laborAmount: totalCost,
+                    totalAmount: totalCost,
+                };
             }
+            return row;
         });
     };
-
 
     return (
         <div className="p-4">
@@ -326,8 +415,8 @@ const BOMTable = ({ user }) => {
                         <h2 className="text-lg font-semibold mb-4">{modalType === "row" ? "Add a New Row" : "Add a New Column"}</h2>
                         {modalType === "row" && (
                             <>
-                                <label className="block mb-2"><input type="radio" name="rowType" value="regular" checked={!isSubtotalRow && !isMainTitleRow} onChange={() => { setIsSubtotalRow(false); setIsMainTitleRow(false); }} className="mr-2" />Regular Row</label>
-                                <label className="block mb-2"><input type="radio" name="rowType" value="mainTitle" checked={isMainTitleRow} onChange={() => { setIsMainTitleRow(true); setIsSubtotalRow(false); }} className="mr-2" />Main Title (Fixed No)</label>
+                                <label className="block mb-2"><input type="radio" name="rowType" value="regular" checked={!isSubtotalRow && !isMainTitleRow} onChange={() => { setIsSubtotalRow(false); setIsMainTitleRow(false); setComputedRowType("Standard"); }} className="mr-2" />Regular Row</label>
+                                <label className="block mb-2"><input type="radio" name="rowType" value="mainTitle" checked={isMainTitleRow} onChange={() => { setIsMainTitleRow(true); setIsSubtotalRow(false); setComputedRowType("Standard"); }} className="mr-2" />Main Title (Fixed No)</label>
                                 <label className="block mb-2"><input type="radio" name="rowType" value="subtotal" checked={isSubtotalRow && computedRowType === "subtotal"} onChange={() => { setIsSubtotalRow(true); setIsMainTitleRow(false); setComputedRowType("subtotal"); }} className="mr-2" />Subtotal Row</label>
                                 <label className="block mb-2"><input type="radio" name="rowType" value="total" checked={isSubtotalRow && computedRowType === "total"} onChange={() => { setIsSubtotalRow(true); setIsMainTitleRow(false); setComputedRowType("total"); }} className="mr-2" />Total (Sum of All Subtotals)</label>
                                 <label className="block mb-2"><input type="radio" name="rowType" value="markup" checked={isSubtotalRow && computedRowType === "markup"} onChange={() => { setIsSubtotalRow(true); setIsMainTitleRow(false); setComputedRowType("markup"); }} className="mr-2" />Markup (Based on Total)</label>

@@ -159,90 +159,101 @@ export const onCellValueChanged = (params, prevRowData, setRowData) => {
   return updatedRowData;
 };
 
-
 export const getColumnDefs = () => [
   {
-      field: "id",
-      headerName: "No",
-      width: 80,
-      editable: false,
-      rowDrag: true,
-      suppressMenu: true,
-      suppressSorting: true,
-      valueGetter: (params) => {
-          const gridApi = params.api;
-          if (!gridApi) return "";
-          const rowData = [];
-          gridApi.forEachNode(node => rowData.push(node.data));
-          if (params.data?.isSubtotal) {
-              return "";
-          }
-          const mainTitleCount = rowData
-              .slice(0, params.node.rowIndex)
-              .filter(row => row.isMainTitle).length;
-          return params.data?.isMainTitle ? mainTitleCount + 1 : "";
-      },
+    field: "id",
+    headerName: "No",
+    width: 80,
+    editable: false,
+    rowDrag: true,
+    suppressMenu: true,
+    suppressSorting: true,
+    valueGetter: (params) => {
+      const gridApi = params.api;
+      if (!gridApi) return "";
+      const rowData = [];
+      gridApi.forEachNode(node => rowData.push(node.data));
+      if (params.data?.isSubtotal) {
+        return "";
+      }
+      const mainTitleCount = rowData
+        .slice(0, params.node.rowIndex)
+        .filter(row => row.isMainTitle).length;
+      return params.data?.isMainTitle ? mainTitleCount + 1 : "";
+    },
   },
   { field: "scopeOfWorks", headerName: "Scope of Works", width: 350, editable: true },
-  { field: "quantity", headerName: "Quantity", width: 120, editable: true },
+  {
+    headerName: 'Quantity',
+    field: 'quantity',
+    cellRenderer: (params) => {
+      return params.value === '' ? null : params.value;
+    },
+  },
+  
   { field: "unit", headerName: "Unit", width: 100, editable: true },
   {
-      headerName: "Material Cost",
-      children: [
-          {
-              field: "materialUC",
-              headerName: "U/C",
-              width: 120,
-              editable: true,
-              cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.materialUC || 0),
-          },
-          {
-              field: "materialAmount",
-              headerName: "Amount",
-              width: 120,
-              editable: false,
-              cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.materialAmount || 0),
-          },
-      ],
+    headerName: "Material Cost",
+    children: [
+      {
+        field: "materialUC",
+        headerName: "U/C",
+        width: 120,
+        editable: true,
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.materialUC || 0),
+      },
+      {
+        field: "materialAmount",
+        headerName: "Amount",
+        width: 120,
+        editable: false,
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.materialAmount || 0),
+      },
+    ],
   },
   {
-      headerName: "Labor Cost",
-      children: [
-          {
-              field: "laborUC",
-              headerName: "U/C",
-              width: 120,
-              editable: true,
-              cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.laborUC || 0),
-          },
-          {
-              field: "laborAmount",
-              headerName: "Amount",
-              width: 120,
-              editable: false,
-              cellRenderer: (params) => params.data?.isSubtotal ? "Subtotal" : formatNumber(params.data?.laborAmount || 0), // Modified line
-          },
-      ],
+    headerName: "Labor Cost",
+    children: [
+      {
+        field: "laborUC",
+        headerName: "U/C",
+        width: 120,
+        editable: true,
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.laborUC || 0),
+      },
+      {
+        field: "laborAmount",
+        headerName: "Amount",
+        width: 120,
+        editable: false,
+        cellRenderer: (params) => params.data?.isSubtotal ? "" : formatNumber(params.data?.laborAmount || 0), // Modified line
+      },
+    ],
   },
   {
-      headerName: "Total Amount",
-      field: "totalAmount",
-      valueGetter: (params) => {
-          if (params.data?.isSubtotal) {
-              return formatNumber(params.data.totalAmount || 0);
-          }
-          const quantity = parseNumber(params.data?.quantity) || 0;
-          const materialUC = parseNumber(params.data?.materialUC) || 0;
-          const laborAmount = parseNumber(params.data?.laborAmount) || 0;
-          let totalAmount = materialUC * quantity + laborAmount;
-          return formatNumber(totalAmount || 0);
-      },
-      cellStyle: (params) => params.data?.isSubtotal ? { textAlign: "left", fontWeight: "bold" } : {},
-      cellRendererParams: {
-          colSpan: (params) => (params.data?.isSubtotal ? 2 : 1),
-      },
-  },
+    headerName: "Total Amount",
+    field: "totalAmount",
+    valueGetter: (params) => {
+        console.log("Total Amount valueGetter - params.data:", params.data);
+        if (params.data?.computedType === "subtotal" || params.data?.computedType === "total" || params.data?.computedType === "markup" || params.data?.computedType === "grandTotal") {
+            return formatNumber(params.data.totalAmount || 0); // Use the existing value
+        } else {
+            const quantity = parseNumber(params.data?.quantity) || 0;
+            const materialUC = parseNumber(params.data?.materialUC) || 0;
+            const laborUC = parseNumber(params.data?.laborUC) || 0;
+            let totalAmount = materialUC * quantity + laborUC * quantity;
+
+            return formatNumber(totalAmount || 0); // Calculate for non-subtotal rows
+        }
+    },
+    // Remove these temporarily:
+    // cellStyle: (params) => params.data?.computedType === "subtotal" ? { textAlign: "left", fontWeight: "bold" } : {},
+    // cellRendererParams: {
+    //  colSpan: (params) => (params.data?.computedType === "subtotal" ? 2 : 1),
+    // },
+}
 ];
+
 
 export const deleteRow = (rowData, rowId, setRowData) => {
   const updatedData = rowData.filter(row => row.id !== rowId);

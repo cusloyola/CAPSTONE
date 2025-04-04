@@ -1,6 +1,6 @@
 const express = require("express");
 const { getLatestBomId, getNextBomId, createBOM, getBOMList, deleteAllBom, getBOMData,
-     saveBOM, calculateBOMSubtotal  } = require("../controllers/bomController");
+     saveBOM   } = require("../controllers/bomController");
 const { verifyToken } = require("../middleware/authMiddleware");
 
 
@@ -22,7 +22,7 @@ router.get("/", verifyToken, getBOMList); // Fetch all BOM records
 // Route handler for getting both BOM list and BOM details for a given BOM ID
 router.get("/:bomId", getBOMData);  // Handles dynamic bomId
 
-router.get("/calculate-bom-subtotal/:bomId", calculateBOMSubtotal);  // Handles dynamic bomId
+// router.get("/calculate-bom-subtotal/:bomId", calculateBOMSubtotal);  // Handles dynamic bomId
 
 
 router.post("/save", saveBOM);
