@@ -28,6 +28,7 @@ const inventoryInformationRoutes = require("./routes/inventoryInformationRoutes"
 const userManagementController = require("./routes/userManagementRoutes")
 const eventRoutes = require('./routes/eventRoutes');
 const reportsRoutes = require("./routes/reportsRoutes");
+const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
 
 
 const bomRoutes = require("./routes/bomRoutes");
@@ -35,6 +36,7 @@ const bomRoutes = require("./routes/bomRoutes");
 
 
 // ✅ Use Routes
+app.use("/api/request-materials", requestMaterialRoutes);
 app.use("/api/user-accounts", userManagementController);
 app.use("/api/inventory-information", inventoryInformationRoutes);
 app.use("/api/auth", authRoutes);
