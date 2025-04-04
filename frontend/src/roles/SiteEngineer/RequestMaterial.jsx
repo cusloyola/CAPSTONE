@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageMeta from '../../components/common/PageMeta';
+import axios from 'axios';
 
 const RequestMaterial = () => {
   const [selectedMaterials, setSelectedMaterials] = useState([]);
@@ -9,14 +10,9 @@ const RequestMaterial = () => {
   const [notes, setNotes] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
-
-  const materials = [
-    { material_id: 1, item_name: 'Cement Bags', stock_quantity: 100 },
-    { material_id: 2, item_name: 'Steel Bars', stock_quantity: 200 },
-    { material_id: 3, item_name: 'Plywood Sheets', stock_quantity: 50 },
-    { material_id: 4, item_name: 'Gravel (kg)', stock_quantity: 5000 },
-    { material_id: 5, item_name: 'Hollow Blocks', stock_quantity: 300 },
-  ];
+  const [materials, setMaterials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const projects = [
     {
@@ -37,37 +33,60 @@ const RequestMaterial = () => {
     },
   ];
 
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await axios.get('http://localhost:5000/api/request-materials/items');
+        setMaterials(response.data);
+      } catch (error) {
+        console.error('Error fetching materials:', error);
+        setError('Failed to fetch materials. Try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMaterials();
+  }, []);
+
   const toggleMaterial = (material) => {
-    const exists = selectedMaterials.find(
-      (m) => m.material_id === material.material_id
-    );
+    const exists = selectedMaterials.find(m => m.item_id === material.item_id);
     if (exists) {
-      setSelectedMaterials(
-        selectedMaterials.filter((m) => m.material_id !== material.material_id)
-      );
+      setSelectedMaterials(selectedMaterials.filter(m => m.item_id !== material.item_id));
     } else {
       setSelectedMaterials([
         ...selectedMaterials,
-        { ...material, request_quantity: 1, error: '' },
+        {
+          ...material,
+          request_quantity: 1,
+          error: '',
+        },
       ]);
     }
   };
 
   const handleQuantityChange = (id, value) => {
-    setSelectedMaterials(
-      selectedMaterials.map((m) =>
-        m.material_id === id
+    setSelectedMaterials(prev =>
+      prev.map(m =>
+        m.item_id === id
           ? {
               ...m,
               request_quantity: value,
-              error: value > m.stock_quantity ? 'Exceeds available stock!' : '',
+              error:
+                !value || value <= 0
+                  ? 'Quantity must be at least 1'
+                  : value > m.stock_quantity
+                  ? 'Exceeds available stock!'
+                  : '',
             }
           : m
       )
     );
   };
 
-  const filteredMaterials = materials.filter((material) =>
+  const filteredMaterials = materials.filter(material =>
     material.item_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -80,12 +99,13 @@ const RequestMaterial = () => {
   };
 
   const submitRequest = () => {
-    console.log('Request submitted:', {
+    console.log('Submitting request:', {
       selectedProject,
       urgency,
       notes,
       selectedMaterials,
     });
+
     closeModal();
     setSelectedMaterials([]);
     setUrgency('');
@@ -93,6 +113,21 @@ const RequestMaterial = () => {
     setNotes('');
     setRequestSent(true);
   };
+
+  const isRequestInvalid =
+    !selectedProject ||
+    !urgency ||
+    selectedMaterials.length === 0 ||
+    selectedMaterials.some(
+      (m) =>
+        m.error ||
+        m.request_quantity === '' ||
+        m.request_quantity <= 0 ||
+        m.request_quantity > m.stock_quantity
+    );
+
+  if (loading) return <p>Loading materials...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
     <>
@@ -103,7 +138,6 @@ const RequestMaterial = () => {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h3 className="text-xl font-semibold mb-4">Select Materials</h3>
-
         <input
           type="text"
           placeholder="Search by material name..."
@@ -111,7 +145,6 @@ const RequestMaterial = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full p-2 border rounded mb-4"
         />
-
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100 text-left">
@@ -123,13 +156,11 @@ const RequestMaterial = () => {
           <tbody>
             {filteredMaterials.length > 0 ? (
               filteredMaterials.map((material) => (
-                <tr key={material.material_id} className="border-b">
+                <tr key={material.item_id} className="border-b">
                   <td className="p-3">
                     <input
                       type="checkbox"
-                      checked={selectedMaterials.some(
-                        (m) => m.material_id === material.material_id
-                      )}
+                      checked={selectedMaterials.some(m => m.item_id === material.item_id)}
                       onChange={() => toggleMaterial(material)}
                       className="w-4 h-4"
                     />
@@ -140,7 +171,7 @@ const RequestMaterial = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="3" className="p-3 text-center text-gray-500">
+                <td colSpan="3" className="text-center p-4 text-gray-500">
                   No materials found.
                 </td>
               </tr>
@@ -152,42 +183,30 @@ const RequestMaterial = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-semibold mb-4">Selected Materials</h3>
-          {selectedMaterials && selectedMaterials.length > 0 ? (
+          {selectedMaterials.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {selectedMaterials.map((material) => (
-                <div
-                  key={material.material_id}
-                  className="border p-4 rounded-lg shadow"
-                >
+                <div key={material.item_id} className="border p-4 rounded-lg shadow">
                   <h4 className="font-semibold">{material.item_name}</h4>
-                  <p className="text-gray-600">
-                    Available: {material.stock_quantity}
-                  </p>
-                  <label className="block mt-2 font-medium">
-                    Request Quantity:
-                  </label>
+                  <p className="text-gray-600">Available: {material.stock_quantity}</p>
+                  <label className="block mt-2 font-medium">Request Quantity:</label>
                   <input
                     type="number"
                     min="1"
                     max={material.stock_quantity}
                     value={material.request_quantity}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value, 10);
-                      if (isNaN(value) || value === 0) {
-                        handleQuantityChange(material.material_id, '');
-                      } else {
-                        handleQuantityChange(material.material_id, value);
-                      }
-                    }}
+                    onChange={(e) =>
+                      handleQuantityChange(
+                        material.item_id,
+                        parseInt(e.target.value, 10) || ''
+                      )
+                    }
                     className={`w-full p-2 border rounded mt-1 ${
                       material.error ? 'border-red-500' : ''
                     }`}
                   />
                   {material.error && (
                     <p className="text-red-500 text-sm mt-1">{material.error}</p>
-                  )}
-                  {material.request_quantity === '' && (
-                    <p className="text-red-500 text-sm mt-1">Cannot be empty</p>
                   )}
                 </div>
               ))}
@@ -219,10 +238,7 @@ const RequestMaterial = () => {
           {selectedProject && (
             <p className="text-gray-700 mb-4">
               <strong>Location:</strong>{' '}
-              {
-                projects.find((p) => p.project_name === selectedProject)
-                  ?.project_location
-              }
+              {projects.find(p => p.project_name === selectedProject)?.project_location}
             </p>
           )}
 
@@ -240,6 +256,7 @@ const RequestMaterial = () => {
               <option value="Urgent">Urgent (Immediate Attention)</option>
             </select>
           </div>
+
           <div className="mb-4">
             <label className="block font-semibold">Additional Notes:</label>
             <textarea
@@ -248,12 +265,12 @@ const RequestMaterial = () => {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Enter additional instructions or remarks..."
-            ></textarea>
+            />
           </div>
 
           <button
             className="w-full px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-            disabled={!selectedProject || !urgency || selectedMaterials.some((m) => m.error) || selectedMaterials.length === 0}
+            disabled={isRequestInvalid}
             onClick={openModal}
           >
             Submit Request
@@ -262,22 +279,21 @@ const RequestMaterial = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
             <h3 className="text-xl font-semibold mb-4">Confirm Request</h3>
             <p><strong>Project:</strong> {selectedProject}</p>
-            <p><strong>Location:</strong> {projects.find((p) => p.project_name === selectedProject)?.project_location}</p>
+            <p><strong>Location:</strong> {projects.find(p => p.project_name === selectedProject)?.project_location}</p>
             <p><strong>Urgency:</strong> {urgency}</p>
             <p><strong>Notes:</strong> {notes}</p>
             <h4 className="font-semibold mt-4">Selected Items:</h4>
             <ul>
-              {selectedMaterials.map((item) => (
-                <li key={item.material_id}>
+              {selectedMaterials.map(item => (
+                <li key={item.item_id}>
                   {item.item_name} - Quantity: {item.request_quantity}
                 </li>
               ))}
             </ul>
-
             <div className="flex justify-end mt-6">
               <button
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
@@ -285,7 +301,6 @@ const RequestMaterial = () => {
               >
                 Submit Request
               </button>
-
               <button
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 onClick={closeModal}
