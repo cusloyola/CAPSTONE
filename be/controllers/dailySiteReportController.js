@@ -1,32 +1,33 @@
 const db = require("../config/db");
-
 const getProjectDetailsForDailyReport = (req, res) => {
-    const query = `
-      SELECT 
-        p.project_name, 
-        p.location, 
-        p.owner, 
-        u.full_name AS prepared_by
-      FROM 
-        projects p
-      JOIN 
-        users u ON u.user_id = 2 
-      WHERE 
-        TRIM(LOWER(p.status)) = 'in progress'
-    `;
+  const query = `
+    SELECT 
+      p.project_id,  -- Include project_id
+      p.project_name, 
+      p.location, 
+      p.owner, 
+      u.full_name AS prepared_by
+    FROM 
+      projects p
+    JOIN 
+      users u ON u.user_id = 2 
+    WHERE 
+      TRIM(LOWER(p.status)) = 'in progress'
+  `;
+  
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("❌ Database error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+  
+    const projects = result || [];
     
-    db.query(query, (err, result) => {
-      if (err) {
-        console.error("❌ Database error:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-    
-      const projects = result || [];
-      
-      // Send only the project details in the response
-      res.json({ projects });
-    });
+    // Send project details, including project_id
+    res.json({ projects });
+  });
 };
+
 
 // Function to fetch worker roles
 const getWorkerRoles = (req, res) => {
@@ -67,85 +68,91 @@ const getEquipment = (req, res) => {
 };
 
 
-
 const submitDailySiteReport = (req, res) => {
-    const { 
+  console.log("Received request body:", req.body); // Log incoming data
+
+  const { 
+    report_id, 
+    date, 
+    projectId, 
+    activities, 
+    weatherAM, 
+    weatherPM, 
+    manpower, 
+    selectedEquipment, 
+    visitors, 
+    remarks, 
+    preparedBy 
+  } = req.body;
+
+  // Log the data being used in the SQL query
+  console.log("Data to be inserted into database:", {
+    report_id, 
+    date, 
+    projectId, 
+    activities, 
+    weatherAM, 
+    weatherPM, 
+    manpower, 
+    selectedEquipment, 
+    visitors, 
+    remarks, 
+    preparedBy
+  });
+
+  // Database query here
+  const query = `
+    INSERT INTO daily_site_reports (
       report_id, 
-      date, 
-      projectName, 
-      location, 
-      owner, 
+      report_date, 
+      project_id, 
       activities, 
-      weatherAM, 
-      weatherPM, 
+      weather_am, 
+      weather_pm, 
       manpower, 
-      selectedEquipment, 
+      selected_equipment, 
       visitors, 
       remarks, 
-      preparedBy 
-    } = req.body;  // Assuming all fields are sent from the frontend as part of the request body
+      prepared_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+      report_date = VALUES(report_date),
+      project_id = VALUES(project_id),
+      activities = VALUES(activities),
+      weather_am = VALUES(weather_am),
+      weather_pm = VALUES(weather_pm),
+      manpower = VALUES(manpower),
+      selected_equipment = VALUES(selected_equipment),
+      visitors = VALUES(visitors),
+      remarks = VALUES(remarks),
+      prepared_by = VALUES(prepared_by);
+  `;
+
+  db.query(query, [
+    report_id, 
+    date, 
+    projectId, 
+    activities, 
+    weatherAM, 
+    weatherPM, 
+    JSON.stringify(manpower), 
+    selectedEquipment, 
+    visitors, 
+    remarks, 
+    preparedBy
+  ], (err, result) => {
+    if (err) {
+      console.error("❌ Error saving daily site report:", err);
+      return res.status(500).json({ error: "Error saving daily site report" });
+    }
   
-    // Query to insert or update daily site report
-    const query = `
-      INSERT INTO daily_site_reports (
-        report_id, 
-        report_date, 
-        project_name, 
-        location, 
-        owner, 
-        activities, 
-        weather_am, 
-        weather_pm, 
-        manpower, 
-        selected_equipment, 
-        visitors, 
-        remarks, 
-        prepared_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE 
-        report_date = VALUES(report_date),
-        project_name = VALUES(project_name),
-        location = VALUES(location),
-        owner = VALUES(owner),
-        activities = VALUES(activities),
-        weather_am = VALUES(weather_am),
-        weather_pm = VALUES(weather_pm),
-        manpower = VALUES(manpower),
-        selected_equipment = VALUES(selected_equipment),
-        visitors = VALUES(visitors),
-        remarks = VALUES(remarks),
-        prepared_by = VALUES(prepared_by);
-    `;
-    
-    const values = [
-      report_id, 
-      date, 
-      projectName, 
-      location, 
-      owner, 
-      activities, 
-      weatherAM, 
-      weatherPM, 
-      JSON.stringify(manpower), 
-      JSON.stringify(selectedEquipment), 
-      visitors, 
-      remarks, 
-      preparedBy
-    ];
-  
-    db.query(query, values, (err, result) => {
-      if (err) {
-        console.error("❌ Error saving daily site report:", err);
-        return res.status(500).json({ error: "Error saving daily site report" });
-      }
-  
-      console.log("Daily site report saved successfully:", result);
-      res.json({ message: "Report submitted successfully", result });
-    });
-  };
-  
+    console.log("Daily site report saved successfully:", result);
+    res.json({ message: "Report submitted successfully", result });
+  });
+};
+
 
 
 module.exports = {
-    getProjectDetailsForDailyReport, getWorkerRoles, getEquipment
+    getProjectDetailsForDailyReport, getWorkerRoles, getEquipment, submitDailySiteReport
 };

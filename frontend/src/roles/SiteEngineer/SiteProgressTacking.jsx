@@ -9,9 +9,11 @@ import VisitorSelector from "../SiteEngineer/DailyProgressReport/VisitorSelector
 import RemarksInput from "../SiteEngineer/DailyProgressReport/RemarksInput";
 import Modal from "../SiteEngineer/DailyProgressReport/Modal";
 
+
 const SiteProgressTracking = () => {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [projectName, setProjectName] = useState("");
+  const [projectId, setProjectId] = useState(null);
   const [location, setLocation] = useState("");
   const [owner, setOwner] = useState("");
   const [activities, setActivities] = useState("");
@@ -26,28 +28,24 @@ const SiteProgressTracking = () => {
   const [preparedBy, setPreparedBy] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [projects, setProjects] = useState([]);
-  const [manpower, setManpower] = useState({
-    "Site Engineer": 0,
-    "Project Manager": 0,
-    "Safety Engineer": 0,
-    "Foreman": 0,
-    "Inspector": 0,
-    "Surveyor": 0,
-  });
+  const [manpower, setManpower] = useState({});
+  const [equipmentCounts, setEquipmentCounts] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         const response = await fetch("http://localhost:5000/api/daily-site-report/projects");
         const data = await response.json();
-
         if (data.projects && data.projects.length > 0) {
-          const first = data.projects[0];
           setProjects(data.projects);
-          setProjectName(first.project_name);
-          setLocation(first.location);
-          setOwner(first.owner);
-          setPreparedBy(first.prepared_by);
+          const firstProject = data.projects[0];
+          setProjectName(firstProject.project_name);
+          setProjectId(firstProject.project_id);
+          setLocation(firstProject.location);
+          setOwner(firstProject.owner);
+          setPreparedBy(firstProject.prepared_by);
         }
       } catch (error) {
         console.error("Error fetching projects:", error);
@@ -56,105 +54,126 @@ const SiteProgressTracking = () => {
     fetchProjects();
   }, []);
 
+
+  useEffect(() => {
+    const stored = {
+      weatherAM: localStorage.getItem("weatherAM"),
+      weatherPM: localStorage.getItem("weatherPM"),
+      activities: localStorage.getItem("activities"),
+      manpower: localStorage.getItem("manpower"),
+      selectedEquipment: localStorage.getItem("selectedEquipment"),
+      newEquipment: localStorage.getItem("newEquipment"),
+    };
+    if (stored.weatherAM) setWeatherAM(stored.weatherAM);
+    if (stored.weatherPM) setWeatherPM(stored.weatherPM);
+    if (stored.activities) setActivities(stored.activities);
+    if (stored.manpower) setManpower(JSON.parse(stored.manpower));
+    if (stored.selectedEquipment) setSelectedEquipment(JSON.parse(stored.selectedEquipment));
+    if (stored.newEquipment) setNewEquipment(stored.newEquipment);
+  }, []);
+
+
+  useEffect(() => {
+    localStorage.setItem("weatherAM", weatherAM);
+    localStorage.setItem("weatherPM", weatherPM);
+    localStorage.setItem("activities", activities);
+    localStorage.setItem("manpower", JSON.stringify(manpower));
+    localStorage.setItem("selectedEquipment", JSON.stringify(selectedEquipment));
+    localStorage.setItem("newEquipment", newEquipment);
+  }, [weatherAM, weatherPM, activities, manpower, selectedEquipment, newEquipment]);
+
+
+  useEffect(() => {
+    const valid = projectName && activities && weatherAM && weatherPM && validateManpower();
+    setIsFormValid(valid);
+  }, [projectName, activities, weatherAM, weatherPM, manpower]);
+
+
   const validateManpower = () => {
     return Object.values(manpower).some((count) => count > 0);
   };
 
-  // const toggleEquipment = (item) => {
-  //   if (item === "Other") {
-  //     if (selectedEquipment.includes("Other")) {
-  //       setSelectedEquipment((prev) => prev.filter((eq) => eq !== "Other"));
-  //       setNewEquipment("");
-  //     } else {
-  //       setSelectedEquipment((prev) => [...prev, "Other"]);
-  //     }
-  //   } else {
-  //     setSelectedEquipment((prev) =>
-  //       prev.includes(item)
-  //         ? prev.filter((eq) => eq !== item)
-  //         : [...prev, item]
-  //     );
-  //   }
-  // };
-
+ const Modal = ({ summaryData, onClose, onConfirm }) => {
+  // Ensure summaryData is an array or set a fallback in case it's not
+  if (!Array.isArray(summaryData)) {
+    summaryData = []; // Set to an empty array if it's not
+  }
+};
   const handleProjectChange = (e) => {
     const selectedProjectName = e.target.value;
     setProjectName(selectedProjectName);
-
-    const selected = projects.find(p => p.project_name === selectedProjectName);
-    if (selected) {
-      setLocation(selected.location);
-      setOwner(selected.owner);
-      setPreparedBy(selected.prepared_by);
+ 
+    const selectedProject = projects.find((p) => p.project_name === selectedProjectName);
+   
+    if (selectedProject) {
+      setProjectId(selectedProject.project_id);
+      setLocation(selectedProject.location);
+      setOwner(selectedProject.owner);
+      setPreparedBy(selectedProject.prepared_by);
     }
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!projectName || activities === "" || weatherAM === "" || weatherPM === "" || !validateManpower()) {
-      setIsSubmitted(true);
+  
+    if (!projectId) {
+      console.error("❌ Project ID is not defined!");
       return;
     }
-
-    const filteredManpower = Object.entries(manpower)
-      .filter(([_, count]) => count > 0)
-      .map(([role, count]) => `${role}: ${count}`)
-      .join(", ");
-
-    const equipmentText = [
-      ...selectedEquipment.filter((eq) => eq !== "Other"),
-      newEquipment.trim() ? newEquipment : null,
-    ]
-      .filter(Boolean)
-      .join(", ") || "None";
-
-    const summary = [
-      ["Date", date],
-      ["Project Name", projectName],
-      ["Location", location],
-      ["Owner", owner],
-      ["Activities", activities],
-      ["Weather AM", weatherAM],
-      ["Weather PM", weatherPM],
-      ["Manpower", filteredManpower],
-      ["Selected Equipment", equipmentText],
-      ["Visitors", visitors],
-      ["Remarks", remarks],
-      ["Prepared By", preparedBy],
-    ];
-
-    setSummaryData(summary);
-    setIsModalOpen(true);
-
-    const siteReportData = {
+  
+    const reportData = {
       date,
-      projectName,
-      location,
-      owner,
+      projectId,
       activities,
       weatherAM,
       weatherPM,
       manpower,
-      selectedEquipment,
-      newEquipment,
+      selectedEquipment: JSON.stringify(equipmentCounts),
       visitors,
       remarks,
       preparedBy,
     };
-
-    fetch("/api/daily-site-report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(siteReportData),
-    })
-      .then((res) => res.json())
-      .then((data) => console.log("Saved:", data))
-      .catch((err) => console.error("Save error:", err));
+  
+    // Log data before sending it to the backend
+    console.log('Project ID:', projectId);
+    console.log('Selected Equipment (before stringify):', selectedEquipment);  // Log selected equipment
+    console.log('Manpower:', manpower);  // Log manpower data
+    console.log('Report Data:', reportData);
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/daily-site-report/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reportData),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error from backend:", errorData);
+        throw new Error('Failed to submit the report');
+      }
+  
+      const result = await response.json();
+      console.log("Response from backend:", result);  // Log the backend response
+  
+      // Open Modal after successful submission
+      setSummaryData(result);
+      setIsModalOpen(true);
+  
+    } catch (error) {
+      console.error('❌ Error submitting report:', error);
+    }
   };
+  
+
+  const handleButtonClick = (e) => {
+    e.preventDefault(); // Prevent form submission
+  };
+  
 
   const handleConfirm = () => {
     alert("Report complete!");
+    localStorage.clear();
+    setDate(new Date().toISOString().split("T")[0]);
     setProjectName("");
     setLocation("");
     setOwner("");
@@ -166,10 +185,10 @@ const SiteProgressTracking = () => {
     setSelectedEquipment([]);
     setNewEquipment("");
     setManpower(Object.keys(manpower).reduce((acc, role) => ({ ...acc, [role]: 0 }), {}));
-    setIsSubmitted(false);
     setSummaryData(null);
     setIsModalOpen(false);
   };
+
 
   return (
     <div className="max-w-3xl mx-auto p-6 bg-white shadow-lg rounded-lg">
@@ -178,7 +197,7 @@ const SiteProgressTracking = () => {
         <div className="grid grid-cols-2 gap-4">
           <ProjectSelector projectName={projectName} onChange={handleProjectChange} projects={projects} />
           <DateInput date={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
+          </div>
 
         {isSubmitted && !projectName && (
           <span className="text-red-600">Project cannot be empty.</span>
@@ -204,44 +223,19 @@ const SiteProgressTracking = () => {
           onWeatherPMChange={(e) => setWeatherPM(e.target.value)}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <span className="text-red-600">
-            {isSubmitted && weatherAM === "" && "Weather AM cannot be empty."}
-          </span>
-          <span className="text-red-600">
-            {isSubmitted && weatherPM === "" && "Weather PM cannot be empty."}
-          </span>
-        </div>
-
         <ActivitiesInput activities={activities} onChange={(e) => setActivities(e.target.value)} />
-        {isSubmitted && activities === "" && (
-          <span className="text-red-600">Activities cannot be empty.</span>
-        )}
-
         <div className="flex space-x-4">
-          <ManpowerInput
-            manpower={manpower}
-            incrementManpower={(role, e) => {
-              e.preventDefault();
-              setManpower((prev) => ({ ...prev, [role]: prev[role] + 1 }));
-            }}
-            decrementManpower={(role, e) => {
-              e.preventDefault();
-              setManpower((prev) => ({ ...prev, [role]: Math.max(prev[role] - 1, 0) }));
-            }}
-          />
-
-          <EquipmentInput
-            selectedEquipment={selectedEquipment}
-            // toggleEquipment={toggleEquipment}
-            newEquipment={newEquipment}
-            setNewEquipment={setNewEquipment}
-          />
+        <ManpowerInput manpower={manpower} setManpower={setManpower} handleButtonClick={handleButtonClick} />
+        <EquipmentInput
+    selectedEquipment={selectedEquipment}
+    onEquipmentChange={setSelectedEquipment}
+    equipmentCounts={equipmentCounts}
+    onEquipmentCountsChange={setEquipmentCounts}
+    newEquipment={newEquipment}
+    setNewEquipment={setNewEquipment}
+    handleButtonClick={handleButtonClick}
+/>
         </div>
-
-        {isSubmitted && !validateManpower() && (
-          <span className="text-red-600">At least one manpower role must be assigned.</span>
-        )}
 
         <label className="block font-medium">Select Visitors:</label>
         <VisitorSelector visitors={visitors} onChange={(e) => setVisitors(e.target.value)} />
@@ -253,7 +247,11 @@ const SiteProgressTracking = () => {
           <input type="text" value={preparedBy} readOnly className="w-full border p-2 rounded bg-gray-100" />
         </div>
 
-        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        <button
+          type="submit"
+          className={`w-full py-2 rounded text-white ${isFormValid ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}`}
+          disabled={!isFormValid}
+        >
           Submit Report
         </button>
 
