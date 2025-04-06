@@ -26,6 +26,8 @@ import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
 
 
+
+
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 
 import UserManagement from "./roles/Admin/UserManagement.jsx";
@@ -66,6 +68,7 @@ import BOMTable from "./roles/Admin/Estimation/BOMTable.jsx";
 
 // Projects CRUD
 import ProjectsCRUD from "./roles/Admin/Project Management/ProjectsCRUD.jsx";
+import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 
 
 export default function App() {
@@ -98,7 +101,10 @@ export default function App() {
               <Route path="/ProjectsCRUD" element={<ProjectsCRUD />} />
               <Route path="/Estimation/BOMTable/:bomId" element={<BOMTable />} />  {/* Updated to include :bomId */}
               <Route path="/Reports" element={<AdminReports />} />       
-              <Route path="/MaterialRequestManagement" element={<MaterialRequestManagement />} />          
+              <Route path="/MaterialRequestManagement" element={<MaterialRequestManagement />} />       
+
+
+              <Route path="/AdminSiteReports" element={<AdminSiteReport/>}   /> 
               
             </Route>
 

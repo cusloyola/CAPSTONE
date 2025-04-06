@@ -34,6 +34,7 @@ const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
 const bomRoutes = require("./routes/bomRoutes");
 const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
 
+const adminSiteReport = require("./routes/adminSiteReportRoutes");
 
 
 // ✅ Use Routes
@@ -54,6 +55,10 @@ app.use('/api/events', eventRoutes);
 app.use("/api/bom", bomRoutes);
 
 app.use("/api/daily-site-report", dailySiteReportRoutes);
+
+
+app.use("/api/admin-site-reports", adminSiteReport);
+
 
 
 

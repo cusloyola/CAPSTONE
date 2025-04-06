@@ -32,6 +32,8 @@ const navItems = [
         { name: "Status Updates", path: "", pro: false }, 
         { name: "Calendar", path: "/AdminCalendar", pro: false },
         { name: "CRUD Projects", path: "/ProjectsCRUD", pro: false },
+        { name: "Daily Site Reports", path: "/AdminSiteReports", pro: false },
+
       ],
 
   },
