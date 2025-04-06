@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PageMeta from '../../components/common/PageMeta';
 import axios from 'axios';
 
-const MaterialRequestHistory = () => {
+const MaterialRequestManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,18 +33,31 @@ const MaterialRequestHistory = () => {
     request.items.some(item => item.item_name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const handleApprove = async (requestId) => {
+    try {
+      await axios.put(`http://localhost:5000/api/request-materials/${requestId}/approve`);
+      // Update the requests state to reflect the approval
+      setRequests(requests.map(req => 
+        req.request_id === requestId ? { ...req, status: 'approved' } : req
+      ));
+    } catch (err) {
+      console.error('Error approving request:', err);
+      setError('Failed to approve request.');
+    }
+  };
+
   if (loading) return <p>Loading request history...</p>;
   if (error) return <p>Error: {error}</p>;
 
   return (
     <>
       <PageMeta
-        title="Material Request History"
-        description="View all material requests submitted"
+        title="Material Request Management"
+        description="Manage all material requests submitted"
       />
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h3 className="text-xl font-semibold mb-4">Material Request History</h3>
+        <h3 className="text-xl font-semibold mb-4">Material Request Management</h3>
 
         <input
           type="text"
@@ -73,9 +86,7 @@ const MaterialRequestHistory = () => {
               </div>
               <p className="text-sm mt-2">Notes: {request.notes}</p>
               {request.status === 'pending' ? (
-                <button disabled className="mt-2 bg-yellow-300 text-yellow-800 font-semibold px-4 py-2 rounded-full cursor-not-allowed">
-                  Pending
-                </button>
+                <p className="mt-2 text-yellow-500 font-semibold">Pending</p>
               ) : request.status === 'approved' ? (
                 <p className="mt-2 text-green-600 font-semibold">Approved</p>
               ) : (
@@ -95,6 +106,7 @@ const MaterialRequestHistory = () => {
               <th className="p-3 border-b">Items</th>
               <th className="p-3 border-b">Notes</th>
               <th className="p-3 border-b">Status</th>
+              <th className="p-3 border-b">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -115,13 +127,21 @@ const MaterialRequestHistory = () => {
                 <td className="p-3">{request.notes}</td>
                 <td className="p-3">
                   {request.status === 'pending' ? (
-                    <button disabled className="bg-yellow-300 text-yellow-800 font-semibold px-4 py-2 rounded-full cursor-not-allowed">
-                      Pending
-                    </button>
+                    <span className="text-yellow-500 font-semibold">Pending</span>
                   ) : request.status === 'approved' ? (
                     <span className="text-green-600 font-semibold">Approved</span>
                   ) : (
                     <span>{request.status}</span>
+                  )}
+                </td>
+                <td className="p-3">
+                  {request.status === 'pending' && (
+                    <button 
+                      onClick={() => handleApprove(request.request_id)} 
+                      className="bg-green-500 text-white font-semibold px-4 py-2 rounded-full"
+                    >
+                      Approve
+                    </button>
                   )}
                 </td>
               </tr>
@@ -133,4 +153,4 @@ const MaterialRequestHistory = () => {
   );
 };
 
-export default MaterialRequestHistory;
+export default MaterialRequestManagement;

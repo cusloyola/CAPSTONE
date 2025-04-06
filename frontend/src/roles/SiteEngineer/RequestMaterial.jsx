@@ -13,6 +13,7 @@ const RequestMaterial = () => {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [requestError, setRequestError] = useState('');
 
   const projects = [
     {
@@ -98,20 +99,34 @@ const RequestMaterial = () => {
     setIsModalOpen(false);
   };
 
-  const submitRequest = () => {
-    console.log('Submitting request:', {
-      selectedProject,
-      urgency,
-      notes,
-      selectedMaterials,
-    });
+  const submitRequest = async () => {
+    setRequestError('');
+    try {
+      await axios.post('http://localhost:5000/api/request-materials/create', {
+        selectedProject,
+        urgency,
+        notes,
+        selectedMaterials: selectedMaterials.map(m => ({
+          item_id: m.item_id,
+          request_quantity: m.request_quantity,
+        })),
+      });
 
-    closeModal();
-    setSelectedMaterials([]);
-    setUrgency('');
-    setSelectedProject('');
-    setNotes('');
-    setRequestSent(true);
+      console.log('Request submitted successfully!');
+      closeModal();
+      setSelectedMaterials([]);
+      setUrgency('');
+      setSelectedProject('');
+      setNotes('');
+      setRequestSent(true);
+    } catch (err) {
+      console.error('Error submitting request:', err);
+      if (err.response && err.response.data && err.response.data.error) {
+        setRequestError(err.response.data.error);
+      } else {
+        setRequestError('Failed to submit request. Please try again.');
+      }
+    }
   };
 
   const isRequestInvalid =
@@ -308,6 +323,9 @@ const RequestMaterial = () => {
                 Cancel
               </button>
             </div>
+            {requestError && (
+              <p className="text-red-500 mt-2">{requestError}</p>
+            )}
           </div>
         </div>
       )}

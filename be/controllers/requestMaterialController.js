@@ -24,16 +24,17 @@ const getRequestMaterialItems = (req, res) => {
   );
 };
 
+
 const createRequestedMaterials = (req, res) => {
-  const { project_name, urgency, notes, selectedMaterials } = req.body;
+  const { selectedProject, urgency, notes, selectedMaterials } = req.body;
 
   console.log("Received request to create materials:", req.body); // Debugging log
 
-  if (!project_name || !urgency || !selectedMaterials || selectedMaterials.length === 0) {
+  if (!selectedProject || !urgency || !selectedMaterials || selectedMaterials.length === 0) {
     return res.status(400).json({ error: "Missing required fields." });
   }
 
-  // Input validation (example, add more as needed)
+  // Input validation for selectedMaterials
   if (!Array.isArray(selectedMaterials) || selectedMaterials.some(item => !item.item_id || !item.request_quantity)) {
     return res.status(400).json({ error: "Invalid selectedMaterials format." });
   }
@@ -46,7 +47,7 @@ const createRequestedMaterials = (req, res) => {
 
     db.query(
       "INSERT INTO requested_materials (project_name, urgency, notes) VALUES (?, ?, ?)",
-      [project_name, urgency, notes],
+      [selectedProject, urgency, notes],
       (err, requestResults) => {
         if (err) {
           console.error("❌ Error inserting requested materials:", err);
@@ -94,4 +95,119 @@ const createRequestedMaterials = (req, res) => {
   });
 };
 
-module.exports = { getRequestMaterialItems, createRequestedMaterials };
+
+// const getRequestedMaterialsHistory = (req, res) => {
+//   db.query(
+//     `SELECT 
+//       rm.request_id, 
+//       rm.project_name, 
+//       rm.urgency, 
+//       rm.notes, 
+//       rmi.item_id, 
+//       ii.item_name, 
+//       rmi.request_quantity 
+//     FROM requested_materials rm
+//     JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
+//     JOIN inventory_items ii ON rmi.item_id = ii.item_id
+//     ORDER BY rm.request_id`,
+//     (err, results) => {
+//       if (err) {
+//         console.error("❌ Error fetching requested materials history:", err);
+//         return res.status(500).json({ error: "Server error while fetching history" });
+//       }
+
+//       if (!results || results.length === 0) {
+//         console.warn("⚠️ No requested materials history found.");
+//         return res.status(404).json({ message: "No requested materials history found." });
+//       }
+
+//       const formattedResults = results.reduce((acc, row) => {
+//         const existingRequest = acc.find(item => item.request_id === row.request_id);
+//         if (existingRequest) {
+//           existingRequest.items.push({
+//             item_id: row.item_id,
+//             item_name: row.item_name,
+//             request_quantity: row.request_quantity,
+//           });
+//         } else {
+//           acc.push({
+//             request_id: row.request_id,
+//             project_name: row.project_name,
+//             urgency: row.urgency,
+//             notes: row.notes,
+//             items: [{
+//               item_id: row.item_id,
+//               item_name: row.item_name,
+//               request_quantity: row.request_quantity,
+//             }],
+//           });
+//         }
+//         return acc;
+//       }, []);
+
+//       console.log("📌 Sending Requested Materials History Data:", formattedResults);
+//       return res.json(formattedResults);
+//     }
+//   );
+// };
+const getRequestedMaterialsHistory = (req, res) => {
+  db.query(
+    `SELECT 
+      rm.request_id, 
+      rm.project_name, 
+      rm.urgency, 
+      rm.notes, 
+      rm.is_approved, 
+      rm.request_date, 
+      rmi.item_id, 
+      ii.item_name, 
+      rmi.request_quantity 
+    FROM requested_materials rm
+    JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
+    JOIN inventory_items ii ON rmi.item_id = ii.item_id
+    ORDER BY rm.request_id`,
+    (err, results) => {
+      if (err) {
+        console.error("❌ Error fetching requested materials history:", err);
+        return res.status(500).json({ error: "Server error while fetching history" });
+      }
+
+      if (!results || results.length === 0) {
+        console.warn("⚠️ No requested materials history found.");
+        return res.status(404).json({ message: "No requested materials history found." });
+      }
+
+      const formattedResults = results.reduce((acc, row) => {
+        const existingRequest = acc.find(item => item.request_id === row.request_id);
+        if (existingRequest) {
+          existingRequest.items.push({
+            item_id: row.item_id,
+            item_name: row.item_name,
+            request_quantity: row.request_quantity,
+          });
+        } else {
+          acc.push({
+            request_id: row.request_id,
+            project_name: row.project_name,
+            urgency: row.urgency,
+            notes: row.notes,
+            status: row.is_approved === 0 ? 'pending' : 'approved', // Determine status
+            request_date: row.request_date, // include request date
+            items: [{
+              item_id: row.item_id,
+              item_name: row.item_name,
+              request_quantity: row.request_quantity,
+            }],
+          });
+        }
+        return acc;
+      }, []);
+
+      console.log("📌 Sending Requested Materials History Data:", formattedResults);
+      return res.json(formattedResults);
+    }
+  );
+};
+
+
+module.exports = { getRequestMaterialItems, createRequestedMaterials, getRequestedMaterialsHistory };

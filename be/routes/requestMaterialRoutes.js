@@ -1,8 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { getRequestMaterialItems, createRequestedMaterials } = require("../controllers/requestMaterialController"); // Adjust the path
+const { getRequestMaterialItems, createRequestedMaterials, getRequestedMaterialsHistory } = require("../controllers/requestMaterialController"); // Adjust the path
 
-router.get("/items", getRequestMaterialItems);
+
 router.post("/create", createRequestedMaterials);
+router.get("/items", getRequestMaterialItems);
+router.get("/history", getRequestedMaterialsHistory);
+
 
 module.exports = router;

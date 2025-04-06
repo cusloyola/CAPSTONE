@@ -61,8 +61,8 @@ const navItems = [
   },
   {
     icon: <GridIcon />,
-    name: "Material Request ",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    name: "Request Management ",
+    subItems: [{ name: "Manage Material Request", path: "/MaterialRequestManagement", pro: false }],
   },
   {
     icon: <GridIcon />,
