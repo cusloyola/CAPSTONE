@@ -7,6 +7,12 @@ const MaterialRequestManagement = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [requestToApprove, setRequestToApprove] = useState(null);
+  const [requestToReject, setRequestToReject] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -26,35 +32,50 @@ const MaterialRequestManagement = () => {
     fetchRequests();
   }, []);
 
-  const filteredRequests = requests.filter((request) =>
-    request.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.urgency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.items.some(item => item.item_name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredRequests = requests.filter(
+    (request) =>
+      request.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.urgency.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.items.some((item) => item.item_name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleApprove = async (requestId) => {
     try {
       await axios.put(`http://localhost:5000/api/request-materials/${requestId}/approve`);
-      // Update the requests state to reflect the approval
-      setRequests(requests.map(req => 
-        req.request_id === requestId ? { ...req, status: 'approved' } : req
-      ));
+      setRequests(requests.map((req) => (req.request_id === requestId ? { ...req, status: 'approved' } : req)));
+      setShowApproveModal(false);
+      setRequestToApprove(null);
+      setSuccessMessage('Material request successfully approved!');
+      setShowSuccessModal(true);
     } catch (err) {
       console.error('Error approving request:', err);
       setError('Failed to approve request.');
     }
   };
 
+  const handleDisapprove = async (requestId) => {
+    try {
+      await axios.put(`http://localhost:5000/api/request-materials/${requestId}/reject`);
+      setRequests(requests.map((req) => (req.request_id === requestId ? { ...req, status: 'rejected' } : req)));
+      setShowRejectModal(false);
+      setRequestToReject(null);
+      setSuccessMessage('Material request successfully rejected!');
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error('Error rejecting request:', err);
+      setError('Failed to reject request.');
+    }
+  };
+
   if (loading) return <p>Loading request history...</p>;
   if (error) return <p>Error: {error}</p>;
 
+  const lastThreeRequests = filteredRequests.slice(-3);
+
   return (
     <>
-      <PageMeta
-        title="Material Request Management"
-        description="Manage all material requests submitted"
-      />
+      <PageMeta title="Material Request Management" description="Manage all material requests submitted" />
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h3 className="text-xl font-semibold mb-4">Material Request Management</h3>
@@ -67,9 +88,9 @@ const MaterialRequestManagement = () => {
           className="w-full p-2 border rounded mb-4"
         />
 
-        {/* Card View Layout */}
+        <p className="font-semibold mb-2">Top 3 Recent Material Requests:</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredRequests.map((request) => (
+          {lastThreeRequests.map((request) => (
             <div key={request.request_id} className="border rounded-lg p-4 shadow-md">
               <h4 className="font-semibold">{request.project_name}</h4>
               <p className="text-sm text-gray-600">Urgency: {request.urgency}</p>
@@ -84,19 +105,21 @@ const MaterialRequestManagement = () => {
                   ))}
                 </ul>
               </div>
-              <p className="text-sm mt-2">Notes: {request.notes}</p>
-              {request.status === 'pending' ? (
-                <p className="mt-2 text-yellow-500 font-semibold">Pending</p>
-              ) : request.status === 'approved' ? (
-                <p className="mt-2 text-green-600 font-semibold">Approved</p>
-              ) : (
-                <p className="text-sm mt-2">Status: {request.status}</p>
-              )}
+              <p className="text-sm mt-2">Notes: {request.notes || 'N/A'}</p>
+              <p className="text-sm mt-2">
+                Status:
+                {request.status === 'pending' ? (
+                  <span className="bg-yellow-400 text-black px-3 py-1 rounded-full font-semibold">Pending</span>
+                ) : request.status === 'approved' ? (
+                  <span className="bg-green-500 text-black px-3 py-1 rounded-full font-semibold">Approved</span>
+                ) : (
+                  <span className="bg-red-500 text-black px-3 py-1 rounded-full font-semibold">Rejected</span>
+                )}
+              </p>
             </div>
           ))}
         </div>
 
-        {/* Table View Layout (Optional) */}
         <table className="w-full border-collapse mt-6">
           <thead>
             <tr className="bg-gray-100 text-left">
@@ -124,24 +147,62 @@ const MaterialRequestManagement = () => {
                     ))}
                   </ul>
                 </td>
-                <td className="p-3">{request.notes}</td>
+                <td className="p-3">{request.notes || 'N/A'}</td>
                 <td className="p-3">
-                  {request.status === 'pending' ? (
-                    <span className="text-yellow-500 font-semibold">Pending</span>
-                  ) : request.status === 'approved' ? (
-                    <span className="text-green-600 font-semibold">Approved</span>
-                  ) : (
-                    <span>{request.status}</span>
-                  )}
+                {request.status === 'pending' ? (
+  <span className="bg-yellow-500 text-black px-4 py-1 rounded-full font-semibold min-w-[90px] text-center inline-block">Pending</span>
+) : request.status === 'approved' ? (
+  <span className="bg-green-500 text-black px-4 py-1 rounded-full font-semibold min-w-[90px] text-center inline-block">Approved</span>
+) : (
+  <span className="bg-red-500 text-black px-4 py-1 rounded-full font-semibold min-w-[90px] text-center inline-block">Rejected</span>
+)}
                 </td>
                 <td className="p-3">
-                  {request.status === 'pending' && (
-                    <button 
-                      onClick={() => handleApprove(request.request_id)} 
-                      className="bg-green-500 text-white font-semibold px-4 py-2 rounded-full"
-                    >
-                      Approve
-                    </button>
+                  {request.status === 'pending' ? (
+                    <>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <button
+                          onClick={() => {
+                            setRequestToApprove(request.request_id);
+                            setShowApproveModal(true);
+                          }}
+                          style={{
+                            width: '50px',
+                            padding: '8px 12px',
+                            backgroundColor: '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            flex: '1',
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRequestToReject(request.request_id);
+                            setShowRejectModal(true);
+                          }}
+                          style={{
+                            width: '50px',
+                            padding: '8px 12px',
+                            backgroundColor: '#e74c3c',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                            flex: '1',
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-gray-600 italic text-center block">No Further Actions</span>
                   )}
                 </td>
               </tr>
@@ -149,6 +210,51 @@ const MaterialRequestManagement = () => {
           </tbody>
         </table>
       </div>
+
+      {showApproveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <p>Do you want to approve this material request?</p>
+            <div className="mt-4 flex justify-end gap-4">
+              <button className="bg-green-600 text-white px-4 py-2 rounded font-bold" onClick={() => handleApprove(requestToApprove)}>
+                Yes
+              </button>
+              <button className="bg-red-600 text-white px-4 py-2 rounded font-bold" onClick={() => setShowApproveModal(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <p>Do you want to reject this material request?</p>
+            <div className="mt-4 flex justify-end gap-4">
+              <button className="bg-green-600 text-white px-4 py-2 rounded font-bold" onClick={() => handleDisapprove(requestToReject)}>
+                Yes
+              </button>
+              <button className="bg-red-600 text-white px-4 py-2 rounded font-bold" onClick={() => setShowRejectModal(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <p>{successMessage}</p>
+            <div className="mt-4 flex justify-end">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded font-bold" onClick={() => setShowSuccessModal(false)}>
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PageMeta from '../../components/common/PageMeta';
 import axios from 'axios';
 
-const MaterialRequestHistory = () => {
+const ViewRequestHistory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,22 +26,22 @@ const MaterialRequestHistory = () => {
     fetchRequests();
   }, []);
 
-  const filteredRequests = requests.filter((request) =>
-    request.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.urgency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.items.some(item => item.item_name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredRequests = requests.filter(
+    (request) =>
+      request.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.urgency.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.items.some((item) => item.item_name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   if (loading) return <p>Loading request history...</p>;
   if (error) return <p>Error: {error}</p>;
 
+  const lastThreeRequests = filteredRequests.slice(-3);
+
   return (
     <>
-      <PageMeta
-        title="Material Request History"
-        description="View all material requests submitted"
-      />
+      <PageMeta title="Material Request History" description="View material request history" />
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h3 className="text-xl font-semibold mb-4">Material Request History</h3>
@@ -54,9 +54,9 @@ const MaterialRequestHistory = () => {
           className="w-full p-2 border rounded mb-4"
         />
 
-        {/* Card View Layout */}
+        <p className="font-semibold mb-2">Recent Requests:</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredRequests.map((request) => (
+          {lastThreeRequests.map((request) => (
             <div key={request.request_id} className="border rounded-lg p-4 shadow-md">
               <h4 className="font-semibold">{request.project_name}</h4>
               <p className="text-sm text-gray-600">Urgency: {request.urgency}</p>
@@ -71,21 +71,21 @@ const MaterialRequestHistory = () => {
                   ))}
                 </ul>
               </div>
-              <p className="text-sm mt-2">Notes: {request.notes}</p>
-              {request.status === 'pending' ? (
-                <button disabled className="mt-2 bg-yellow-300 text-yellow-800 font-semibold px-4 py-2 rounded-full cursor-not-allowed">
-                  Pending
-                </button>
-              ) : request.status === 'approved' ? (
-                <p className="mt-2 text-green-600 font-semibold">Approved</p>
-              ) : (
-                <p className="text-sm mt-2">Status: {request.status}</p>
-              )}
+              <p className="text-sm mt-2">Notes: {request.notes || 'N/A'}</p>
+              <p className="text-sm mt-2">
+                Status:
+                {request.status === 'pending' ? (
+                  <span className="bg-yellow-500 text-black px-2 py-1 rounded-full ml-1 font-semibold">Pending</span>
+                ) : request.status === 'approved' ? (
+                  <span className="bg-green-500 text-black px-2 py-1 rounded-full ml-1 font-semibold">Approved</span>
+                ) : (
+                  <span className="bg-red-500 text-black px-2 py-1 rounded-full ml-1 font-semibold">Rejected</span>
+                )}
+              </p>
             </div>
           ))}
         </div>
 
-        {/* Table View Layout (Optional) */}
         <table className="w-full border-collapse mt-6">
           <thead>
             <tr className="bg-gray-100 text-left">
@@ -112,16 +112,14 @@ const MaterialRequestHistory = () => {
                     ))}
                   </ul>
                 </td>
-                <td className="p-3">{request.notes}</td>
+                <td className="p-3">{request.notes || 'N/A'}</td>
                 <td className="p-3">
                   {request.status === 'pending' ? (
-                    <button disabled className="bg-yellow-300 text-yellow-800 font-semibold px-4 py-2 rounded-full cursor-not-allowed">
-                      Pending
-                    </button>
+                    <span className="bg-yellow-500 text-black px-2 py-1 rounded-full font-semibold">Pending</span>
                   ) : request.status === 'approved' ? (
-                    <span className="text-green-600 font-semibold">Approved</span>
+                    <span className="bg-green-500 text-black px-2 py-1 rounded-full font-semibold">Approved</span>
                   ) : (
-                    <span>{request.status}</span>
+                    <span className="bg-red-500 text-black px-2 py-1 rounded-full font-semibold">Rejected</span>
                   )}
                 </td>
               </tr>
@@ -133,4 +131,4 @@ const MaterialRequestHistory = () => {
   );
 };
 
-export default MaterialRequestHistory;
+export default ViewRequestHistory;

@@ -1,6 +1,8 @@
 // requestMaterialController.js
 
 const db = require("../config/db"); // Adjust the path as needed
+const moment = require('moment');
+
 
 const getRequestMaterialItems = (req, res) => {
   db.query(
@@ -96,60 +98,6 @@ const createRequestedMaterials = (req, res) => {
 };
 
 
-// const getRequestedMaterialsHistory = (req, res) => {
-//   db.query(
-//     `SELECT 
-//       rm.request_id, 
-//       rm.project_name, 
-//       rm.urgency, 
-//       rm.notes, 
-//       rmi.item_id, 
-//       ii.item_name, 
-//       rmi.request_quantity 
-//     FROM requested_materials rm
-//     JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
-//     JOIN inventory_items ii ON rmi.item_id = ii.item_id
-//     ORDER BY rm.request_id`,
-//     (err, results) => {
-//       if (err) {
-//         console.error("❌ Error fetching requested materials history:", err);
-//         return res.status(500).json({ error: "Server error while fetching history" });
-//       }
-
-//       if (!results || results.length === 0) {
-//         console.warn("⚠️ No requested materials history found.");
-//         return res.status(404).json({ message: "No requested materials history found." });
-//       }
-
-//       const formattedResults = results.reduce((acc, row) => {
-//         const existingRequest = acc.find(item => item.request_id === row.request_id);
-//         if (existingRequest) {
-//           existingRequest.items.push({
-//             item_id: row.item_id,
-//             item_name: row.item_name,
-//             request_quantity: row.request_quantity,
-//           });
-//         } else {
-//           acc.push({
-//             request_id: row.request_id,
-//             project_name: row.project_name,
-//             urgency: row.urgency,
-//             notes: row.notes,
-//             items: [{
-//               item_id: row.item_id,
-//               item_name: row.item_name,
-//               request_quantity: row.request_quantity,
-//             }],
-//           });
-//         }
-//         return acc;
-//       }, []);
-
-//       console.log("📌 Sending Requested Materials History Data:", formattedResults);
-//       return res.json(formattedResults);
-//     }
-//   );
-// };
 const getRequestedMaterialsHistory = (req, res) => {
   db.query(
     `SELECT 
@@ -191,7 +139,13 @@ const getRequestedMaterialsHistory = (req, res) => {
             project_name: row.project_name,
             urgency: row.urgency,
             notes: row.notes,
-            status: row.is_approved === 0 ? 'pending' : 'approved', // Determine status
+            // status: row.is_approved === 0 ? 'pending' : 'approved', 
+            status:
+            row.is_approved === 1
+              ? 'approved'
+              : row.is_approved === 2
+              ? 'rejected'
+              : 'pending',
             request_date: row.request_date, // include request date
             items: [{
               item_id: row.item_id,
@@ -209,5 +163,45 @@ const getRequestedMaterialsHistory = (req, res) => {
   );
 };
 
+const approveRequest = (req, res) => {
+  const requestId = req.params.requestId;
+  const approvedBy = 'Admin'; // Or get from session/auth
+  const approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
 
-module.exports = { getRequestMaterialItems, createRequestedMaterials, getRequestedMaterialsHistory };
+  db.query(
+    'UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?',
+    [approvedBy, approvedAt, requestId],
+    (err, results) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to approve request' });
+      }
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      res.json({ message: 'Request approved successfully' });
+    }
+  );
+};
+
+const rejectRequest = (req, res) => {
+  const requestId = req.params.requestId;
+
+  db.query(
+    'UPDATE requested_materials SET is_approved = 2 WHERE request_id = ?', // 2 represents rejected
+    [requestId],
+    (err, results) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to reject request' });
+      }
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      res.json({ message: 'Request rejected successfully' });
+    }
+  );
+};
+
+
+module.exports = { getRequestMaterialItems, createRequestedMaterials, getRequestedMaterialsHistory, approveRequest, rejectRequest };
