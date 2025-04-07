@@ -22,10 +22,11 @@ const createProject = (req, res) => {
     budget,
     actual_cost,
     progress_percent,
-    client_id
+    client_id // new client_id field
+
   } = req.body;
 
-
+  // Validate the required fields
   if (
     !project_name ||
     !location ||
@@ -36,7 +37,9 @@ const createProject = (req, res) => {
     !budget ||
     !actual_cost ||
     !progress_percent ||
-    !client_id
+    !client_id // ensure client_id is provided
+
+
   ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }

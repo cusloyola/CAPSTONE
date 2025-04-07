@@ -71,6 +71,11 @@ import ProjectsCRUD from "./roles/Admin/Project Management/ProjectsCRUD.jsx";
 import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
 import ClientManagement from "./roles/Admin/ClientManagement.jsx";
+import FilePage from "./roles/Admin/File Management/FilePage.jsx";
+import FolderPage from "./roles/Admin/File Management/FolderPage.jsx";
+import UploadDocument from "./roles/Admin/File Management/UploadDocument.jsx";
+import SubFolderPage from "./roles/Admin/File Management/SubFolderPage.jsx";
+
 
 
 export default function App() {
@@ -109,6 +114,12 @@ export default function App() {
               <Route path="/AdminSiteReports" element={<AdminSiteReport/>}   /> 
               <Route path="/AdminFileManagement" element={<AdminFileManagement/>} />
               <Route path="/ClientManagement" element={<ClientManagement/>} />
+
+              <Route path="/" element={<FilePage />} />
+<Route path="/clients/:clientId/folders" element={<FolderPage />} />
+<Route path="/clients/:clientId/folders/:folderId" element={<SubFolderPage />} />
+<Route path="/clients/:clientId/folders/:folderId/upload" element={<UploadDocument />} />
+
             </Route>
 
 
@@ -120,7 +131,7 @@ export default function App() {
               <Route path="/ViewRequestHistory" element={<MaterialRequestHistory />} />
 
             </Route>
-            <Route element={<ProtectedRoute allowedRoles={["safetyengineer"]} />}>
+            <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
             </Route>
 

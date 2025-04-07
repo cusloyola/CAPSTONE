@@ -12,7 +12,6 @@ import Button from "../../../components/ui/button/Button";
 import ProjectModal from "./ProjectModal";
 
 const API_URL = "http://localhost:5000/api/projects";
-const CLIENTS_API_URL = "http://localhost:5000/api/clients"; // Assuming this endpoint exists to fetch clients
 
 export default function ProjectTable() {
   const [projectData, setProjectData] = useState([]);
@@ -38,30 +37,22 @@ export default function ProjectTable() {
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [projectsResponse, clientsResponse] = await Promise.all([
-          fetch(API_URL),
-          fetch(CLIENTS_API_URL),
-        ]);
 
-        if (!projectsResponse.ok || !clientsResponse.ok) throw new Error("Failed to fetch data");
-
-        const projectsData = await projectsResponse.json();
-        const clientsData = await clientsResponse.json();
-
-        setProjectData(projectsData);
-        setClients(clientsData);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchProjects();
   }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setProjectData(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -85,7 +76,6 @@ export default function ProjectTable() {
     if (!form.end_date) errors.end_date = "End date is required.";
     if (!form.status) errors.status = "Status is required.";
     if (!form.budget || isNaN(form.budget)) errors.budget = "Valid budget is required.";
-    if (!form.client_id) errors.client_id = "Client is required."; // Add client validation
     return errors;
   };
 
@@ -135,15 +125,21 @@ export default function ProjectTable() {
       const responseText = await response.text();
       console.log("Response:", response.status, responseText);
 
-      if (!response.ok) {
-        throw new Error("Failed to submit form");
-      }
 
-      // Refresh data after save
-      fetchProjects();
-      onClose(); // <-- You might still need to define this if it's not declared
-    } catch (err) {
-      console.error("Submission error:", err.message);
+      setIsModalOpen(false);
+      setForm({
+        project_name: "",
+        location: "",
+        owner: "",
+        start_date: "",
+        end_date: "",
+        status: "",
+        budget: "",
+      });
+      setFormErrors({});
+      fetchProjects(); // Refresh table
+    } catch (error) {
+      alert(error.message);
     }
   };
 
@@ -237,13 +233,83 @@ export default function ProjectTable() {
       {/* Confirmation Modal */}
       <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} className="fixed z-50 inset-0 overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4">
-          <DialogPanel className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
-            <DialogTitle className="text-lg font-semibold mb-4">Confirm Deletion</DialogTitle>
-            <p className="mb-4 text-gray-600">Are you sure you want to delete this project?</p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
-              <Button onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700">Delete</Button>
-            </div>
+          <DialogPanel className="bg-white p-6 rounded-lg max-w-lg w-full shadow-lg">
+            <DialogTitle className="text-lg font-semibold mb-4">Create New Project</DialogTitle>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {[
+                { label: "Project Name", name: "project_name" },
+                { label: "Location", name: "location" },
+                { label: "Owner", name: "owner" },
+              ].map(({ label, name }) => (
+                <div key={name}>
+                  <label className="block font-medium">{label}</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded"
+                    value={form[name]}
+                    onChange={(e) => setForm({ ...form, [name]: e.target.value })}
+                  />
+                  {formErrors[name] && <p className="text-red-500 text-sm">{formErrors[name]}</p>}
+                </div>
+              ))}
+
+              <div>
+                <label className="block font-medium">Start Date</label>
+                <input
+                  type="date"
+                  className="w-full p-2 border rounded"
+                  value={form.start_date}
+                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                />
+                {formErrors.start_date && <p className="text-red-500 text-sm">{formErrors.start_date}</p>}
+              </div>
+
+              <div>
+                <label className="block font-medium">End Date</label>
+                <input
+                  type="date"
+                  className="w-full p-2 border rounded"
+                  value={form.end_date}
+                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                />
+                {formErrors.end_date && <p className="text-red-500 text-sm">{formErrors.end_date}</p>}
+              </div>
+
+              <div>
+                <label className="block font-medium">Status</label>
+                <select
+                  className="w-full p-2 border rounded"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                >
+                  <option value="">Select status</option>
+                  <option value="Planned">Planned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                {formErrors.status && <p className="text-red-500 text-sm">{formErrors.status}</p>}
+              </div>
+
+              <div>
+                <label className="block font-medium">Budget (₱)</label>
+                <input
+                  type="number"
+                  className="w-full p-2 border rounded"
+                  value={form.budget}
+                  onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                />
+                {formErrors.budget && <p className="text-red-500 text-sm">{formErrors.budget}</p>}
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Submit</Button>
+              </div>
+            </form>
+
+      
           </DialogPanel>
         </div>
       </Dialog>
@@ -318,4 +384,3 @@ export default function ProjectTable() {
       </div>
     </div>
   );
-}

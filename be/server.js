@@ -38,6 +38,10 @@ const adminSiteReport = require("./routes/adminSiteReportRoutes");
 const clientRoutes = require("./routes/clientRoutes"); // Import the client routes
 
 
+const subclientRoutes = require("./routes/subclientRoutes");
+const folderRoutes = require("./routes/folderRoutes");
+const documentRoutes = require("./routes/documentRoutes");
+
 // ✅ Use Routes
 app.use("/api/request-materials", requestMaterialRoutes); 
 app.use("/api/user-accounts", userManagementController);
@@ -60,6 +64,17 @@ app.use("/api/daily-site-report", dailySiteReportRoutes);
 
 app.use("/api/admin-site-reports", adminSiteReport);
 app.use("/api/clients", clientRoutes);
+
+
+
+app.use("/api/subclients", subclientRoutes);
+
+
+
+app.use("/api/folders", folderRoutes);
+
+
+app.use("/api/documents", documentRoutes);
 
 
 

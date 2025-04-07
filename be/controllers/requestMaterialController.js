@@ -166,23 +166,87 @@ const getRequestedMaterialsHistory = (req, res) => {
 
 const approveRequest = (req, res) => {
   const requestId = req.params.requestId;
-  const approvedBy = 'Admin'; 
+  const approvedBy = 'Admin';
   const approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
 
-  db.query(
-    'UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?',
-    [approvedBy, approvedAt, requestId],
-    (err, results) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Failed to approve request' });
-      }
-      if (results.affectedRows === 0) {
-        return res.status(404).json({ error: 'Request not found' });
-      }
-      res.json({ message: 'Request approved successfully' });
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error('Database transaction error:', err);
+      return res.status(500).json({ error: 'Database transaction error.' });
     }
-  );
+
+    db.query(
+      'UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?',
+      [approvedBy, approvedAt, requestId],
+      (err, results) => {
+        if (err) {
+          console.error('Database error:', err);
+          return db.rollback(() => {
+            return res.status(500).json({ error: 'Failed to approve request' });
+          });
+        }
+        if (results.affectedRows === 0) {
+          return db.rollback(() => {
+            return res.status(404).json({ error: 'Request not found' });
+          });
+        }
+
+        db.query(
+          'SELECT item_id, request_quantity FROM requested_material_items WHERE request_id = ?',
+          [requestId],
+          (err, itemsResults) => {
+            if (err) {
+              console.error('Database error:', err);
+              return db.rollback(() => {
+                return res.status(500).json({ error: 'Failed to fetch items' });
+              });
+            }
+
+            if (!itemsResults || itemsResults.length === 0) {
+              return db.rollback(() => {
+                return res.status(404).json({ error: 'No items found for request' });
+              });
+            }
+
+            const updateStockQueries = itemsResults.map(item => {
+              return new Promise((resolve, reject) => {
+                db.query(
+                  'UPDATE inventory_items SET stock_quantity = stock_quantity - ? WHERE item_id = ?',
+                  [item.request_quantity, item.item_id],
+                  (err, updateResults) => {
+                    if (err) {
+                      reject(err);
+                    } else {
+                      resolve(updateResults);
+                    }
+                  }
+                );
+              });
+            });
+
+            Promise.all(updateStockQueries)
+              .then(() => {
+                db.commit((err) => {
+                  if (err) {
+                    console.error('Database transaction error:', err);
+                    return db.rollback(() => {
+                      return res.status(500).json({ error: 'Error completing transaction.' });
+                    });
+                  }
+                  res.json({ message: 'Request approved and stock updated successfully' });
+                });
+              })
+              .catch(err => {
+                console.error('Database error:', err);
+                return db.rollback(() => {
+                  return res.status(500).json({ error: 'Failed to update stock' });
+                });
+              });
+          }
+        );
+      }
+    );
+  });
 };
 
 const rejectRequest = (req, res) => {
