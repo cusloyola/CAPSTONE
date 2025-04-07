@@ -35,6 +35,7 @@ const bomRoutes = require("./routes/bomRoutes");
 const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
+const clientRoutes = require("./routes/clientRoutes"); // Import the client routes
 
 
 // ✅ Use Routes
@@ -58,6 +59,7 @@ app.use("/api/daily-site-report", dailySiteReportRoutes);
 
 
 app.use("/api/admin-site-reports", adminSiteReport);
+app.use("/api/clients", clientRoutes);
 
 
 

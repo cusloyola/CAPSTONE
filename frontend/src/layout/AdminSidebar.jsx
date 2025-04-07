@@ -33,6 +33,7 @@ const navItems = [
         { name: "Calendar", path: "/AdminCalendar", pro: false },
         { name: "CRUD Projects", path: "/ProjectsCRUD", pro: false },
         { name: "Daily Site Reports", path: "/AdminSiteReports", pro: false },
+        { name: "Clients", path: "/ClientManagement", pro: false },
 
       ],
 
@@ -69,7 +70,7 @@ const navItems = [
   {
     icon: <GridIcon />,
     name: "Document Management",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    subItems: [{ name: "File Manaegement", path: "/AdminFileManagement", pro: false }],
   },
   {
     icon: <GridIcon />,

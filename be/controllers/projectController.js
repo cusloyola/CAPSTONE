@@ -11,8 +11,6 @@ const getAllProjects = (req, res) => {
     res.json(results);
   });
 };
-
-// Add a new project
 const createProject = (req, res) => {
   const {
     project_name,
@@ -23,10 +21,11 @@ const createProject = (req, res) => {
     status,
     budget,
     actual_cost,
-    progress_percent
+    progress_percent,
+    client_id 
   } = req.body;
 
-  // Validate the required fields
+
   if (
     !project_name ||
     !location ||
@@ -36,15 +35,16 @@ const createProject = (req, res) => {
     !status ||
     !budget ||
     !actual_cost ||
-    !progress_percent
+    !progress_percent ||
+    !client_id 
   ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   const query = `
     INSERT INTO projects 
-    (project_name, location, owner, start_date, end_date, status, budget, actual_cost, progress_percent)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (project_name, location, owner, start_date, end_date, status, budget, actual_cost, progress_percent, client_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
@@ -58,7 +58,8 @@ const createProject = (req, res) => {
       status,
       budget,
       actual_cost,
-      progress_percent
+      progress_percent,
+      client_id // insert client_id
     ],
     (err, result) => {
       if (err) {
@@ -69,6 +70,7 @@ const createProject = (req, res) => {
     }
   );
 };
+
 
 // Update an existing project
 const updateProject = (req, res) => {
