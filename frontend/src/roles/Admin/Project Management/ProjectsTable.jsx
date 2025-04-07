@@ -8,17 +8,22 @@ import {
 } from "../../../components/ui/table";
 import Badge from "../../../components/ui/badge/Badge";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react"; // Modal
-import Button from "../../../components/ui/button/Button"; // Default export
+import Button from "../../../components/ui/button/Button";
+import ProjectModal from "./ProjectModal";
 
 const API_URL = "http://localhost:5000/api/projects";
 const CLIENTS_API_URL = "http://localhost:5000/api/clients"; // Assuming this endpoint exists to fetch clients
 
 export default function ProjectTable() {
   const [projectData, setProjectData] = useState([]);
-  const [clients, setClients] = useState([]); // State to store clients
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editProjectId, setEditProjectId] = useState(null);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [form, setForm] = useState({
     project_name: "",
     location: "",
@@ -27,36 +32,36 @@ export default function ProjectTable() {
     end_date: "",
     status: "",
     budget: "",
-    client_id: "", // New field to hold the selected client_id
+    client_name: "", // changed from client_id
   });
+
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-    fetchProjects();
-    fetchClients(); // Fetch clients when the component mounts
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [projectsResponse, clientsResponse] = await Promise.all([
+          fetch(API_URL),
+          fetch(CLIENTS_API_URL),
+        ]);
+
+        if (!projectsResponse.ok || !clientsResponse.ok) throw new Error("Failed to fetch data");
+
+        const projectsData = await projectsResponse.json();
+        const clientsData = await clientsResponse.json();
+
+        setProjectData(projectsData);
+        setClients(clientsData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
-
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setProjectData(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchClients = async () => {
-    try {
-      const response = await fetch(CLIENTS_API_URL);
-      const data = await response.json();
-      setClients(data); // Store clients in the state
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -86,108 +91,159 @@ export default function ProjectTable() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
+
+    // Map client name to ID
+    const selectedClient = clients.find(c => c.client_name === form.client_name);
+    const client_id = selectedClient?.client_id;
+
+    // Basic validation
+    const errors = {};
+    if (!form.project_name) errors.project_name = "Project name is required";
+    if (!client_id) errors.client_id = "Client is required";
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    // Build final payload
+    const payload = {
+      project_name: form.project_name,
+      location: form.location,
+      owner: form.owner,
+      start_date: form.start_date,
+      end_date: form.end_date,
+      status: form.status,
+      budget: form.budget,
+      client_id,
+    };
+
+
+    // If editing, include the project ID and log the final URL
+    const url = isEditing ? `${API_URL}/${editProjectId}` : API_URL;
+    const method = isEditing ? "PUT" : "POST";
+
+    console.log("Submitting form with method:", method);
+    console.log("Target URL:", url);
+    console.log("Payload:", payload);
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Failed to create project");
+      const responseText = await response.text();
+      console.log("Response:", response.status, responseText);
 
-      setIsModalOpen(false);
-      setForm({
-        project_name: "",
-        location: "",
-        owner: "",
-        start_date: "",
-        end_date: "",
-        status: "",
-        budget: "",
-        client_id: "", // Reset the client_id
-      });
-      setFormErrors({});
-      fetchProjects(); // Refresh table
-    } catch (error) {
-      alert(error.message);
+      if (!response.ok) {
+        throw new Error("Failed to submit form");
+      }
+
+      // Refresh data after save
+      fetchProjects();
+      onClose(); // <-- You might still need to define this if it's not declared
+    } catch (err) {
+      console.error("Submission error:", err.message);
     }
+  };
+
+
+
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`${API_URL}/${projectToDelete}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete project");
+      setIsConfirmOpen(false);
+      setProjectToDelete(null);
+      fetchProjects(); // Refresh list
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setProjectData(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleEdit = (project) => {
+    setIsEditing(true);
+    setEditProjectId(project.project_id);
+    const client = clients.find(c => c.client_id === project.client_id);
+    setForm({
+      project_name: project.project_name,
+      location: project.location,
+      owner: project.owner,
+      start_date: project.start_date.split("T")[0],
+      end_date: project.end_date.split("T")[0],
+      status: project.status,
+      budget: project.budget,
+      client_name: client?.client_name || "", // show name in the modal
+    });
+    setIsModalOpen(true);
+  };
+
+  // Add an initial empty state for the form
+  const initialFormState = {
+    project_name: '',
+    location: '',
+    owner: '',
+    start_date: '',
+    end_date: '',
+    status: '',
+    budget: '',
+    client_name: ''
+  };
+
+
+  // Handle when the "Create Project" button is clicked
+  const handleCreateProjectClick = () => {
+    setForm(initialFormState);  // Reset form fields
+    setFormErrors({});  // Reset any previous form errors
+    setIsModalOpen(true);  // Open modal for new project
   };
 
   return (
     <div className="p-4">
       <div className="flex justify-between mb-4">
         <h2 className="text-xl font-semibold">Projects</h2>
-        <Button onClick={() => setIsModalOpen(true)}>+ Create Project</Button>
+        <Button onClick={handleCreateProjectClick}>+ Create Project</Button>
       </div>
 
-      {/* Modal */}
-      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="fixed z-50 inset-0 overflow-y-auto">
+      {/* Project Modal for Create/Edit */}
+      <ProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        form={form}
+        setForm={setForm}
+        formErrors={formErrors}
+        handleSubmit={handleSubmit}
+        isEditing={isEditing} // isEditing is false for create mode
+        clients={clients}
+        handleDelete={handleDelete}
+        isConfirmOpen={isConfirmOpen}
+        setIsConfirmOpen={setIsConfirmOpen}
+        projectToDelete={projectToDelete}
+      />
+
+      {/* Confirmation Modal */}
+      <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} className="fixed z-50 inset-0 overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4">
-          <DialogPanel className="bg-white p-6 rounded-lg max-w-lg w-full shadow-lg">
-            <DialogTitle className="text-lg font-semibold mb-4">Create New Project</DialogTitle>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {[ 
-                { label: "Project Name", name: "project_name" },
-                { label: "Location", name: "location" },
-                { label: "Owner", name: "owner" },
-              ].map(({ label, name }) => (
-                <div key={name}>
-                  <label className="block font-medium">{label}</label>
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    value={form[name]}
-                    onChange={(e) => setForm({ ...form, [name]: e.target.value })}
-                  />
-                  {formErrors[name] && <p className="text-red-500 text-sm">{formErrors[name]}</p>}
-                </div>
-              ))}
-
-              {/* Add client dropdown */}
-              <div>
-                <label className="block font-medium">Client</label>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={form.client_id}
-                  onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                >
-                  <option value="">Select Client</option>
-                  {clients.map((client) => (
-                    <option key={client.client_id} value={client.client_id}>
-                      {client.client_name}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.client_id && <p className="text-red-500 text-sm">{formErrors.client_id}</p>}
-              </div>
-
-              {/* Other fields remain the same */}
-              <div>
-                <label className="block font-medium">Start Date</label>
-                <input
-                  type="date"
-                  className="w-full p-2 border rounded"
-                  value={form.start_date}
-                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                />
-                {formErrors.start_date && <p className="text-red-500 text-sm">{formErrors.start_date}</p>}
-              </div>
-
-              {/* Continue with other fields for status, budget, etc. */}
-
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Submit</Button>
-              </div>
-            </form>
+          <DialogPanel className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
+            <DialogTitle className="text-lg font-semibold mb-4">Confirm Deletion</DialogTitle>
+            <p className="mb-4 text-gray-600">Are you sure you want to delete this project?</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
+              <Button onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700">Delete</Button>
+            </div>
           </DialogPanel>
         </div>
       </Dialog>
@@ -206,6 +262,12 @@ export default function ProjectTable() {
                       {heading}
                     </TableCell>
                   ))}
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Edit
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Delete
+                  </TableCell>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -232,6 +294,21 @@ export default function ProjectTable() {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500">{formatBudget(project.budget)}</TableCell>
+                    <TableCell className="px-4 py-3 space-x-2">
+                      <Button size="sm" onClick={() => handleEdit(project)}>Edit</Button>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setProjectToDelete(project.project_id);
+                          setIsConfirmOpen(true);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
