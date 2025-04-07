@@ -11,11 +11,9 @@ import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react"; // Modal
 import Button from "../../../components/ui/button/Button"; // Default export
 
 const API_URL = "http://localhost:5000/api/projects";
-const CLIENTS_API_URL = "http://localhost:5000/api/clients"; // Assuming this endpoint exists to fetch clients
 
 export default function ProjectTable() {
   const [projectData, setProjectData] = useState([]);
-  const [clients, setClients] = useState([]); // State to store clients
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,13 +25,11 @@ export default function ProjectTable() {
     end_date: "",
     status: "",
     budget: "",
-    client_id: "", // New field to hold the selected client_id
   });
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     fetchProjects();
-    fetchClients(); // Fetch clients when the component mounts
   }, []);
 
   const fetchProjects = async () => {
@@ -45,16 +41,6 @@ export default function ProjectTable() {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchClients = async () => {
-    try {
-      const response = await fetch(CLIENTS_API_URL);
-      const data = await response.json();
-      setClients(data); // Store clients in the state
-    } catch (err) {
-      setError(err.message);
     }
   };
 
@@ -80,7 +66,6 @@ export default function ProjectTable() {
     if (!form.end_date) errors.end_date = "End date is required.";
     if (!form.status) errors.status = "Status is required.";
     if (!form.budget || isNaN(form.budget)) errors.budget = "Valid budget is required.";
-    if (!form.client_id) errors.client_id = "Client is required."; // Add client validation
     return errors;
   };
 
@@ -110,7 +95,6 @@ export default function ProjectTable() {
         end_date: "",
         status: "",
         budget: "",
-        client_id: "", // Reset the client_id
       });
       setFormErrors({});
       fetchProjects(); // Refresh table
@@ -132,7 +116,7 @@ export default function ProjectTable() {
           <DialogPanel className="bg-white p-6 rounded-lg max-w-lg w-full shadow-lg">
             <DialogTitle className="text-lg font-semibold mb-4">Create New Project</DialogTitle>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {[ 
+              {[
                 { label: "Project Name", name: "project_name" },
                 { label: "Location", name: "location" },
                 { label: "Owner", name: "owner" },
@@ -149,25 +133,6 @@ export default function ProjectTable() {
                 </div>
               ))}
 
-              {/* Add client dropdown */}
-              <div>
-                <label className="block font-medium">Client</label>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={form.client_id}
-                  onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                >
-                  <option value="">Select Client</option>
-                  {clients.map((client) => (
-                    <option key={client.client_id} value={client.client_id}>
-                      {client.client_name}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.client_id && <p className="text-red-500 text-sm">{formErrors.client_id}</p>}
-              </div>
-
-              {/* Other fields remain the same */}
               <div>
                 <label className="block font-medium">Start Date</label>
                 <input
@@ -179,7 +144,42 @@ export default function ProjectTable() {
                 {formErrors.start_date && <p className="text-red-500 text-sm">{formErrors.start_date}</p>}
               </div>
 
-              {/* Continue with other fields for status, budget, etc. */}
+              <div>
+                <label className="block font-medium">End Date</label>
+                <input
+                  type="date"
+                  className="w-full p-2 border rounded"
+                  value={form.end_date}
+                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                />
+                {formErrors.end_date && <p className="text-red-500 text-sm">{formErrors.end_date}</p>}
+              </div>
+
+              <div>
+                <label className="block font-medium">Status</label>
+                <select
+                  className="w-full p-2 border rounded"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                >
+                  <option value="">Select status</option>
+                  <option value="Planned">Planned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+                {formErrors.status && <p className="text-red-500 text-sm">{formErrors.status}</p>}
+              </div>
+
+              <div>
+                <label className="block font-medium">Budget (₱)</label>
+                <input
+                  type="number"
+                  className="w-full p-2 border rounded"
+                  value={form.budget}
+                  onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                />
+                {formErrors.budget && <p className="text-red-500 text-sm">{formErrors.budget}</p>}
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
