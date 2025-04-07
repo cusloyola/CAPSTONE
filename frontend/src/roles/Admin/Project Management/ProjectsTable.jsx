@@ -37,7 +37,6 @@ export default function ProjectTable() {
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-
     fetchProjects();
   }, []);
 
@@ -51,7 +50,6 @@ export default function ProjectTable() {
     } finally {
       setLoading(false);
     }
-  }
   };
 
   const formatDate = (dateString) => {
@@ -83,7 +81,7 @@ export default function ProjectTable() {
     e.preventDefault();
 
     // Map client name to ID
-    const selectedClient = clients.find(c => c.client_name === form.client_name);
+    const selectedClient = clients.find((c) => c.client_name === form.client_name);
     const client_id = selectedClient?.client_id;
 
     // Basic validation
@@ -106,7 +104,6 @@ export default function ProjectTable() {
       client_id,
     };
 
-
     // If editing, include the project ID and log the final URL
     const url = isEditing ? `${API_URL}/${editProjectId}` : API_URL;
     const method = isEditing ? "PUT" : "POST";
@@ -125,7 +122,6 @@ export default function ProjectTable() {
       const responseText = await response.text();
       console.log("Response:", response.status, responseText);
 
-
       setIsModalOpen(false);
       setForm({
         project_name: "",
@@ -143,9 +139,6 @@ export default function ProjectTable() {
     }
   };
 
-
-
-
   const handleDelete = async () => {
     try {
       const response = await fetch(`${API_URL}/${projectToDelete}`, {
@@ -160,20 +153,10 @@ export default function ProjectTable() {
     }
   };
 
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setProjectData(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   const handleEdit = (project) => {
     setIsEditing(true);
     setEditProjectId(project.project_id);
-    const client = clients.find(c => c.client_id === project.client_id);
+    const client = clients.find((c) => c.client_id === project.client_id);
     setForm({
       project_name: project.project_name,
       location: project.location,
@@ -189,22 +172,21 @@ export default function ProjectTable() {
 
   // Add an initial empty state for the form
   const initialFormState = {
-    project_name: '',
-    location: '',
-    owner: '',
-    start_date: '',
-    end_date: '',
-    status: '',
-    budget: '',
-    client_name: ''
+    project_name: "",
+    location: "",
+    owner: "",
+    start_date: "",
+    end_date: "",
+    status: "",
+    budget: "",
+    client_name: "",
   };
-
 
   // Handle when the "Create Project" button is clicked
   const handleCreateProjectClick = () => {
-    setForm(initialFormState);  // Reset form fields
-    setFormErrors({});  // Reset any previous form errors
-    setIsModalOpen(true);  // Open modal for new project
+    setForm(initialFormState); // Reset form fields
+    setFormErrors({}); // Reset any previous form errors
+    setIsModalOpen(true); // Open modal for new project
   };
 
   return (
@@ -231,10 +213,16 @@ export default function ProjectTable() {
       />
 
       {/* Confirmation Modal */}
-      <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} className="fixed z-50 inset-0 overflow-y-auto">
+      <Dialog
+        open={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        className="fixed z-50 inset-0 overflow-y-auto"
+      >
         <div className="flex items-center justify-center min-h-screen px-4">
           <DialogPanel className="bg-white p-6 rounded-lg max-w-lg w-full shadow-lg">
-            <DialogTitle className="text-lg font-semibold mb-4">Create New Project</DialogTitle>
+            <DialogTitle className="text-lg font-semibold mb-4">
+              Create New Project
+            </DialogTitle>
             <form onSubmit={handleSubmit} className="space-y-4">
               {[
                 { label: "Project Name", name: "project_name" },
@@ -249,7 +237,9 @@ export default function ProjectTable() {
                     value={form[name]}
                     onChange={(e) => setForm({ ...form, [name]: e.target.value })}
                   />
-                  {formErrors[name] && <p className="text-red-500 text-sm">{formErrors[name]}</p>}
+                  {formErrors[name] && (
+                    <p className="text-red-500 text-sm">{formErrors[name]}</p>
+                  )}
                 </div>
               ))}
 
@@ -261,7 +251,9 @@ export default function ProjectTable() {
                   value={form.start_date}
                   onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                 />
-                {formErrors.start_date && <p className="text-red-500 text-sm">{formErrors.start_date}</p>}
+                {formErrors.start_date && (
+                  <p className="text-red-500 text-sm">{formErrors.start_date}</p>
+                )}
               </div>
 
               <div>
@@ -272,7 +264,9 @@ export default function ProjectTable() {
                   value={form.end_date}
                   onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                 />
-                {formErrors.end_date && <p className="text-red-500 text-sm">{formErrors.end_date}</p>}
+                {formErrors.end_date && (
+                  <p className="text-red-500 text-sm">{formErrors.end_date}</p>
+                )}
               </div>
 
               <div>
@@ -287,7 +281,9 @@ export default function ProjectTable() {
                   <option value="In Progress">In Progress</option>
                   <option value="Completed">Completed</option>
                 </select>
-                {formErrors.status && <p className="text-red-500 text-sm">{formErrors.status}</p>}
+                {formErrors.status && (
+                  <p className="text-red-500 text-sm">{formErrors.status}</p>
+                )}
               </div>
 
               <div>
@@ -298,18 +294,22 @@ export default function ProjectTable() {
                   value={form.budget}
                   onChange={(e) => setForm({ ...form, budget: e.target.value })}
                 />
-                {formErrors.budget && <p className="text-red-500 text-sm">{formErrors.budget}</p>}
+                {formErrors.budget && (
+                  <p className="text-red-500 text-sm">{formErrors.budget}</p>
+                )}
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsModalOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit">Submit</Button>
               </div>
             </form>
-
-      
           </DialogPanel>
         </div>
       </Dialog>
@@ -322,16 +322,33 @@ export default function ProjectTable() {
               <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
                 <TableRow>
                   {[
-                    "Project ID", "Project Name", "Location", "Owner", "Start Date", "End Date", "Status", "Budget"
+                    "Project ID",
+                    "Project Name",
+                    "Location",
+                    "Owner",
+                    "Start Date",
+                    "End Date",
+                    "Status",
+                    "Budget",
                   ].map((heading) => (
-                    <TableCell key={heading} isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    <TableCell
+                      key={heading}
+                      isHeader
+                      className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                    >
                       {heading}
                     </TableCell>
                   ))}
-                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
                     Edit
                   </TableCell>
-                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  <TableCell
+                    isHeader
+                    className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                  >
                     Delete
                   </TableCell>
                 </TableRow>
@@ -339,12 +356,24 @@ export default function ProjectTable() {
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {projectData.map((project) => (
                   <TableRow key={project.project_id}>
-                    <TableCell className="px-5 py-4 sm:px-6 text-start">{project.project_id}</TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500">{project.project_name}</TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500">{project.location}</TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500">{project.owner}</TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500">{formatDate(project.start_date)}</TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500">{formatDate(project.end_date)}</TableCell>
+                    <TableCell className="px-5 py-4 sm:px-6 text-start">
+                      {project.project_id}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      {project.project_name}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      {project.location}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      {project.owner}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      {formatDate(project.start_date)}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      {formatDate(project.end_date)}
+                    </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500">
                       <Badge
                         size="sm"
@@ -352,16 +381,20 @@ export default function ProjectTable() {
                           project.status === "Completed"
                             ? "success"
                             : project.status === "In Progress"
-                              ? "warning"
-                              : "error"
+                            ? "warning"
+                            : "error"
                         }
                       >
                         {project.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500">{formatBudget(project.budget)}</TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      {formatBudget(project.budget)}
+                    </TableCell>
                     <TableCell className="px-4 py-3 space-x-2">
-                      <Button size="sm" onClick={() => handleEdit(project)}>Edit</Button>
+                      <Button size="sm" onClick={() => handleEdit(project)}>
+                        Edit
+                      </Button>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500">
                       <Button
@@ -384,3 +417,4 @@ export default function ProjectTable() {
       </div>
     </div>
   );
+}
