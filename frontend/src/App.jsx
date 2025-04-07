@@ -69,6 +69,8 @@ import BOMTable from "./roles/Admin/Estimation/BOMTable.jsx";
 // Projects CRUD
 import ProjectsCRUD from "./roles/Admin/Project Management/ProjectsCRUD.jsx";
 import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
+import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
+import ClientManagement from "./roles/Admin/ClientManagement.jsx";
 
 
 export default function App() {
@@ -105,7 +107,8 @@ export default function App() {
 
 
               <Route path="/AdminSiteReports" element={<AdminSiteReport/>}   /> 
-              
+              <Route path="/AdminFileManagement" element={<AdminFileManagement/>} />
+              <Route path="/ClientManagement" element={<ClientManagement/>} />
             </Route>
 
 
