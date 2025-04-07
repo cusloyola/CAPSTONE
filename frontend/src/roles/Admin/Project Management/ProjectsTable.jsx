@@ -8,15 +8,21 @@ import {
 } from "../../../components/ui/table";
 import Badge from "../../../components/ui/badge/Badge";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react"; // Modal
-import Button from "../../../components/ui/button/Button"; // Default export
+import Button from "../../../components/ui/button/Button";
+import ProjectModal from "./ProjectModal";
 
 const API_URL = "http://localhost:5000/api/projects";
 
 export default function ProjectTable() {
   const [projectData, setProjectData] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editProjectId, setEditProjectId] = useState(null);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [form, setForm] = useState({
     project_name: "",
     location: "",
@@ -25,10 +31,13 @@ export default function ProjectTable() {
     end_date: "",
     status: "",
     budget: "",
+    client_name: "", // changed from client_id
   });
+
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
+
     fetchProjects();
   }, []);
 
@@ -42,6 +51,7 @@ export default function ProjectTable() {
     } finally {
       setLoading(false);
     }
+  }
   };
 
   const formatDate = (dateString) => {
@@ -71,20 +81,50 @@ export default function ProjectTable() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      return;
-    }
+
+    // Map client name to ID
+    const selectedClient = clients.find(c => c.client_name === form.client_name);
+    const client_id = selectedClient?.client_id;
+
+    // Basic validation
+    const errors = {};
+    if (!form.project_name) errors.project_name = "Project name is required";
+    if (!client_id) errors.client_id = "Client is required";
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    // Build final payload
+    const payload = {
+      project_name: form.project_name,
+      location: form.location,
+      owner: form.owner,
+      start_date: form.start_date,
+      end_date: form.end_date,
+      status: form.status,
+      budget: form.budget,
+      client_id,
+    };
+
+
+    // If editing, include the project ID and log the final URL
+    const url = isEditing ? `${API_URL}/${editProjectId}` : API_URL;
+    const method = isEditing ? "PUT" : "POST";
+
+    console.log("Submitting form with method:", method);
+    console.log("Target URL:", url);
+    console.log("Payload:", payload);
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Failed to create project");
+      const responseText = await response.text();
+      console.log("Response:", response.status, responseText);
+
 
       setIsModalOpen(false);
       setForm({
@@ -103,15 +143,95 @@ export default function ProjectTable() {
     }
   };
 
+
+
+
+  const handleDelete = async () => {
+    try {
+      const response = await fetch(`${API_URL}/${projectToDelete}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete project");
+      setIsConfirmOpen(false);
+      setProjectToDelete(null);
+      fetchProjects(); // Refresh list
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setProjectData(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleEdit = (project) => {
+    setIsEditing(true);
+    setEditProjectId(project.project_id);
+    const client = clients.find(c => c.client_id === project.client_id);
+    setForm({
+      project_name: project.project_name,
+      location: project.location,
+      owner: project.owner,
+      start_date: project.start_date.split("T")[0],
+      end_date: project.end_date.split("T")[0],
+      status: project.status,
+      budget: project.budget,
+      client_name: client?.client_name || "", // show name in the modal
+    });
+    setIsModalOpen(true);
+  };
+
+  // Add an initial empty state for the form
+  const initialFormState = {
+    project_name: '',
+    location: '',
+    owner: '',
+    start_date: '',
+    end_date: '',
+    status: '',
+    budget: '',
+    client_name: ''
+  };
+
+
+  // Handle when the "Create Project" button is clicked
+  const handleCreateProjectClick = () => {
+    setForm(initialFormState);  // Reset form fields
+    setFormErrors({});  // Reset any previous form errors
+    setIsModalOpen(true);  // Open modal for new project
+  };
+
   return (
     <div className="p-4">
       <div className="flex justify-between mb-4">
         <h2 className="text-xl font-semibold">Projects</h2>
-        <Button onClick={() => setIsModalOpen(true)}>+ Create Project</Button>
+        <Button onClick={handleCreateProjectClick}>+ Create Project</Button>
       </div>
 
-      {/* Modal */}
-      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} className="fixed z-50 inset-0 overflow-y-auto">
+      {/* Project Modal for Create/Edit */}
+      <ProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        form={form}
+        setForm={setForm}
+        formErrors={formErrors}
+        handleSubmit={handleSubmit}
+        isEditing={isEditing} // isEditing is false for create mode
+        clients={clients}
+        handleDelete={handleDelete}
+        isConfirmOpen={isConfirmOpen}
+        setIsConfirmOpen={setIsConfirmOpen}
+        projectToDelete={projectToDelete}
+      />
+
+      {/* Confirmation Modal */}
+      <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} className="fixed z-50 inset-0 overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4">
           <DialogPanel className="bg-white p-6 rounded-lg max-w-lg w-full shadow-lg">
             <DialogTitle className="text-lg font-semibold mb-4">Create New Project</DialogTitle>
@@ -188,6 +308,8 @@ export default function ProjectTable() {
                 <Button type="submit">Submit</Button>
               </div>
             </form>
+
+      
           </DialogPanel>
         </div>
       </Dialog>
@@ -206,6 +328,12 @@ export default function ProjectTable() {
                       {heading}
                     </TableCell>
                   ))}
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Edit
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                    Delete
+                  </TableCell>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
@@ -232,6 +360,21 @@ export default function ProjectTable() {
                       </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500">{formatBudget(project.budget)}</TableCell>
+                    <TableCell className="px-4 py-3 space-x-2">
+                      <Button size="sm" onClick={() => handleEdit(project)}>Edit</Button>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          setProjectToDelete(project.project_id);
+                          setIsConfirmOpen(true);
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -241,4 +384,3 @@ export default function ProjectTable() {
       </div>
     </div>
   );
-}

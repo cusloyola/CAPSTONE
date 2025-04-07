@@ -23,6 +23,7 @@ const createProject = (req, res) => {
     actual_cost,
     progress_percent,
     client_id // new client_id field
+
   } = req.body;
 
   // Validate the required fields
@@ -37,6 +38,8 @@ const createProject = (req, res) => {
     !actual_cost ||
     !progress_percent ||
     !client_id // ensure client_id is provided
+
+
   ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -145,21 +148,24 @@ const updateProject = (req, res) => {
 };
 
 // Delete a project
-const deleteProject = (req, res) => {
-  const { id } = req.params;
+ const deleteProject = async (req, res) => {
+  const projectId = req.params.id;
 
-  const query = 'DELETE FROM projects WHERE project_id = ?';
-  db.query(query, [id], (err, result) => {
-    if (err) {
-      console.error('❌ Error deleting project:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-    res.json({ message: 'Project deleted successfully' });
-  });
+  try {
+    // Step 1: Delete related records in worker_projects
+    await db.query("DELETE FROM worker_projects WHERE project_id = ?", [projectId]);
+
+    // Step 2: Delete the project
+    await db.query("DELETE FROM projects WHERE project_id = ?", [projectId]);
+
+    res.status(200).json({ message: "Project deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting project:", error);
+    res.status(500).json({ error: error.message });
+  }
 };
+
+
 
 // Export the functions
 module.exports = {
