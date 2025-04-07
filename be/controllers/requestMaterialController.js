@@ -106,7 +106,8 @@ const getRequestedMaterialsHistory = (req, res) => {
       rm.urgency, 
       rm.notes, 
       rm.is_approved, 
-      rm.request_date, 
+      rm.request_date,
+      rm.approved_at, 
       rmi.item_id, 
       ii.item_name, 
       rmi.request_quantity 
@@ -139,14 +140,14 @@ const getRequestedMaterialsHistory = (req, res) => {
             project_name: row.project_name,
             urgency: row.urgency,
             notes: row.notes,
-            // status: row.is_approved === 0 ? 'pending' : 'approved', 
             status:
-            row.is_approved === 1
-              ? 'approved'
-              : row.is_approved === 2
-              ? 'rejected'
-              : 'pending',
-            request_date: row.request_date, // include request date
+              row.is_approved === 1
+                ? 'approved'
+                : row.is_approved === 2
+                ? 'rejected'
+                : 'pending',
+            request_date: row.request_date,
+            approved_at: row.approved_at, 
             items: [{
               item_id: row.item_id,
               item_name: row.item_name,
@@ -165,7 +166,7 @@ const getRequestedMaterialsHistory = (req, res) => {
 
 const approveRequest = (req, res) => {
   const requestId = req.params.requestId;
-  const approvedBy = 'Admin'; // Or get from session/auth
+  const approvedBy = 'Admin'; 
   const approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
 
   db.query(
@@ -186,10 +187,11 @@ const approveRequest = (req, res) => {
 
 const rejectRequest = (req, res) => {
   const requestId = req.params.requestId;
+  const rejectedAt = moment().format('YYYY-MM-DD HH:mm:ss'); // Get the current date and time
 
   db.query(
-    'UPDATE requested_materials SET is_approved = 2 WHERE request_id = ?', // 2 represents rejected
-    [requestId],
+    'UPDATE requested_materials SET is_approved = 2, approved_at = ? WHERE request_id = ?', // 2 represents rejected
+    [rejectedAt, requestId],
     (err, results) => {
       if (err) {
         console.error('Database error:', err);
@@ -202,6 +204,4 @@ const rejectRequest = (req, res) => {
     }
   );
 };
-
-
 module.exports = { getRequestMaterialItems, createRequestedMaterials, getRequestedMaterialsHistory, approveRequest, rejectRequest };

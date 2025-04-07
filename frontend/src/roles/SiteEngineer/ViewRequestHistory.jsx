@@ -60,7 +60,10 @@ const ViewRequestHistory = () => {
             <div key={request.request_id} className="border rounded-lg p-4 shadow-md">
               <h4 className="font-semibold">{request.project_name}</h4>
               <p className="text-sm text-gray-600">Urgency: {request.urgency}</p>
-              <p className="text-sm text-gray-600">Date: {new Date(request.request_date).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-600">Request Date: {new Date(request.request_date).toLocaleDateString()}</p>
+              {request.approved_at && (
+                <p className="text-sm text-gray-600">Admin Action Date: {new Date(request.approved_at).toLocaleDateString()}</p>
+              )}
               <div className="mt-2">
                 <h5 className="font-medium">Items:</h5>
                 <ul className="list-disc list-inside text-sm">
@@ -91,7 +94,8 @@ const ViewRequestHistory = () => {
             <tr className="bg-gray-100 text-left">
               <th className="p-3 border-b">Project</th>
               <th className="p-3 border-b">Urgency</th>
-              <th className="p-3 border-b">Date</th>
+              <th className="p-3 border-b">Request Date</th>
+              <th className="p-3 border-b">Admin Action Date</th>
               <th className="p-3 border-b">Items</th>
               <th className="p-3 border-b">Notes</th>
               <th className="p-3 border-b">Status</th>
@@ -103,6 +107,13 @@ const ViewRequestHistory = () => {
                 <td className="p-3">{request.project_name}</td>
                 <td className="p-3">{request.urgency}</td>
                 <td className="p-3">{new Date(request.request_date).toLocaleDateString()}</td>
+                <td className="p-3">
+                  {request.approved_at ? (
+                    new Date(request.approved_at).toLocaleDateString()
+                  ) : (
+                    'N/A'
+                  )}
+                </td>
                 <td className="p-3">
                   <ul>
                     {request.items.map((item) => (
