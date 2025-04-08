@@ -1,37 +1,46 @@
-import React, { useEffect, useState } from "react";
-import { useUser } from "../../context/UserContext";
+import React from "react";
+import EcommerceMetrics from '../../components/ecommerce/EcommerceMetrics';
+import AdminOverviewMetrics from "./AdminOverviewMetrics";
+import BarChartOne from "../../components/charts/bar/BarChartOne";
 
 const Dashboard = () => {
-  const { user } = useUser(); // Get user data (including token)
-  const [data, setData] = useState(null);
+  // If you need this again, you can uncomment and use it later
+  // const { user } = useUser(); 
+  // const [data, setData] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/DashboardData", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user?.token}`, // Include token for authentication
-          },
-        });
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const response = await fetch("http://localhost:5000/api/DashboardData", {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${user?.token}`,
+  //         },
+  //       });
 
-        const result = await response.json();
-        setData(result); // Store fetched data in state
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
 
-    if (user?.token) {
-      fetchData(); // Fetch data only if token exists
-    }
-  }, [user?.token]);
+  //       const result = await response.json();
+  //       setData(result);
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //       alert("An error occurred while fetching data.");
+  //     }
+  //   };
+
+  //   if (user?.token) {
+  //     fetchData();
+  //   }
+  // }, [user?.token]);
 
   return (
-    <div>
-      <h2>Dashboard</h2>
-      {data ? <pre>{JSON.stringify(data, null, 2)}</pre> : <p>Loading...</p>}
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold">Admin Dashboard</h2>
+      <AdminOverviewMetrics />
+      <BarChartOne />
     </div>
   );
 };

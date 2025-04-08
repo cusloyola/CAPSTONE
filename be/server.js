@@ -37,6 +37,7 @@ const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
 const clientRoutes = require("./routes/clientRoutes"); // Import the client routes
 
+const dashboardRoutes = require('./routes/dashboard');
 
 const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
@@ -69,7 +70,7 @@ app.use("/api/clients", clientRoutes);
 
 app.use("/api/subclients", subclientRoutes);
 
-
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use("/api/folders", folderRoutes);
 

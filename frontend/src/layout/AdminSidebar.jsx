@@ -21,7 +21,7 @@ const navItems = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Overview", path: "/Ecommerce", pro: false }],
+    path: "/AdminDashboard"
   },
   {
     icon: <GridIcon />,
@@ -79,11 +79,11 @@ const navItems = [
       { name: "Leave Application Contract", path: "/LeaveContract", pro: false },
     ],
   },
-  {
-    icon: <GridIcon />,
-    name: "HR Management ",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  },
+  // {
+  //   icon: <GridIcon />,
+  //   name: "HR Management ",
+  //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+  // },
   {
     icon: <GridIcon />,
     name: "Reports and Analytics",
