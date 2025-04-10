@@ -184,4 +184,84 @@ const getTotalCategoriesCount = (req, res) => {
   });
 };
 
-module.exports = { getInventoryInformation, getLowestStockItems, getTotalItemsCount, getTotalStockQuantity, getOutOfStockCount, getTotalCategoriesCount  };
+const getFastMovingItems = (req, res) => {
+  console.log("getFastMovingItems called!");
+
+  const query = `
+    SELECT
+      rmi.item_id,
+      ii.item_name,
+      SUM(rmi.request_quantity) AS total_requested_quantity
+    FROM requested_material_items rmi
+    JOIN requested_materials rm ON rmi.request_id = rm.request_id
+    JOIN inventory_items ii ON rmi.item_id = ii.item_id
+    WHERE rm.is_approved = 1
+    GROUP BY rmi.item_id, ii.item_name
+    ORDER BY total_requested_quantity DESC
+    LIMIT 5;
+  `;
+
+  console.log("Executing Query:", query);
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("❌ Database Error fetching top 5 fast-moving items:", err);
+      return res.status(500).json({
+        error: "Database error while fetching top 5 fast-moving items",
+        details: err.message,
+      });
+    }
+
+    console.log("Query Results:", results);
+
+    if (!results || results.length === 0) {
+      console.log("No approved material requests found, so no fast-moving items could be determined.");
+      return res.status(404).json({ message: "No fast-moving items found based on approved requests." });
+    }
+
+    console.log("📌 Sending Top 5 Fast-Moving Items Data:", results);
+    return res.json(results);
+  });
+};
+
+const getSlowMovingItems = (req, res) => {
+  console.log("getSlowMovingItems called!");
+
+  const query = `
+    SELECT
+      rmi.item_id,
+      ii.item_name,
+      SUM(rmi.request_quantity) AS total_requested_quantity
+    FROM requested_material_items rmi
+    JOIN requested_materials rm ON rmi.request_id = rm.request_id
+    JOIN inventory_items ii ON rmi.item_id = ii.item_id
+    WHERE rm.is_approved = 1
+    GROUP BY rmi.item_id, ii.item_name
+    ORDER BY total_requested_quantity ASC
+    LIMIT 5;
+  `;
+
+  console.log("Executing Query:", query);
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("❌ Database Error fetching slow-moving items:", err);
+      return res.status(500).json({
+        error: "Database error while fetching slow-moving items",
+        details: err.message,
+      });
+    }
+
+    console.log("Query Results:", results);
+
+    if (!results || results.length === 0) {
+      console.log("No approved material requests found, so no slow-moving items could be determined.");
+      return res.status(404).json({ message: "No slow-moving items found based on approved requests." });
+    }
+
+    console.log("📌 Sending Slow-Moving Items Data:", results);
+    return res.json(results);
+  });
+};
+
+module.exports = { getInventoryInformation, getLowestStockItems, getTotalItemsCount, getTotalStockQuantity, getOutOfStockCount, getTotalCategoriesCount, getFastMovingItems, getSlowMovingItems  };

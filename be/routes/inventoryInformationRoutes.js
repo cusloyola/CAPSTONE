@@ -6,7 +6,9 @@ const {
   getTotalItemsCount,
   getTotalStockQuantity,
   getOutOfStockCount,
-  getTotalCategoriesCount
+  getTotalCategoriesCount,
+  getFastMovingItems,
+  getSlowMovingItems
 } = require("../controllers/inventoryInformationController"); // Import both functions
 
 router.get("/information", (req, res, next) => {
@@ -27,5 +29,12 @@ router.get("/total-stock", getTotalStockQuantity);
 router.get("/out-of-stock", getOutOfStockCount);
 
 router.get("/total-categories", getTotalCategoriesCount);
+
+router.get("/fast-moving-items", (req, res, next) => {
+  console.log("GET /api/inventory-information/fast-moving-items requested");
+  next();
+}, getFastMovingItems);
+
+router.get("/slow-moving-items", getSlowMovingItems);
 
 module.exports = router;

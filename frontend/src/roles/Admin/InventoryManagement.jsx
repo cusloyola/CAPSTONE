@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import LowStockInventory from "./InventoryMonitoring";
+import { FaEye, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
 
 
 
@@ -236,9 +236,9 @@ const InventoryManagement = () => {
 </h1>
 
             <div className="low-stock-wrapper" style={{ marginBottom: '10px', maxHeight: '300px' }}>
-  <LowStockInventory />
+  {/* <LowStockInventory /> */}
 </div>
-<br></br><br></br><br></br>
+
             {error && <p style={{ color: "red" }}>⚠️ {error}</p>}
 
             <button
@@ -397,8 +397,8 @@ const InventoryManagement = () => {
                     </div>
                 </div>
             )}
-
-<h3 style={{ marginTop: '10px' ,marginLeft: '30px', fontSize: '1.5em' }}> <strong> Inventory List</strong></h3>            {loading ? (
+{/* <strong> Inventory List</strong> */}
+<h3 style={{ marginTop: '10px' ,marginLeft: '30px', fontSize: '1.5em' }}>   </h3>            {loading ? (
                 <p>⏳ Loading inventory...</p>
             ) : filteredInventory.length > 0 ? (
             //     <div
@@ -424,57 +424,66 @@ const InventoryManagement = () => {
   <td style={{ padding: "12px 15px", color: "black", width: "27.5%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.location}</td>
   <td style={{ padding: "12px 15px", width: "17.5%" }}>
     <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-                      <button
-                        onClick={() => handleViewItemInfo(item)}
-                        style={{
-                            width: "75px",
-                          padding: "8px 12px",
-                          backgroundColor: "#3498db",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "5px",
-                          cursor: "pointer",
-                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                          flex: '1',
-                          marginRight: '5px',
-                        }}
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleEdit(item)}
-                        style={{
-                            width: "75px",
-                          padding: "8px 12px",
-                          backgroundColor: "#f1c40f",
-                          color: "black",
-                          border: "none",
-                          borderRadius: "5px",
-                          cursor: "pointer",
-                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                          flex: '1',
-                          marginRight: '5px',
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(item)}
-                        style={{
-                            width: "75px",
-                          padding: "8px 12px",
-                          backgroundColor: "#e74c3c",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "5px",
-                          cursor: "pointer",
-                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                          flex: '1',
-                          marginRight: '5px',
-                        }}
-                      >
-                        Delete
-                      </button>
+    <button
+  onClick={() => handleViewItemInfo(item)}
+  style={{
+    width: "75px",
+    padding: "8px 12px",
+    backgroundColor: "#3498db",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    flex: '1',
+    marginRight: '5px',
+    display: 'flex', // Add flex display
+    alignItems: 'center', // Vertically align icon and text
+    justifyContent: 'center', // Center icon and text
+  }}
+>
+  <FaEye className="mr-2" /> View
+</button>
+<button
+  onClick={() => handleEdit(item)}
+  style={{
+    width: "75px",
+    padding: "8px 12px",
+    backgroundColor: "#f1c40f",
+    color: "black",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    flex: '1',
+    marginRight: '5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <FaPencilAlt className="mr-2" /> Edit
+</button>
+<button
+  onClick={() => handleDeleteClick(item)}
+  style={{
+    width: "90px", // Increased width
+    padding: "8px 12px",
+    backgroundColor: "#e74c3c",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    flex: '1',
+    marginRight: '5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <FaTrashAlt className="mr-2" /> Delete
+</button>
                     </div>
                   </td>
                 </tr>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FaEye, FaPencilAlt, FaTrashAlt } from 'react-icons/fa'; 
 
 function UserManagement() {
     const [users, setUsers] = useState([]);
@@ -320,57 +321,67 @@ function UserManagement() {
                                 <td style={{ padding: "12px 15px", color: "black", width: "10%", textAlign: 'center' }}>{user.is_active === 1 ? 'Yes' : 'No'}</td>
                                 <td style={{ padding: "12px 15px", width: "20%" }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-                                        <button
-                                            onClick={() => handleViewUserInfo(user)}
-                                            style={{
-                                                width: "75px",
-                                                padding: "8px 12px",
-                                                backgroundColor: "#3498db",
-                                                color: "white",
-                                                border: "none",
-                                                borderRadius: "5px",
-                                                cursor: "pointer",
-                                                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                                flex: '1',
-                                                marginRight: '5px',
-                                            }}
-                                        >
-                                            View
-                                        </button>
-                                        <button
-                                            onClick={() => handleEdit(user)}
-                                            style={{
-                                                width: "75px",
-                                                padding: "8px 12px",
-                                                backgroundColor: "#f1c40f",
-                                                color: "black",
-                                                border: "none",
-                                                borderRadius: "5px",
-                                                cursor: "pointer",
-                                                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                                flex: '1',
-                                                marginRight: '5px',
-                                            }}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteClick(user)}
-                                            style={{
-                                                width: "75px",
-                                                padding: "8px 12px",
-                                                backgroundColor: "#e74c3c",
-                                                color: "white",
-                                                border: "none",
-                                                borderRadius: "5px",
-                                                cursor: "pointer",
-                                                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                                flex: '1',
-                                                marginRight: '5px',
-                                            }}
-                                        >
-                                            Delete
-                                        </button>
+                                    
+<button
+  onClick={() => handleViewUserInfo(user)}
+  style={{
+    width: "85px", // Adjusted width to accommodate icon and text
+    padding: "8px 12px",
+    backgroundColor: "#3498db",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    flex: '1',
+    marginRight: '5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <FaEye className="mr-2" /> View
+</button>
+<button
+  onClick={() => handleEdit(user)}
+  style={{
+    width: "85px", // Adjusted width
+    padding: "8px 12px",
+    backgroundColor: "#f1c40f",
+    color: "black",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    flex: '1',
+    marginRight: '5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <FaPencilAlt className="mr-2" /> Edit
+</button>
+<button
+  onClick={() => handleDeleteClick(user)}
+  style={{
+    width: "90px", // Adjusted width for "Delete"
+    padding: "8px 12px",
+    backgroundColor: "#e74c3c",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    flex: '1',
+    marginRight: '5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <FaTrashAlt className="mr-2" /> Delete
+</button>
                                     </div>
                                 </td>
                             </tr>
