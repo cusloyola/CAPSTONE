@@ -17,6 +17,7 @@ import AdminBOQ from "./roles/Admin/AdminBOQ.jsx";
 import InventortManagement from "./roles/Admin/InventoryManagement.jsx"
 import AdminReports from "./roles/Admin/Reports.jsx";
 import MaterialRequestManagement from "./roles/Admin/MaterialRequestManagemet.jsx";
+import EmployeeManagement from "./roles/Admin/EmployeeManagement.jsx";
 
 
 // site
@@ -109,7 +110,7 @@ export default function App() {
               <Route path="/Estimation/BOMTable/:bomId" element={<BOMTable />} />  {/* Updated to include :bomId */}
               <Route path="/Reports" element={<AdminReports />} />       
               <Route path="/MaterialRequestManagement" element={<MaterialRequestManagement />} />       
-
+              <Route path="/EmployeeManagement" element={<EmployeeManagement />} />       
 
               <Route path="/AdminSiteReports" element={<AdminSiteReport/>}   /> 
               <Route path="/AdminFileManagement" element={<AdminFileManagement/>} />

@@ -46,6 +46,11 @@ const navItems = [
   },
   {
     icon: <GridIcon />,
+    name: "HR Management",
+    subItems: [{ name: "Workers Management", path: "/EmployeeManagement", pro: false }],
+  },
+  {
+    icon: <GridIcon />,
     name: "Cost Estimation",
     subItems:
     [

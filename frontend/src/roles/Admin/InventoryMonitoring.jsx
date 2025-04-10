@@ -80,11 +80,11 @@ const LowStockInventory = () => {
   );
 
   const lowestStockItemsCard = (
-    <div className={`bg-white ${cardRadiusClass} shadow-md p-6 max-h-80 overflow-y-auto`}
-    style={{ width: 'auto' }} > {/* Set width to auto to allow flex to control */}
-      <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-        <FaExclamationTriangle className="mr-2 text-red-500" /> Depleted Items
-      </h2>
+        <div className={`bg-white ${cardRadiusClass} shadow-md p-6 overflow-y-auto`}
+        style={{ width: 'auto', maxHeight: '284px' }} > {/* Set a specific pixel maxHeight */}
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+            <FaExclamationTriangle className="mr-2 text-red-500" /> Depleted Items
+          </h2>
       {lowestStocks.map((item) => (
         <div key={item.item_id}>
           <p className="font-semibold text-lg text-gray-900">

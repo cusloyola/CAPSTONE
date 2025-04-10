@@ -30,6 +30,9 @@ const eventRoutes = require('./routes/eventRoutes');
 const reportsRoutes = require("./routes/reportsRoutes");
 const projectRoutes = require('./routes/projectRoutes');
 const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
+const employeeManagementRoutes = require("./routes/employeeManagementRoutes"); // Import employee management routes
+
+
 
 const bomRoutes = require("./routes/bomRoutes");
 const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
@@ -44,6 +47,7 @@ const folderRoutes = require("./routes/folderRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 
 // ✅ Use Routes
+app.use("/api", employeeManagementRoutes); // Mount employee management routes under /api
 app.use("/api/request-materials", requestMaterialRoutes); 
 app.use("/api/user-accounts", userManagementController);
 app.use("/api/inventory-information", inventoryInformationRoutes);

@@ -4,35 +4,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 const bcrypt = require('bcrypt');
-// const multer = require('multer');
 const path = require('path');
-
-// // Multer setup for image uploads
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, 'uploads/userImages/');
-//     },
-//     filename: (req, file, cb) => {
-//         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-//         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-//     },
-// });
-
-// const fileFilter = (req, file, cb) => {
-//     if (file.mimetype.startsWith('image/')) {
-//         cb(null, true);
-//     } else {
-//         cb(new Error('Only image files are allowed.'), false);
-//     }
-// };
-
-// const upload = multer({
-//     storage: storage,
-//     fileFilter: fileFilter,
-//     limits: {
-//         fileSize: 1024 * 1024 * 5, // 5MB limit
-//     },
-// });
 
 const getAllUsers = async (req, res) => {
     try {
@@ -127,46 +99,6 @@ const addUserAccount = (req, res) => {
         });
     });
 };
-// const uploadUserImage = (req, res) => {
-//     console.log("Image upload started for user:", req.params.id);
-//     console.log("Request headers:", req.headers);
-//     console.log("Request body:", req.body);
-
-//     upload.single('image')(req, res, (err) => {
-//         if (err) {
-//             console.error("❌ Multer Error:", err);
-//             if (err instanceof multer.MulterError) {
-//                 return res.status(400).json({ error: err.message });
-//             }
-//             return res.status(500).json({ error: "Image upload failed: " + err.message });
-//         }
-
-//         if (!req.file) {
-//             console.log("Req File: undefined");
-//             return res.status(400).json({ error: "No image file provided." });
-//         }
-
-//         console.log("Req File:", req.file);
-
-//         const userId = req.params.id;
-//         const image = req.file.filename;
-
-//         const query = "UPDATE users SET image = ? WHERE user_id = ?";
-
-//         db.query(query, [image, userId], (dbErr, result) => {
-//             if (dbErr) {
-//                 console.error("❌ Database Error:", dbErr);
-//                 return res.status(500).json({ error: "Failed to update user image." });
-//             }
-//             if (result.affectedRows === 0) {
-//                 return res.status(404).json({ message: "User account not found." });
-//             }
-//             console.log("📌 User image updated:", result);
-//             return res.status(200).json({ message: "User image updated successfully." }); // Send JSON response
-//         });
-//     });
-// };
-
 
 const updateUserAccount = (req, res) => {
     console.log("updateUserAccount: Request received for user ID:", req.params.id);
@@ -234,6 +166,4 @@ module.exports = {
     getUserAccountById,
     addUserAccount,
     updateUserAccount
-    // uploadUserImage,
-    // upload,
 };

@@ -157,7 +157,7 @@ function UserManagement() {
                 <span style={{ marginLeft: "25px", fontSize: '1.75em' }}><strong>User Management</strong></span>
             </h1>
 
-            <br /><br /><br />
+            <br />
             {error && <p style={{ color: "red" }}>⚠️ {error}</p>}
 
             <button
@@ -296,7 +296,7 @@ function UserManagement() {
                 </div>
             )}
 
-            <h3 style={{ marginTop: '10px', marginLeft: '30px', fontSize: '1.5em' }}> <strong> User List</strong></h3>
+            {/* <h3 style={{ marginTop: '10px', marginLeft: '30px', fontSize: '1.5em' }}> <strong> User List</strong></h3> */}
             {loading ? (
                 <p>⏳ Loading users...</p>
             ) : filteredUsers.length > 0 ? (
