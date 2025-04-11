@@ -36,7 +36,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
 const employeeManagementRoutes = require("./routes/employeeManagementRoutes"); // Import employee management routes
 
-
+const taskRoutes = require('./routes/taskRoutes');
 
 const bomRoutes = require("./routes/bomRoutes");
 const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
@@ -93,6 +93,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use("/api/folders", folderRoutes);
 
 
+app.use('/api/tasks', taskRoutes); // now your endpoints will start with /api/tasks
 
 
 app.use("/api/documents", documentRoutes);

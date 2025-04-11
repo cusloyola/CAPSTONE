@@ -76,6 +76,7 @@ import FilePage from "./roles/Admin/File Management/FilePage.jsx";
 import FolderPage from "./roles/Admin/File Management/FolderPage.jsx";
 import UploadDocument from "./roles/Admin/File Management/UploadDocument.jsx";
 import SubFolderPage from "./roles/Admin/File Management/SubFolderPage.jsx";
+import Task from "./roles/Admin/Task Management/TaskSchedule.jsx";
 
 
 
@@ -117,6 +118,8 @@ export default function App() {
               <Route path="/AdminSiteReports" element={<AdminSiteReport/>}   /> 
               <Route path="/AdminFileManagement" element={<AdminFileManagement/>} />
               <Route path="/ClientManagement" element={<ClientManagement/>} />
+
+              <Route path="/TaskManagement" element={<Task/>} />
 
               <Route path="/" element={<FilePage />} />
 <Route path="/clients/:clientId/folders" element={<FolderPage />} />
