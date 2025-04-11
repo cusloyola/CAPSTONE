@@ -6,9 +6,8 @@ const ProtectedRoute = ({ allowedRoles }) => {
   const location = useLocation();
 
   console.log("ProtectedRoute - User:", user);
-
   if (!user) {
-    console.log("⛔ User is not logged in. Redirecting to signin...");
+    // If no user is authenticated, redirect to the signin page
     return <Navigate to="/signin" state={{ from: location }} replace />;
   }
 

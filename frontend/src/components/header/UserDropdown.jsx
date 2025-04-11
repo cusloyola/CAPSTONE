@@ -7,7 +7,7 @@ export default function UserDropdown() {
   const [user, setUser] = useState({ name: "", email: "" });
   const navigate = useNavigate();
 
-  useEffect(() => {
+useEffect(() => {
     async function fetchUser() {
       try {
         // Retrieve the JWT from localStorage
@@ -55,6 +55,7 @@ export default function UserDropdown() {
 
     fetchUser();
   }, [navigate]);
+  
   function toggleDropdown() {
     setIsOpen(!isOpen);
   }
@@ -84,17 +85,30 @@ export default function UserDropdown() {
 
   async function handleLogout() {
     try {
+      // Optional: Log out from API server (if applicable)
       await fetch("/api/logout", { method: "POST", credentials: "include" });
     } catch (error) {
       console.error("Logout failed:", error);
     }
-
+  
+    // Clear cookies, localStorage, and sessionStorage
     clearCookies();
     localStorage.clear();
     sessionStorage.clear();
+  
+    // Prevent going back to the previous page (including sign-in page)
+    window.history.pushState(null, "", "/signin");  // Replace current history state
+    window.onpopstate = () => {
+      navigate("/signin");  // Redirect to sign-in if the user tries to go back
+    };
+  
+    // Redirect to the sign-in page
     navigate("/signin");
+  
+    // Optionally, reload the page to reset any state or re-initialize
     window.location.reload();
   }
+  
 
   return (
     <div className="relative">
