@@ -5,6 +5,10 @@ const router = express.Router();
 const db = require("../config/db");
 const bcrypt = require('bcrypt');
 const path = require('path');
+const jwt = require("jsonwebtoken");
+const secret = "your_super_secret_key"; // Replace with your secret key
+
+
 
 const getAllUsers = async (req, res) => {
     try {
@@ -162,30 +166,36 @@ const updateUserAccount = (req, res) => {
 
 const getUserNamesAndEmails = async (req, res) => {
     try {
-        const results = await new Promise((resolve, reject) => {
-            // Select only full_name and email
-            db.query("SELECT full_name, email FROM users WHERE is_active = 1", (err, results) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(results);
-                }
-            });
+      console.log("req.user in getUserNamesAndEmails:", req.user); // Log req.user
+  
+      const userId = req.user.user_id;
+  
+      const query = "SELECT full_name, email FROM users WHERE user_id = ? AND is_active = 1";
+      console.log("Executing Query:", query, [userId]); // Log the query
+  
+      const results = await new Promise((resolve, reject) => {
+        db.query(query, [userId], (err, results) => {
+          if (err) {
+            console.error("Database Query Error:", err);
+            reject(err);
+          } else {
+            console.log("Query Results:", results); // Log the results
+            resolve(results);
+          }
         });
-
-        if (!results || results.length === 0) {
-            console.warn("⚠️ No user accounts found.");
-            return res.status(404).json({ message: "No user accounts found." });
-        }
-        console.log("📌 Sending Users Data (Full Name and Email):", results);
-        return res.json(results); // Return only full_name and email
+      });
+  
+      if (!results || results.length === 0) {
+        return res.status(404).json({ message: "User account not found or inactive." });
+      }
+  
+      return res.json(results[0]); // Send the logged-in user's data
     } catch (err) {
-        console.error("❌ Error fetching user names and emails:", err);
-        return res.status(500).json({ error: "Server error while fetching user names and emails", details: err.message });
+      console.error('Server error while fetching user data:', err);
+      return res.status(500).json({ error: 'Server error while fetching user data', details: err.message });
     }
-};
-
-
+  };
+  
 
 module.exports = {
     getAllUsers,

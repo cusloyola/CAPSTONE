@@ -10,33 +10,40 @@ export default function UserDropdown() {
   useEffect(() => {
     async function fetchUser() {
       try {
+        // Retrieve the JWT from localStorage
+        const token = localStorage.getItem('authToken');
+
+        const headers = {
+          'Content-Type': 'application/json',
+          'credentials': 'include',
+        };
+
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch("http://localhost:5000/api/user-accounts/names-and-emails", {
-          credentials: "include",
+          method: 'GET',
+          headers: headers,
         });
 
-        // Check if the response is OK (status code 200)
         if (!response.ok) {
           console.error("Failed to fetch user. Status:", response.status);
+          if (response.status === 401 || response.status === 403) {
+            navigate('/signin');
+          }
           return;
         }
 
-        // Check if the content type is JSON
         const contentType = response.headers.get("Content-Type");
         if (contentType && contentType.includes("application/json")) {
           const data = await response.json();
 
-          // Check if the data is an array and contains at least one user
-          if (Array.isArray(data) && data.length > 0) {
-            // Assuming the API returns an array of user objects
-            // and you want to display the first user's information
-            const firstUser = data[0];
-            if (firstUser.full_name && firstUser.email) {
-              setUser({ name: firstUser.full_name, email: firstUser.email });
-            } else {
-              console.error("User data is missing full_name or email.");
-            }
+          // Now 'data' should be a single user object
+          if (data && data.full_name && data.email) {
+            setUser({ name: data.full_name, email: data.email });
           } else {
-            console.error("Expected an array of user data.");
+            console.error("User data is incomplete.");
           }
         } else {
           console.error("Expected JSON response, but got:", contentType);
@@ -47,8 +54,7 @@ export default function UserDropdown() {
     }
 
     fetchUser();
-  }, []);
-
+  }, [navigate]);
   function toggleDropdown() {
     setIsOpen(!isOpen);
   }
@@ -57,7 +63,6 @@ export default function UserDropdown() {
     setIsOpen(false);
   }
 
-  // Close the dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       const dropdownElement = document.querySelector(".dropdown-toggle");
@@ -101,7 +106,7 @@ export default function UserDropdown() {
           <img src="/images/drl/user.png" alt="User" />
         </span>
         <span className="block mr-1 font-medium text-theme-sm">
-          {user.name || "Loading..."}
+          {user.name || "Loading..."} {/* Display user name or "Loading..." */}
         </span>
         <svg
           className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}

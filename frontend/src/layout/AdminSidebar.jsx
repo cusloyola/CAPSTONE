@@ -13,6 +13,14 @@ import {
   PlugInIcon,
   TableIcon,
   UserCircleIcon,
+  FolderIcon,
+  UserIcon,
+  GroupIcon,
+  DollarLineIcon,
+  PlusIcon,
+  FileIcon,
+
+  
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
@@ -24,14 +32,14 @@ const navItems = [
     path: "/AdminDashboard"
   },
   {
-    icon: <GridIcon />,
+    icon: <CalenderIcon />,
     name: "Project Management",
     subItems:
       [
         { name: "Task Scheduling", path: "", pro: false, }, //path : /AdminDashboard - name ng file
         { name: "Status Updates", path: "", pro: false }, 
         { name: "Calendar", path: "/AdminCalendar", pro: false },
-        { name: "CRUD Projects", path: "/ProjectsCRUD", pro: false },
+        { name: "Projects", path: "/ProjectsCRUD", pro: false },
         { name: "Daily Site Reports", path: "/AdminSiteReports", pro: false },
         { name: "Clients", path: "/ClientManagement", pro: false },
 
@@ -40,17 +48,17 @@ const navItems = [
   },
 
   {
-    icon: <GridIcon />,
+    icon: <UserIcon  />,
     name: "User Management",
     subItems: [{ name: "User Accounts", path: "/UserManagement", pro: false }],
   },
   {
-    icon: <GridIcon />,
+    icon: <GroupIcon />,
     name: "HR Management",
     subItems: [{ name: "Workers Management", path: "/EmployeeManagement", pro: false }],
   },
   {
-    icon: <GridIcon />,
+    icon: <DollarLineIcon />,
     name: "Cost Estimation",
     subItems:
     [
@@ -59,7 +67,7 @@ const navItems = [
     ],
   },
   {
-    icon: <GridIcon />,
+    icon: <ListIcon />,
     name: "Inventory & Resources",
     subItems:
     [
@@ -68,17 +76,17 @@ const navItems = [
     ],
   },
   {
-    icon: <GridIcon />,
+    icon: <PlusIcon />,
     name: "Request Management ",
     subItems: [{ name: "Manage Material Request", path: "/MaterialRequestManagement", pro: false }],
   },
   {
-    icon: <GridIcon />,
+    icon: <FolderIcon />,
     name: "Document Management",
     subItems: [{ name: "File Manaegement", path: "/AdminFileManagement", pro: false }],
   },
   {
-    icon: <GridIcon />,
+    icon: <FileIcon />,
     name: "Contract Management",
     subItems: [{ name: "Employee Application Contract", path: "/EmploymentContract", pro: false },
       { name: "Leave Application Contract", path: "/LeaveContract", pro: false },
@@ -90,7 +98,7 @@ const navItems = [
   //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   // },
   {
-    icon: <GridIcon />,
+    icon: <PieChartIcon />,
     name: "Reports and Analytics",
     subItems: [{ name: "Reports", path: "/Reports", pro: false }],
   },
@@ -352,7 +360,7 @@ const AdminSidebar = () => {
                   !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
                 }`}
               >
-                {isExpanded || isHovered || isMobileOpen ? "Others" : <HorizontaLDots />}
+                {isExpanded || isHovered || isMobileOpen ? " " : <HorizontaLDots />}
               </h2>
               {renderMenuItems(othersItems, "others")}
             </div>

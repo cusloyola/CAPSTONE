@@ -86,14 +86,16 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Public Routes */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/* <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} /> */}
 
+            <Route path="/" element={<SignIn />} />
 
 
           {/* Protected Routes */}
           <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+            {/* <Route index path="/" element={<Home />} /> */}
+            <Route path="/" element={<SignIn />} />
 
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>

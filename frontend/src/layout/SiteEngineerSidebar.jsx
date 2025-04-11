@@ -20,36 +20,36 @@ import SidebarWidget from "./SidebarWidget";
 const navItems = [
  
   {
-    icon: <BoxCubeIcon />,
+    icon: <PageIcon />,
     name: "Site Progress",
     subItems: [{ name: "Site Progress", path: "/SiteProgressTracking", pro: false }],
   },
-  {
-    icon: <GridIcon />,
-    name: "DashboardOriginal",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Inventory & Resources",
-    subItems: [{ name: "Stocks", path: "/admin/inventory", pro: false }],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Inventory",
-    subItems: [{ name: "Stocks", path: "/admin/inventory", pro: false }],
-  },
-   ,
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
-  {
-    name: "Forms",
-    icon: <ListIcon />,
-    subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  },
+  // {
+  //   icon: <GridIcon />,
+  //   name: "DashboardOriginal",
+  //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+  // },
+  // {
+  //   icon: <BoxCubeIcon />,
+  //   name: "Inventory & Resources",
+  //   subItems: [{ name: "Stocks", path: "/admin/inventory", pro: false }],
+  // },
+  // {
+  //   icon: <BoxCubeIcon />,
+  //   name: "Inventory",
+  //   subItems: [{ name: "Stocks", path: "/admin/inventory", pro: false }],
+  // },
+  //  ,
+  // {
+  //   icon: <UserCircleIcon />,
+  //   name: "User Profile",
+  //   path: "/profile",
+  // },
+  // {
+  //   name: "Forms",
+  //   icon: <ListIcon />,
+  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
+  // },
   {
     name: "Request Material",
     icon: <ListIcon />, // Assuming ListIcon is imported from a library like @mui/icons-material
@@ -291,10 +291,10 @@ const SiteEngineerSidebar = () => {
             <>
               <img
                 className="dark:hidden"
-                src="./images/drl/logo.png"
+                src="/images/drl/logo.png"
                 alt="Logo"
-                width={150}
-                height={40}
+                width={250}
+                height={50}
               />
               <img
                 className="hidden dark:block"

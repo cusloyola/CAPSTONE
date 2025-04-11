@@ -49,7 +49,7 @@ export default function SignInForm() {
         // Redirect user based on role
         const roleRoutes = {
           admin: "/AdminDashboard",
-          "site engineer": "/SiteEngineerDashboard",
+          "site engineer": "/SiteProgressTracking",
           "safety engineer": "/SafetyEngineerDashboard",
         };
 
