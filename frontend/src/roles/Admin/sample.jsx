@@ -205,14 +205,7 @@ function EmployeeManagement() {
     };
 
     const handleEdit = (employee) => {
-        setEditEmployee({
-            worker_id: employee.worker_id,
-            first_name: employee.first_name,
-            last_name: employee.last_name,
-            role: employee.role,
-            contact_details: employee.contact_details,
-            hire_date: employee.hire_date ? new Date(employee.hire_date) : null,
-        });
+        setEditEmployee({ ...employee, hire_date: employee.hire_date ? new Date(employee.hire_date) : null });
         setIsEditModalOpen(true);
     };
 
@@ -233,57 +226,30 @@ function EmployeeManagement() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    first_name: editEmployee.first_name,
-                    last_name: editEmployee.last_name,
-                    role: editEmployee.role,
-                    contact_details: editEmployee.contact_details,
+                    ...editEmployee,
                     hire_date: editEmployee.hire_date ? editEmployee.hire_date.toISOString().split('T')[0] : null,
                 }),
             });
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData?.message || 'Failed to update employee');
+                throw new Error('Failed to update employee');
             }
-            const responseData = await response.json(); // Parse the response to potentially get updated data
-
-            setIsEditModalOpen(false); // Close the modal after successful submission
+            setIsEditModalOpen(false);
             setSuccessMessage('Employee updated successfully!');
             setShowSuccessModal(true);
-
-            // If the backend returns the updated employee data, update the state directly
-            if (responseData?.employee) {
-                setEmployees(prevEmployees =>
-                    prevEmployees.map(emp =>
-                        emp.worker_id === responseData.employee.worker_id
-                            ? { ...emp, ...responseData.employee, full_name: `${responseData.employee.first_name} ${responseData.employee.last_name}` }
-                            : emp
-                    )
-                );
-            } else {
-                // If the backend doesn't return the updated data, refetch the employees
-                fetchEmployees();
-            }
+            fetchEmployees();
         } catch (err) {
             setError(err.message);
         }
     };
 
-
-    const handleSearchChange = (e) => {
-        setSearchTerm(e.target.value);
-    };
-
     const filteredEmployees = employees.filter((employee) => {
-        const fullNameLower = (employee.full_name || '').toLowerCase();
-        const roleLower = (employee.role || '').toLowerCase();
-        const searchTermLower = searchTerm.toLowerCase();
-
+        const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.toLowerCase();
         return (
-            fullNameLower.includes(searchTermLower) ||
-            roleLower.includes(searchTermLower)
+            fullName.includes(searchTerm.toLowerCase()) ||
+            (employee.role || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (employee.contact_details || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
     });
-
 
     return (
         <div>
@@ -300,14 +266,14 @@ function EmployeeManagement() {
             >
                 + Add Employee
             </button>
+
             <input
                 type="text"
-                placeholder="Search employees by full name or role..."
+                placeholder="Search employees..."
                 value={searchTerm}
-                onChange={handleSearchChange}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "750px", borderRadius: "10px" }}
             />
-
 
             {showAddModal && (
                 <div
@@ -427,6 +393,7 @@ function EmployeeManagement() {
                         {filteredEmployees.map((employee) => (
                             <tr key={employee.worker_id} style={{ borderBottom: "1px solid #eee", backgroundColor: "white" }}>
                                 <td style={{ padding: "12px 15px", color: "black", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{employee.worker_id}</td>
+                                {/* <td style={{ padding: "12px 15px", color: "black", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{`${employee.first_name} ${employee.last_name}`}</td> */}
                                 <td style={{ padding: "12px 15px", color: "black", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{employee.full_name}</td>
                                 <td style={{ padding: "12px 15px", color: "black", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{employee.role}</td>
                                 <td style={{ padding: "12px 15px", color: "black", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{employee.contact_details}</td>
@@ -435,7 +402,7 @@ function EmployeeManagement() {
                                         <button
                                             onClick={() => handleViewEmployeeInfo(employee)}
                                             style={{
-                                                width:"auto",
+                                                width: "auto",
                                                 padding: "8px 10px",
                                                 backgroundColor: "#3498db",
                                                 color: "white",
@@ -462,7 +429,7 @@ function EmployeeManagement() {
                                                 borderRadius: "5px",
                                                 cursor: "pointer",
                                                 boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                                marginRight: '5px', display: 'flex',
+                                                marginRight: '5px',display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                             }}
@@ -553,7 +520,7 @@ function EmployeeManagement() {
                                 onClick={closeDeleteModal}
                                 style={{
                                     padding: "12px 20px",
-                                    backgroundColor: "#3498db",
+                                    backgroundColor:"#3498db",
                                     color: "white",
                                     border: "none",
                                     borderRadius: "4px",
@@ -683,17 +650,6 @@ function EmployeeManagement() {
                                 />
                             </div>
                             <div>
-                                <label>Role</label>
-                                <input
-                                    type="text"
-                                    name="role"
-                                    value={editEmployee.role || ''}
-                                    onChange={handleEditChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
-                            </div>
-                            <div>
                                 <label>Contact Details</label>
                                 <input
                                     type="text"
@@ -704,7 +660,9 @@ function EmployeeManagement() {
                                 />
                             </div>
                             <div>
-                                <label>Hire Date</label><br></br>
+                            </div>
+                            <div>
+                                <label>Hire Date</label>
                                 <DatePicker
                                     name="hire_date"
                                     selected={editEmployee.hire_date}
@@ -713,7 +671,6 @@ function EmployeeManagement() {
                                     style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
                                 />
                             </div>
-                            <br></br>
                             <div>
                                 <button type="submit" style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}>
                                     Update Employee</button>
