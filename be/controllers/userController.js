@@ -45,3 +45,21 @@ exports.addUser = async (req, res) => {
         res.status(500).json({ error: "Internal server error." });
     }
 };
+
+exports.getUserById = (req, res) => {
+    const userId = req.params.id;
+
+    db.query("SELECT full_name, email FROM users WHERE id = ?", [userId], (err, results) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.status(500).json({ error: "Failed to fetch user" });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json(results[0]);
+    });
+};
+

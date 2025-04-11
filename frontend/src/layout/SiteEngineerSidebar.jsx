@@ -291,7 +291,7 @@ const SiteEngineerSidebar = () => {
             <>
               <img
                 className="dark:hidden"
-                src="/images/logo/logo.svg"
+                src="./images/drl/logo.png"
                 alt="Logo"
                 width={150}
                 height={40}

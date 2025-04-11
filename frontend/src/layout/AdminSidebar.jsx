@@ -310,10 +310,10 @@ const AdminSidebar = () => {
             <>
               <img
                 className="dark:hidden"
-                src="/images/logo/logo.svg"
+                src="/images/drl/logo.png"
                 alt="Logo"
-                width={150}
-                height={40}
+                width={250}
+                height={50}
               />
               <img
                 className="hidden dark:block"

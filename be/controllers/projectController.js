@@ -1,4 +1,3 @@
-// controllers/projectController.js
 const db = require('../config/db');
 
 // Get all projects

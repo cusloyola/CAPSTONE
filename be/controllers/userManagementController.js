@@ -160,10 +160,38 @@ const updateUserAccount = (req, res) => {
     }
 };
 
+const getUserNamesAndEmails = async (req, res) => {
+    try {
+        const results = await new Promise((resolve, reject) => {
+            // Select only full_name and email
+            db.query("SELECT full_name, email FROM users WHERE is_active = 1", (err, results) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+
+        if (!results || results.length === 0) {
+            console.warn("⚠️ No user accounts found.");
+            return res.status(404).json({ message: "No user accounts found." });
+        }
+        console.log("📌 Sending Users Data (Full Name and Email):", results);
+        return res.json(results); // Return only full_name and email
+    } catch (err) {
+        console.error("❌ Error fetching user names and emails:", err);
+        return res.status(500).json({ error: "Server error while fetching user names and emails", details: err.message });
+    }
+};
+
+
+
 module.exports = {
     getAllUsers,
     deleteUserAccount,
     getUserAccountById,
     addUserAccount,
-    updateUserAccount
+    updateUserAccount,
+    getUserNamesAndEmails
 };

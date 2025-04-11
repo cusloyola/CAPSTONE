@@ -1,6 +1,10 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const path = require('path');
+const fs = require('fs');  // Add this line at the top of your file
+const {verifyToken} = require('./middleware/authMiddleware'); // Correct way for default export
+
 const db = require("./config/db"); // Ensure DB connection is initialized
 
 dotenv.config(); // Load environment variables
@@ -46,6 +50,16 @@ const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 
+const fileRoutes = require('./routes/fileRoutes'); // Import fileRoutes
+
+
+// Ensure the uploads directory exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir); // Create uploads folder if it doesn't exist
+}
+
+
 // ✅ Use Routes
 app.use("/api", employeeManagementRoutes); // Mount employee management routes under /api
 app.use("/api/request-materials", requestMaterialRoutes); 
@@ -79,7 +93,14 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use("/api/folders", folderRoutes);
 
 
+
+
 app.use("/api/documents", documentRoutes);
+
+
+
+// Use the fileRoutes for the POST request
+app.use("/api/files", fileRoutes); // This includes /api/files/upload
 
 
 

@@ -1,5 +1,3 @@
-// userManagementRoutes.js
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -7,7 +5,8 @@ const {
     deleteUserAccount,
     getUserAccountById,
     addUserAccount,
-    updateUserAccount
+    updateUserAccount,
+    getUserNamesAndEmails 
 } = require("../controllers/userManagementController");
 
 router.get("/", getAllUsers);
@@ -15,5 +14,7 @@ router.delete("/:id", deleteUserAccount);
 router.get("/:id", getUserAccountById);
 router.post("/", addUserAccount);
 router.put("/:id", updateUserAccount);
+
+router.get("/names-and-emails", getUserNamesAndEmails);
 
 module.exports = router;
