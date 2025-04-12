@@ -8,6 +8,8 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import Badge from "../../../components/ui/badge/Badge";
+import Button from "../../../components/ui/button/Button";
+
 import ReportViewModal from "../Daily Site Reports/ReportViewModal"; // Import the modal
 
 function DailySiteReports() {
@@ -142,25 +144,28 @@ function DailySiteReports() {
                     {report.project_name}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {report.owner}
+                    {report.client_name}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     {report.location}
                   </TableCell>
                   {/* Actions Cell with View and Delete buttons */}
                   <TableCell className="px-4 py-3 text-gray-500 text-start">
-                    <button
+                
+              
+                    <Button
                       onClick={() => handleViewClick(report)}
                       className="px-4 py-2 mr-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
                       View
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                    variant='destructive'
                       onClick={() => handleDeleteClick(report.report_id)}
-                      className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      className="px-4 py-2 bg-red-500 text-white rounded "
                     >
                       Delete
-                    </button>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

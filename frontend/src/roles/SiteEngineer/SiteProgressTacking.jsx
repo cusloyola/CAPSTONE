@@ -44,7 +44,7 @@ const SiteProgressTracking = () => {
           setProjectName(firstProject.project_name);
           setProjectId(firstProject.project_id);
           setLocation(firstProject.location);
-          setOwner(firstProject.owner);
+          setOwner(firstProject.owner); 
           setPreparedBy(firstProject.prepared_by);
         }
       } catch (error) {

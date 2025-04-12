@@ -50,7 +50,7 @@ const CreateBOMModal = ({ isOpen, onClose }) => {
 
             alert(response.data.message);
             onClose(); // Close modal
-            navigate(`/admin/bom/${newBOMId}`); // ✅ Redirect to BOM Table template
+            navigate(`/Estimation/BOMTable/${newBOMId}`); // ✅ Redirect to BOM Table template
         } catch (error) {
             console.error("❌ Error creating BOM:", error.response?.data || error);
             alert(error.response?.data?.message || "Error creating BOM");

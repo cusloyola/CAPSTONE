@@ -38,39 +38,49 @@ const getClientById = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch client", error: err.message });
   }
 };
-
 // controllers/clientController.js
 const createClient = (req, res, next) => {
-    const { client_name, email, phone_number, industry } = req.body;
-    
-    if (!client_name || !email || !phone_number || !industry) {
-      return res.status(400).json({ message: "Missing required fields" });
+  const { client_name, email, phone_number, industry, website } = req.body;
+
+  if (!client_name || !email || !phone_number || !industry) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const query = "INSERT INTO clients (client_name, email, phone_number, industry, website) VALUES (?, ?, ?, ?, ?)";
+  db.query(query, [client_name, email, phone_number, industry, website], (err, result) => {
+    if (err) {
+      return next(err);
     }
-  
-    const query = "INSERT INTO clients (client_name, email, phone_number, industry) VALUES (?, ?, ?, ?)";
-    db.query(query, [client_name, email, phone_number, industry], (err, result) => {
-      if (err) {
-        return next(err); // Call error handler if something goes wrong
-      }
-  
-      res.status(201).json({ message: "Client created successfully", clientId: result.insertId });
+
+    res.status(201).json({
+      message: "Client created successfully",
+      clientId: result.insertId,
+      client: {
+        client_id: result.insertId,
+        client_name,
+        email,
+        phone_number,
+        industry,
+        website,
+      },
     });
-  };
+  });
+};
 
 
 // Update client information
 const updateClient = async (req, res) => {
   const { clientId } = req.params;
-  const { client_name, contact_number, email } = req.body;
+  const { client_name, phone_number, email } = req.body; // Change contact_number to phone_number
 
-  if (!client_name && !contact_number && !email) {
-    return res.status(400).json({ message: "At least one field (client_name, contact_number, or email) must be provided" });
+  if (!client_name && !phone_number && !email) {
+    return res.status(400).json({ message: "At least one field (client_name, phone_number, or email) must be provided" });
   }
 
   try {
     const result = await db.query(
-      "UPDATE clients SET client_name = ?, contact_number = ?, email = ? WHERE client_id = ?",
-      [client_name, contact_number, email, clientId]
+      "UPDATE clients SET client_name = ?, phone_number = ?, email = ? WHERE client_id = ?",
+      [client_name, phone_number, email, clientId] // Use phone_number here as well
     );
 
     if (result.affectedRows === 0) {
@@ -83,6 +93,7 @@ const updateClient = async (req, res) => {
     res.status(500).json({ message: "Failed to update client", error: err.message });
   }
 };
+
 
 // Delete a client
 const deleteClient = async (req, res) => {

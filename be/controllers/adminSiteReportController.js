@@ -1,8 +1,7 @@
 const db = require("../config/db");
-
-// Fetch all report details with project information
+// Fetch all report details with project and client information
 const fetchAllReportDetails = async (req, res) => {
-  console.log('Fetching all report details with project information...');
+  console.log('Fetching all report details with project and client information...');
   try {
     const query = `
       SELECT 
@@ -20,9 +19,10 @@ const fetchAllReportDetails = async (req, res) => {
         p.project_id, 
         p.project_name, 
         p.location, 
-        p.owner
+        c.client_name
       FROM daily_site_reports ds
       JOIN projects p ON ds.project_id = p.project_id
+      JOIN clients c ON p.client_id = c.client_id
     `;
     
     db.query(query, (err, result) => {
@@ -31,7 +31,7 @@ const fetchAllReportDetails = async (req, res) => {
         return res.status(500).json({ message: 'Failed to fetch report details' });
       }
 
-      console.log('Fetched report details:', result);  // Log the report details with project info
+      console.log('Fetched report details:', result);  // Log the report details with project & client info
       res.status(200).json(result);
     });
   } catch (error) {

@@ -5,10 +5,12 @@ const getProjectDetailsForDailyReport = (req, res) => {
       p.project_id,  -- Include project_id
       p.project_name, 
       p.location, 
-      p.owner, 
+      c.client_name AS owner,
       u.full_name AS prepared_by
     FROM 
       projects p
+    JOIN 
+      clients c ON p.client_id = c.client_id
     JOIN 
       users u ON u.user_id = 2 
     WHERE 

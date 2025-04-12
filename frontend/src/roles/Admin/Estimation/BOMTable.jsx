@@ -388,7 +388,7 @@ const BOMTable = ({ user }) => {
                 <button onClick={() => handleDeleteAllRows(setRowData, setUndoStack, rowData)()} className="bg-red-500 text-white px-4 py-2 rounded ">Delete All Rows</button>
             </div>
             <div className="border border-gray-300" tabIndex="0" onKeyDown={(event) => handleGridKeyDown(event, gridApiRef.current, rowData, setRowData, setUndoStack, undoStack)}>
-                <div className="ag-theme-alpine ag-theme-legacy excel-grid" style={{ height: 1500, width: "100%" }}>
+                <div className="ag-theme-alpine ag-theme-legacy excel-grid" style={{ height: 1800, width: "100%" }}>
                     <AgGridReact
                         rowData={rowData}
                         columnDefs={columnDefs}

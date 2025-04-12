@@ -1,8 +1,18 @@
 const db = require('../config/db');
 
-// Get all projects
+// Get all projects (joined with client info)
 const getAllProjects = (req, res) => {
-  db.query('SELECT * FROM projects ORDER BY start_date', (err, results) => {
+  const query = `
+    SELECT 
+      p.*,
+      c.client_name AS owner_name,
+      c.email AS owner_email
+    FROM projects p
+    JOIN clients c ON p.client_id = c.client_id
+    ORDER BY p.start_date
+  `;
+
+  db.query(query, (err, results) => {
     if (err) {
       console.error('❌ Error fetching projects:', err);
       return res.status(500).json({ error: 'Database error' });
@@ -10,43 +20,41 @@ const getAllProjects = (req, res) => {
     res.json(results);
   });
 };
+
 const createProject = (req, res) => {
+  console.log(req.body); // Log the incoming request body
+
   const {
     project_name,
     location,
-    owner,
     start_date,
     end_date,
     status,
     budget,
     actual_cost,
     progress_percent,
-    client_id // new client_id field
-
+    client_id
   } = req.body;
 
-  // Validate the required fields
   if (
-    !project_name ||
-    !location ||
-    !owner ||
-    !start_date ||
-    !end_date ||
-    !status ||
-    !budget ||
-    !actual_cost ||
-    !progress_percent ||
-    !client_id // ensure client_id is provided
-
-
-  ) {
+    project_name == null ||
+    location == null ||
+    start_date == null ||
+    end_date == null ||
+    status == null ||
+    budget == null ||
+    actual_cost == null ||
+    progress_percent == null ||
+    client_id == null
+  )
+  {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   const query = `
     INSERT INTO projects 
-    (project_name, location, owner, start_date, end_date, status, budget, actual_cost, progress_percent, client_id) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (project_name, location, start_date, end_date, status, budget, actual_cost, progress_percent, client_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
@@ -54,14 +62,13 @@ const createProject = (req, res) => {
     [
       project_name,
       location,
-      owner,
       start_date,
       end_date,
       status,
       budget,
       actual_cost,
       progress_percent,
-      client_id // insert client_id
+      client_id
     ],
     (err, result) => {
       if (err) {
@@ -73,100 +80,93 @@ const createProject = (req, res) => {
   );
 };
 
-
-// Update an existing project
 const updateProject = (req, res) => {
-  const { id } = req.params;
+  const { id } = req.params; // The project ID from the URL (e.g., /projects/:id)
   const {
     project_name,
     location,
-    owner,
     start_date,
     end_date,
     status,
     budget,
     actual_cost,
-    progress_percent
-  } = req.body;
+    progress_percent,
+    client_id
+  } = req.body; // The project details sent in the body of the request
 
-  // Validate the required fields
+  // Check if all required fields are provided
   if (
     !project_name ||
     !location ||
-    !owner ||
     !start_date ||
     !end_date ||
     !status ||
     !budget ||
     !actual_cost ||
-    !progress_percent
+    !progress_percent ||
+    !client_id
   ) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: 'Missing required fields' }); // Return error if any field is missing
   }
 
   const query = `
-    UPDATE projects 
-    SET 
-      project_name = ?, 
-      location = ?, 
-      owner = ?, 
-      start_date = ?, 
-      end_date = ?, 
-      status = ?, 
-      budget = ?, 
-      actual_cost = ?, 
-      progress_percent = ? 
-    WHERE project_id = ?
-  `;
+  UPDATE projects
+  SET 
+    project_name = ?, 
+    location = ?, 
+    start_date = ?, 
+    end_date = ?, 
+    status = ?, 
+    budget = ?, 
+    actual_cost = ?, 
+    progress_percent = ?, 
+    client_id = ?
+  WHERE project_id = ?;
+`;
 
-  db.query(
-    query,
-    [
-      project_name,
-      location,
-      owner,
-      start_date,
-      end_date,
-      status,
-      budget,
-      actual_cost,
-      progress_percent,
-      id
-    ],
-    (err, result) => {
-      if (err) {
-        console.error('❌ Error updating project:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'Project not found' });
-      }
-      res.json({ message: 'Project updated successfully' });
+db.query(
+  query,
+  [
+    project_name,
+    location,
+    start_date,
+    end_date,
+    status,
+    budget,
+    actual_cost,
+    progress_percent, // Ensure this is being passed correctly
+    client_id,
+    id, // Project ID to update
+  ],
+  (err, result) => {
+    if (err) {
+      console.error('❌ Error updating project:', err);
+      return res.status(500).json({ error: 'Database error' });
     }
-  );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    res.json({ message: 'Project updated successfully' });
+  }
+);
 };
 
+
 // Delete a project
- const deleteProject = async (req, res) => {
+const deleteProject = async (req, res) => {
   const projectId = req.params.id;
 
   try {
-    // Step 1: Delete related records in worker_projects
-    await db.query("DELETE FROM worker_projects WHERE project_id = ?", [projectId]);
-
-    // Step 2: Delete the project
+    await db.query("DELETE FROM projects WHERE project_id = ?", [projectId]);
     await db.query("DELETE FROM projects WHERE project_id = ?", [projectId]);
 
     res.status(200).json({ message: "Project deleted successfully" });
   } catch (error) {
-    console.error("Error deleting project:", error);
+    console.error("❌ Error deleting project:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-
-
-// Export the functions
 module.exports = {
   getAllProjects,
   createProject,

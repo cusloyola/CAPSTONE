@@ -37,7 +37,7 @@ const navItems = [
     subItems:
       [
         { name: "Task Scheduling", path: "/TaskManagement", pro: false, }, //path : /AdminDashboard - name ng file
-        { name: "Status Updates", path: "", pro: false }, 
+        // { name: "Status Updates", path: "", pro: false }, 
         { name: "Calendar", path: "/AdminCalendar", pro: false },
         { name: "Projects", path: "/ProjectsCRUD", pro: false },
         { name: "Daily Site Reports", path: "/AdminSiteReports", pro: false },
@@ -55,7 +55,7 @@ const navItems = [
   {
     icon: <GroupIcon />,
     name: "HR Management",
-    subItems: [{ name: "Workers Management", path: "/EmployeeManagement", pro: false }],
+    subItems: [{ name: "Workers", path: "/EmployeeManagement", pro: false }],
   },
   {
     icon: <DollarLineIcon />,
@@ -78,12 +78,12 @@ const navItems = [
   {
     icon: <PlusIcon />,
     name: "Request Management ",
-    subItems: [{ name: "Manage Material Request", path: "/MaterialRequestManagement", pro: false }],
+    subItems: [{ name: "Material Request", path: "/MaterialRequestManagement", pro: false }],
   },
   {
     icon: <FolderIcon />,
     name: "Document Management",
-    subItems: [{ name: "File Manaegement", path: "/AdminFileManagement", pro: false }],
+    subItems: [{ name: "Files", path: "/AdminFileManagement", pro: false }],
   },
   {
     icon: <FileIcon />,
