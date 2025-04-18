@@ -23,6 +23,20 @@ const ProjectModal = ({
         console.log("ProjectModal: Clients prop received:", clients);
     }, [clients]);
 
+    useEffect(() => {
+        if (!isEditing && isOpen) {
+            // Set initial values for new project creation
+            setForm(prevForm => ({
+                ...prevForm,
+                start_date: '',
+                end_date: '',
+                status: "Not Started",
+                budget: '',
+                progress_percent: 0,
+            }));
+        }
+    }, [isOpen, isEditing, setForm]);
+
     const handleClientChange = (e) => {
         const selectedClient = e.target.value;
         console.log("ProjectModal: Client selected:", selectedClient);
@@ -39,23 +53,24 @@ const ProjectModal = ({
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Form Fields */}
-                        {[{ label: "Project Name", name: "project_name" }, 
-                        { label: "Location", name: "location" }, 
-                        { label: "Start Date", name: "start_date", type: "date" },
-                         { label: "End Date", name: "end_date", type: "date" }, 
-                         { label: "Status", name: "status" }, 
-                         { label: "Budget", name: "budget", type: "number" },
-                          { label: "Progress", name: "progress_percent", type: "number", min: "0", max: "100" }].map(({ label, name, type = "text", ...rest }) => (
+                        {[{ label: "Project Name", name: "project_name" },
+                        { label: "Location", name: "location" },
+                        { label: "Start Date", name: "start_date", type: "date", disabled: !isEditing },
+                        { label: "End Date", name: "end_date", type: "date", disabled: !isEditing },
+                        { label: "Status", name: "status", disabled: !isEditing },
+                        { label: "Budget", name: "budget", type: "number", disabled: !isEditing },
+                        { label: "Progress", name: "progress_percent", type: "number", min: "0", max: "100", disabled: !isEditing }].map(({ label, name, type = "text", disabled = false, ...rest }) => (
                             <div key={name}>
                                 <label className="block font-medium">{label}</label>
                                 <input
                                     type={type}
-                                    className="w-full p-2 border rounded"
+                                    className={`w-full p-2 border rounded ${disabled && !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                     value={form[name] || ''}
                                     onChange={(e) => {
                                         console.log(`ProjectModal: Input ${name} changed to:`, e.target.value);
                                         setForm({ ...form, [name]: e.target.value });
                                     }}
+                                    disabled={disabled && !isEditing}
                                     {...rest}
                                 />
                                 {formErrors[name] && <p className="text-red-500 text-sm">{formErrors[name]}</p>}

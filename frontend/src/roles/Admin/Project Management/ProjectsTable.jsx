@@ -288,11 +288,12 @@ export default function ProjectTable() {
                                                     {ownerClient?.client_name || "N/A"}
                                                 </TableCell>
                                                 <TableCell className="px-4 py-3 text-gray-500">
-                                                    {formatDate(project.start_date)}
-                                                </TableCell>
-                                                <TableCell className="px-4 py-3 text-gray-500">
-                                                    {formatDate(project.end_date)}
-                                                </TableCell>
+    {project.start_date === "0000-00-00" || !project.start_date ? "Not Started" : formatDate(project.start_date)}
+</TableCell>
+<TableCell className="px-4 py-3 text-gray-500">
+    {project.end_date === "0000-00-00" || !project.end_date ? "Not Started" : formatDate(project.end_date)}
+</TableCell>
+
                                                 <TableCell className="px-4 py-3 text-gray-500">
                                                     <Badge
                                                         size="sm"
