@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaEye, FaPencilAlt, FaTrashAlt } from 'react-icons/fa'; 
+import { Table, TableHeader, TableBody, TableRow, TableCell } from '../../components/ui/table';
+
 
 function UserManagement() {
     const [users, setUsers] = useState([]);
@@ -300,94 +302,183 @@ function UserManagement() {
             {loading ? (
                 <p>⏳ Loading users...</p>
             ) : filteredUsers.length > 0 ? (
-                <table style={{ marginTop: "20px", width: "100%", height: "600px", borderCollapse: "collapse", borderRadius: "10px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", display: "block", overflowY: "auto" }}>
-                    <thead>
-                        <tr style={{ backgroundColor: "#e0e0e0", textAlign: "left" }}>
-                            <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Full Name</th>
-                            <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Email</th>
-                            <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Phone Number</th>
-                            <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Role</th>
-                            <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Is Active</th>
-                            <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "180px" }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+                <div className="max-w-full overflow-x-auto">
+                  <div className="min-w-[1102px]">
+                    <Table>
+                      <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]" style={{ backgroundColor: "#e0e0e0" }}>
+                        <TableRow>
+                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Full Name</TableCell>
+                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Email</TableCell>
+                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Phone Number</TableCell>
+                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Role</TableCell>
+                          <TableCell isHeader className="px-5 py-3 text-center text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Is Active</TableCell>
+                          <TableCell isHeader className="px-5 py-3 text-center text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Actions</TableCell>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                         {filteredUsers.map((user) => (
-                            <tr key={user.user_id} style={{ borderBottom: "1px solid #eee", backgroundColor: "white" }}>
-                                <td style={{ padding: "12px 15px", color: "black", width: "20%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.full_name}</td>
-                                <td style={{ padding: "12px 15px", color: "black", width: "20%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</td>
-                                <td style={{ padding: "12px 15px", color: "black", width: "15%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.phone_number}</td>
-                                <td style={{ padding: "12px 15px", color: "black", width: "15%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.role}</td>
-                                <td style={{ padding: "12px 15px", color: "black", width: "10%", textAlign: 'center' }}>{user.is_active === 1 ? 'Yes' : 'No'}</td>
-                                <td style={{ padding: "12px 15px", width: "20%" }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-                                    
-<button
-  onClick={() => handleViewUserInfo(user)}
-  style={{
-    width: "85px", // Adjusted width to accommodate icon and text
-    padding: "8px 12px",
-    backgroundColor: "#3498db",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    flex: '1',
-    marginRight: '5px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  }}
->
-  <FaEye className="mr-2" /> View
-</button>
-<button
-  onClick={() => handleEdit(user)}
-  style={{
-    width: "85px", // Adjusted width
-    padding: "8px 12px",
-    backgroundColor: "#f1c40f",
-    color: "black",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    flex: '1',
-    marginRight: '5px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  }}
->
-  <FaPencilAlt className="mr-2" /> Edit
-</button>
-<button
-  onClick={() => handleDeleteClick(user)}
-  style={{
-    width: "90px", // Adjusted width for "Delete"
-    padding: "8px 12px",
-    backgroundColor: "#e74c3c",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    flex: '1',
-    marginRight: '5px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  }}
->
-  <FaTrashAlt className="mr-2" /> Delete
-</button>
-                                    </div>
-                                </td>
-                            </tr>
+                          <TableRow key={user.user_id}>
+                            <TableCell className="px-5 py-4 sm:px-6 text-start text-black">{user.full_name}</TableCell>
+                            <TableCell className="px-4 py-3 text-black text-start text-theme-sm dark:text-gray-400">{user.email}</TableCell>
+                            <TableCell className="px-4 py-3 text-black text-start text-theme-sm dark:text-gray-400">{user.phone_number}</TableCell>
+                            <TableCell className="px-4 py-3 text-black text-start text-theme-sm dark:text-gray-400">{user.role}</TableCell>
+                            <TableCell className="px-4 py-3 text-black text-center text-theme-sm dark:text-gray-400">{user.is_active === 1 ? 'Yes' : 'No'}</TableCell>
+                            <TableCell className="px-4 py-3 text-black text-center">
+                              <div className="flex justify-center items-center">
+                                <button
+                                  onClick={() => handleViewUserInfo(user)}
+                                  style={{
+                                    width: "auto",
+                                    padding: "8px 10px",
+                                    backgroundColor: "#3498db",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                                    marginRight: '5px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <FaEye style={{ marginRight: '5px' }} /> View
+                                </button>
+                                <button
+                                  onClick={() => handleEdit(user)}
+                                  style={{
+                                    width: "auto",
+                                    padding: "8px 10px",
+                                    backgroundColor: "#f1c40f",
+                                    color: "black",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                                    marginRight: '5px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <FaPencilAlt style={{ marginRight: '5px' }} /> Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(user)}
+                                  style={{
+                                    width: "auto",
+                                    padding: "8px 10px",
+                                    backgroundColor: "#e74c3c",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <FaTrashAlt style={{ marginRight: '5px' }} /> Delete
+                                </button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                    </tbody>
-                </table>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+//                 <table style={{ marginTop: "20px", width: "100%", height: "600px", borderCollapse: "collapse", borderRadius: "10px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", display: "block", overflowY: "auto" }}>
+//                     <thead>
+//                         <tr style={{ backgroundColor: "#e0e0e0", textAlign: "left" }}>
+//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Full Name</th>
+//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Email</th>
+//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Phone Number</th>
+//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Role</th>
+//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Is Active</th>
+//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "180px" }}>Actions</th>
+//                         </tr>
+//                     </thead>
+//                     <tbody>
+//                         {filteredUsers.map((user) => (
+//                             <tr key={user.user_id} style={{ borderBottom: "1px solid #eee", backgroundColor: "white" }}>
+//                                 <td style={{ padding: "12px 15px", color: "black", width: "20%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.full_name}</td>
+//                                 <td style={{ padding: "12px 15px", color: "black", width: "20%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</td>
+//                                 <td style={{ padding: "12px 15px", color: "black", width: "15%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.phone_number}</td>
+//                                 <td style={{ padding: "12px 15px", color: "black", width: "15%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.role}</td>
+//                                 <td style={{ padding: "12px 15px", color: "black", width: "10%", textAlign: 'center' }}>{user.is_active === 1 ? 'Yes' : 'No'}</td>
+//                                 <td style={{ padding: "12px 15px", width: "20%" }}>
+//                                     <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                                    
+// <button
+//   onClick={() => handleViewUserInfo(user)}
+//   style={{
+//     width: "85px", // Adjusted width to accommodate icon and text
+//     padding: "8px 12px",
+//     backgroundColor: "#3498db",
+//     color: "white",
+//     border: "none",
+//     borderRadius: "5px",
+//     cursor: "pointer",
+//     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+//     flex: '1',
+//     marginRight: '5px',
+//     display: 'flex',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   }}
+// >
+//   <FaEye className="mr-2" /> View
+// </button>
+// <button
+//   onClick={() => handleEdit(user)}
+//   style={{
+//     width: "85px", // Adjusted width
+//     padding: "8px 12px",
+//     backgroundColor: "#f1c40f",
+//     color: "black",
+//     border: "none",
+//     borderRadius: "5px",
+//     cursor: "pointer",
+//     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+//     flex: '1',
+//     marginRight: '5px',
+//     display: 'flex',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   }}
+// >
+//   <FaPencilAlt className="mr-2" /> Edit
+// </button>
+// <button
+//   onClick={() => handleDeleteClick(user)}
+//   style={{
+//     width: "90px", // Adjusted width for "Delete"
+//     padding: "8px 12px",
+//     backgroundColor: "#e74c3c",
+//     color: "white",
+//     border: "none",
+//     borderRadius: "5px",
+//     cursor: "pointer",
+//     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+//     flex: '1',
+//     marginRight: '5px',
+//     display: 'flex',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   }}
+// >
+//   <FaTrashAlt className="mr-2" /> Delete
+// </button>
+//                                     </div>
+//                                 </td>
+//                             </tr>
+//                         ))}
+//                     </tbody>
+//                 </table>
             ) : (
                 <p style={{
                     textAlign: 'center',
