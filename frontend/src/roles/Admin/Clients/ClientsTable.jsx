@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "../../../components/ui/table";
 import Button from "../../../components/ui/button/Button";
-
+import DeleteConfirmModal from "./DeleteConfirmModal";
 import ClientViewModal from "../Clients/ClientViewModal";
 
 function ClientTable() {
@@ -16,7 +16,10 @@ function ClientTable() {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [editMode, setEditMode] = useState(false); // create vs edit mode
+  const [editMode, setEditMode] = useState(false); 
+  const [clientToDelete, setClientToDelete] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
 
   const [search, setSearch] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -57,9 +60,13 @@ function ClientTable() {
   };
 
   const handleDeleteClick = (clientId) => {
-    if (!window.confirm("Are you sure you want to delete this client?")) return;
-
-    fetch(`http://localhost:5000/api/clients/${clientId}`, {
+    setClientToDelete(clientId);
+    setIsDeleteModalOpen(true);
+  };
+  
+  
+  const confirmDelete = () => {
+    fetch(`http://localhost:5000/api/clients/${clientToDelete}`, {
       method: "DELETE",
     })
       .then((res) => {
@@ -67,14 +74,20 @@ function ClientTable() {
         return res.json();
       })
       .then(() => {
-        setClients((prev) => prev.filter((client) => client.client_id !== clientId));
+        setClients((prev) =>
+          prev.filter((client) => client.client_id !== clientToDelete)
+        );
+        setIsDeleteModalOpen(false);
+        setClientToDelete(null);
       })
       .catch((err) => {
         console.error(err);
         alert("Failed to delete the client.");
+        setIsDeleteModalOpen(false);
       });
   };
-
+  
+  
   const handleCreateClient = (clientData) => {
     fetch("http://localhost:5000/api/clients", { // Changed URL here
       method: "POST",
@@ -116,6 +129,9 @@ function ClientTable() {
         alert("Failed to update the client.");
       });
   };
+
+
+  
 
   const filteredClients = useMemo(() => {
     return clients.filter((client) =>
@@ -275,6 +291,15 @@ function ClientTable() {
           isEdit={editMode}
         />
       )}
+
+<DeleteConfirmModal
+  isOpen={isDeleteModalOpen}
+  clientName={clientToDelete?.client_name}
+  onClose={() => setIsDeleteModalOpen(false)}
+  onConfirm={confirmDelete}
+/>
+
+
     </div>
   );
 }
