@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { Link } from 'react-router-dom';
+import { Modal } from "../../../../components/ui/modal";
+
+
+import EditModal from "./EditModal";
 
 const PROJECTS_API_URL = "http://localhost:5000/api/projects/";
 
 const AllPendingProjects = () => {
     const [projects, setProjects] = useState([]);
-    const [clients, setClients] = useState([]);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedProject, setSelectedProject] = useState(null);
+    const [editMode, setEditMode] = useState(false);
+
+
+    // const [clients, setClients] = useState([]);
 
     const [filteredProjects, setFilteredProjects] = useState([]);
 
@@ -30,6 +40,9 @@ const AllPendingProjects = () => {
     const clientNames = [...new Set(projects.map(p => p.client_name).filter(Boolean))];
     const priorities = [...new Set(projects.map(p => p.priority).filter(Boolean))];
     const projectManagers = [...new Set(projects.map(p => p.projectManager).filter(Boolean))];
+
+
+
 
     useEffect(() => {
         fetch(PROJECTS_API_URL)
@@ -88,6 +101,53 @@ const AllPendingProjects = () => {
             setCurrentPage((prev) => prev + 1);
         }
     };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedProject(null);
+        setEditMode(false);
+    };
+
+    const handleViewClick = (p) => {
+        setSelectedProject(p);
+        setEditMode(false);
+        setIsModalOpen(true);
+    };
+
+    const handleEditClick = (project) => {
+        setSelectedProject(project);
+        setEditMode(true);
+        setIsModalOpen(true);
+    };
+
+
+    const handleUpdateProject = (projectData) => {
+        console.log(projectData);
+
+        fetch(`${PROJECTS_API_URL}${projectData.project_id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(projectData),
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("Failed to update project");
+                return res.json();
+            })
+            .then((updatedProject) => {
+                setProjects((prev) =>
+                    prev.map((proj) =>
+                        proj.project_id === updatedProject.project_id ? updatedProject : proj
+                    )
+                );
+                alert("Project updated successfully!");
+            })
+            .catch((err) => {
+                console.error(err);
+                alert("Failed to update the project.");
+            });
+    };
+
+
 
     return (
         <div className="p-4 space-y-6 bg-white shadow rounded">
@@ -250,7 +310,12 @@ const AllPendingProjects = () => {
                                 <td className="border px-4 py-2">{project.priority}</td>
                                 <td className="border px-4 py-2">
                                     <div className="flex gap-x-2">
-                                        <button className="bg-yellow-500 text-white px-6 h-10 rounded hover:bg-yellow-700">Edit</button>
+                                        <button
+                                            onClick={() => handleEditClick(project)}
+                                            className="bg-yellow-500 text-white px-6 h-10 rounded hover:bg-yellow-700"
+                                        >
+                                            Edit
+                                        </button>
                                         <button className="bg-red-600 text-white px-6 h-10 rounded hover:bg-red-700">Delete</button>
                                     </div>
                                 </td>
@@ -288,6 +353,19 @@ const AllPendingProjects = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Modal */}
+            {isModalOpen && (
+               <EditModal
+  isOpen={isModalOpen}
+  project={selectedProject}
+  onClose={handleCloseModal}
+  onSubmit={handleUpdateProject}
+  isEdit={editMode}
+/>
+
+            )}
+
         </div>
     );
 };

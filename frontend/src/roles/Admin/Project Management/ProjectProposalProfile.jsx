@@ -35,15 +35,15 @@ const ProjectProposalProfile = () => {
 
                 {/* Sidebar Navigation */}
                 <nav className="w-full flex flex-col gap-2">
-                    <Link
+                    {/* <Link
                         to={`profile`}
                         className="flex items-center justify-between px-4 py-2 rounded hover:bg-gray-100 w-full"
                     >
                         <span>Project Overview</span>
-                    </Link>
+                    </Link> */}
 
                     <Link
-                        to={`profile/info`}
+                        to={`info`}
                         className="flex items-center justify-between px-4 py-2 rounded hover:bg-gray-100 w-full"
                     >
                         <span>Project Info</span>

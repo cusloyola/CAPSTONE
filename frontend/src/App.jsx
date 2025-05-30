@@ -80,7 +80,7 @@ import SOWTables from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/SOWTab
 import QuantityTakeOff from "./roles/Admin/ProjectEstimation/QuantityTakeOff/QuantityTakeOff.jsx";
 
 
-import AllPendingProjects from "./roles/Admin/Project Management/AllPendingProjects.jsx";
+import AllPendingProjects from "./roles/Admin/Project Management/ProjectTable/AllPendingProjects.jsx";
 import ProposalTable from "./roles/Admin/Project Management/ProjectProposal/ProposalTable.jsx";
 import ProposalDetails from "./roles/Admin/Project Management/ProjectProposal/ProposalDetails.jsx";
 

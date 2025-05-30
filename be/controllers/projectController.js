@@ -52,8 +52,6 @@ const createProject = (req, res) => {
     client_id
   });
 
-
-
   if (
     project_name == null ||
     projectCategory == null ||
@@ -101,46 +99,35 @@ const createProject = (req, res) => {
   );
 };
 
+
+
 const updateProject = (req, res) => {
-  const { id } = req.params; // The project ID from the URL (e.g., /projects/:id)
+ const { project_id } = req.params; // The project ID from the URL (e.g., /projects/:id)
   const {
     project_name,
+    projectCategory,
     location,
+    locationArea,
+    priority,
+    projectManager,
     start_date,
     end_date,
-    status,
-    budget,
-    actual_cost,
-    progress_percent,
     client_id
   } = req.body; // The project details sent in the body of the request
 
-  // Check if all required fields are provided
-  if (
-    !project_name ||
-    !location ||
-    !start_date ||
-    !end_date ||
-    !status ||
-    !budget ||
-    !actual_cost ||
-    !progress_percent ||
-    !client_id
-  ) {
-    return res.status(400).json({ error: 'Missing required fields' }); // Return error if any field is missing
-  }
+
 
   const query = `
   UPDATE projects
   SET 
     project_name = ?, 
+    projectCategory = ?,
     location = ?, 
+    locationArea = ?,
+    priority = ?,
+    projectManager = ?,
     start_date = ?, 
     end_date = ?, 
-    status = ?, 
-    budget = ?, 
-    actual_cost = ?, 
-    progress_percent = ?, 
     client_id = ?
   WHERE project_id = ?;
 `;
@@ -149,15 +136,15 @@ const updateProject = (req, res) => {
     query,
     [
       project_name,
+      projectCategory,
       location,
+      locationArea,
+      priority,
+      projectManager,
       start_date,
       end_date,
-      status,
-      budget,
-      actual_cost,
-      progress_percent, // Ensure this is being passed correctly
       client_id,
-      id, // Project ID to update
+      project_id, // Project ID to update
     ],
     (err, result) => {
       if (err) {

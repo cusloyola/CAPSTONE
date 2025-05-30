@@ -31,7 +31,7 @@ const ProposalTable = () => {
                 <h1 className="text-lg font-semibold">Proposal Table</h1>
                 <div className="flex items-center space-x-2">
                     <button className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100">
-                        Add New SOW
+                        Create Proposal
                     </button>
                 </div>
 

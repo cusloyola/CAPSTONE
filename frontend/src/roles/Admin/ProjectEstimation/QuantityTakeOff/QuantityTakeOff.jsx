@@ -26,15 +26,15 @@ const QuantityTakeOff = () => {
             <div className="bg-[#9559d1] text-white flex justify-between items-center p-4 rounded">
                 <h1 className="text-lg font-semibold">Volume Estimation</h1>
                 <div className="flex items-center space-x-2">
-                    <Link
+                    {/* <Link
                         to={`/AllPendingProjects/${project?.project_id}/estimation/scope-of-work/tables`}
                         className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
                     >
                         Scope of Works Table
-                    </Link>
+                    </Link> */}
 
                     <button className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100">
-                        Add New SOW
+                        Wala
                     </button>
                 </div>
 
