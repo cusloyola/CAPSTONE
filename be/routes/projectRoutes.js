@@ -3,9 +3,11 @@ const router = express.Router();
 const projectController = require('../controllers/projectController');  // Ensure the path is correct
 
 // Define your routes
-router.get('/', projectController.getAllProjects); // Get all projects
-router.post('/', projectController.createProject); // Create a new project
-router.put('/:id', projectController.updateProject); // Update a project
-router.delete('/:id', projectController.deleteProject); // Delete a project
+router.get('/', projectController.getAllProjects); 
+// router.get('/proposals', projectController.getProjectProposals); 
+
+router.post('/', projectController.createProject); 
+router.put('/:id', projectController.updateProject); 
+router.delete('/:id', projectController.deleteProject); 
 
 module.exports = router;

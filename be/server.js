@@ -45,12 +45,17 @@ const adminSiteReport = require("./routes/adminSiteReportRoutes");
 const clientRoutes = require("./routes/clientRoutes"); // Import the client routes
 
 const dashboardRoutes = require('./routes/dashboard');
-
 const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 
 const fileRoutes = require('./routes/fileRoutes'); // Import fileRoutes
+
+const proposalRoutes = require('./routes/proposalRoutes');
+
+
+
+
 
 
 // Ensure the uploads directory exists
@@ -84,25 +89,17 @@ app.use("/api/daily-site-report", dailySiteReportRoutes);
 app.use("/api/admin-site-reports", adminSiteReport);
 app.use("/api/clients", clientRoutes);
 
-
-
 app.use("/api/subclients", subclientRoutes);
-
 app.use('/api/dashboard', dashboardRoutes);
-
 app.use("/api/folders", folderRoutes);
-
-
 app.use('/api/tasks', taskRoutes); // now your endpoints will start with /api/tasks
-
-
 app.use("/api/documents", documentRoutes);
-
-
 
 // Use the fileRoutes for the POST request
 app.use("/api/files", fileRoutes); // This includes /api/files/upload
 
+
+app.use("/api/proposals", proposalRoutes);
 
 
 

@@ -28,7 +28,6 @@ import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx"
 
 
 
-
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 
 import UserManagement from "./roles/Admin/UserManagement.jsx";
@@ -69,6 +68,23 @@ import BOMTable from "./roles/Admin/Estimation/BOMTable.jsx";
 
 // Projects CRUD
 import ProjectsCRUD from "./roles/Admin/Project Management/ProjectsCRUD.jsx";
+import ProjectProposalProfile from "./roles/Admin/Project Management/ProjectProposalProfile.jsx";
+
+
+//estimation (proposal)
+import ScopeOfWorks from "./roles/Admin/ProjectEstimation/ScopeOfWorks.jsx";
+import SowItems from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/sowItems.jsx";
+import SowTypes from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/sowTypes.jsx";
+import SOWTables from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/SOWTables.jsx";
+
+import QuantityTakeOff from "./roles/Admin/ProjectEstimation/QuantityTakeOff/QuantityTakeOff.jsx";
+
+
+import AllPendingProjects from "./roles/Admin/Project Management/AllPendingProjects.jsx";
+import ProposalTable from "./roles/Admin/Project Management/ProjectProposal/ProposalTable.jsx";
+import ProposalDetails from "./roles/Admin/Project Management/ProjectProposal/ProposalDetails.jsx";
+
+
 import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
 import ClientManagement from "./roles/Admin/ClientManagement.jsx";
@@ -87,7 +103,7 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Public Routes */}
-          
+
           <Route path="/signin" element={<SignIn />} />
           {/* <Route path="/signup" element={<SignUp />} /> */}
 
@@ -95,7 +111,7 @@ export default function App() {
 
           {/* Protected Routes */}
           <Route element={<AppLayout />}>
-          <Route path="/signin" element={<SignIn />} />
+            <Route path="/signin" element={<SignIn />} />
 
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
@@ -105,24 +121,54 @@ export default function App() {
               <Route path="/InventoryMonitoring" element={<LowStockInventory />} />
               <Route path="/LeaveContract" element={<LeaveContract />} />
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
-              <Route path="/UserManagement" element={<UserManagement />} />            
+              <Route path="/UserManagement" element={<UserManagement />} />
               <Route path="/AdminCalendar" element={<Calendar />} />
-              <Route path="/ProjectsCRUD" element={<ProjectsCRUD />} />
+
+
+              <Route path="/AddProject" element={<ProjectsCRUD />} />
+              <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
+
+              <Route path="/AllPendingProjects/:project_id/profile" element={<ProjectProposalProfile />}>
+                <Route path="proposals" element={<ProposalTable />} />
+                <Route path="proposals/:proposal_id" element={<ProposalDetails />}>
+                  <Route path="scope-of-work" element={<ScopeOfWorks />} />
+                  <Route path="quantity-take-off" element={<QuantityTakeOff />} />
+                  {/* <Route path="boq" element={<BillOfQuantities />} />
+                  <Route path="bom" element={<BillOfMaterials />} />
+                  <Route path="final" element={<FinalCostEstimation />} /> */}
+                </Route>
+              </Route>
+
+
+
+              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work" element={<ScopeOfWorks />} />
+              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables" element={<SOWTables />} />
+              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowItems" element={<sowItems />} />
+              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowTypes" element={<sowTypes />} />
+
+
+
+
+
+
+
+
+
               <Route path="/Estimation/BOMTable/:bomId" element={<BOMTable />} />  {/* Updated to include :bomId */}
-              <Route path="/Reports" element={<AdminReports />} />       
-              <Route path="/MaterialRequestManagement" element={<MaterialRequestManagement />} />       
-              <Route path="/EmployeeManagement" element={<EmployeeManagement />} />       
+              <Route path="/Reports" element={<AdminReports />} />
+              <Route path="/MaterialRequestManagement" element={<MaterialRequestManagement />} />
+              <Route path="/EmployeeManagement" element={<EmployeeManagement />} />
 
-              <Route path="/AdminSiteReports" element={<AdminSiteReport/>}   /> 
-              <Route path="/AdminFileManagement" element={<AdminFileManagement/>} />
-              <Route path="/ClientManagement" element={<ClientManagement/>} />
+              <Route path="/AdminSiteReports" element={<AdminSiteReport />} />
+              <Route path="/AdminFileManagement" element={<AdminFileManagement />} />
+              <Route path="/ClientManagement" element={<ClientManagement />} />
 
-              <Route path="/TaskManagement" element={<Task/>} />
+              <Route path="/TaskManagement" element={<Task />} />
 
               <Route path="/" element={<FilePage />} />
-<Route path="/clients/:clientId/folders" element={<FolderPage />} />
-<Route path="/clients/:clientId/folders/:folderId" element={<SubFolderPage />} />
-<Route path="/clients/:clientId/folders/:folderId/upload" element={<UploadDocument />} />
+              <Route path="/clients/:clientId/folders" element={<FolderPage />} />
+              <Route path="/clients/:clientId/folders/:folderId" element={<SubFolderPage />} />
+              <Route path="/clients/:clientId/folders/:folderId/upload" element={<UploadDocument />} />
 
             </Route>
 

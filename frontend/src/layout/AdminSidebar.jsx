@@ -33,13 +33,14 @@ const navItems = [
   },
   {
     icon: <CalenderIcon />,
-    name: "Project Management",
+    name: "Projects",
     subItems:
       [
         { name: "Task Scheduling", path: "/TaskManagement", pro: false, }, //path : /AdminDashboard - name ng file
         // { name: "Status Updates", path: "", pro: false }, 
         { name: "Calendar", path: "/AdminCalendar", pro: false },
-        { name: "Projects", path: "/ProjectsCRUD", pro: false },
+        { name: "Add New Projects", path: "/AddProject", pro: false },
+        { name: "View Project Proposals", path: "/AllPendingProjects", pro: false },
         { name: "Daily Site Reports", path: "/AdminSiteReports", pro: false },
         { name: "Clients", path: "/ClientManagement", pro: false },
 

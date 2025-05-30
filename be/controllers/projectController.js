@@ -1,73 +1,94 @@
 const db = require('../config/db');
 
 // Get all projects (joined with client info)
-const getAllProjects = (req, res) => {
-  const query = `
-    SELECT 
-      p.*,
-      c.client_name AS owner_name,
-      c.email AS owner_email
-    FROM projects p
-    JOIN clients c ON p.client_id = c.client_id
-    ORDER BY p.start_date
-  `;
+// const getAllProjects = (req, res) => {
+//   const query = `
+//     SELECT 
+//       p.*,
+//       c.client_name AS owner_name,
+//       c.email AS owner_email
+//     FROM projects p
+//     JOIN clients c ON p.client_id = c.client_id
+//     ORDER BY p.start_date
+//   `;
 
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('❌ Error fetching projects:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json(results);
-  });
-};
+//   db.query(query, (err, results) => {
+//     if (err) {
+//       console.error('❌ Error fetching projects:', err);
+//       return res.status(500).json({ error: 'Database error' });
+//     }
+//     res.json(results);
+//   });
+// };
 
 const createProject = (req, res) => {
   console.log(req.body); // Log the incoming request body
 
   const {
     project_name,
+    projectCategory,
     location,
+    locationArea,
+    priority,
+    projectManager,
     start_date,
     end_date,
     status,
     budget,
-    actual_cost,
-    progress_percent,
     client_id
   } = req.body;
 
+  console.log({
+    project_name,
+    projectCategory,
+    location,
+    locationArea,
+    priority,
+    projectManager,
+    start_date,
+    end_date,
+    status,
+    budget,
+    client_id
+  });
+
+
+
   if (
     project_name == null ||
+    projectCategory == null ||
     location == null ||
+    locationArea == null ||
+    priority == null ||
+    projectManager == null ||
     start_date == null ||
     end_date == null ||
     status == null ||
     budget == null ||
-    actual_cost == null ||
-    progress_percent == null ||
     client_id == null
-  )
-  {
+  ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   const query = `
     INSERT INTO projects 
-    (project_name, location, start_date, end_date, status, budget, actual_cost, progress_percent, client_id) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (project_name, projectCategory, location, locationArea, priority, projectManager, start_date, end_date, status, budget, client_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
     query,
     [
       project_name,
+      projectCategory,
       location,
+      locationArea,
+      priority,
+      projectManager,
       start_date,
       end_date,
       status,
       budget,
-      actual_cost,
-      progress_percent,
       client_id
     ],
     (err, result) => {
@@ -124,31 +145,31 @@ const updateProject = (req, res) => {
   WHERE project_id = ?;
 `;
 
-db.query(
-  query,
-  [
-    project_name,
-    location,
-    start_date,
-    end_date,
-    status,
-    budget,
-    actual_cost,
-    progress_percent, // Ensure this is being passed correctly
-    client_id,
-    id, // Project ID to update
-  ],
-  (err, result) => {
-    if (err) {
-      console.error('❌ Error updating project:', err);
-      return res.status(500).json({ error: 'Database error' });
+  db.query(
+    query,
+    [
+      project_name,
+      location,
+      start_date,
+      end_date,
+      status,
+      budget,
+      actual_cost,
+      progress_percent, // Ensure this is being passed correctly
+      client_id,
+      id, // Project ID to update
+    ],
+    (err, result) => {
+      if (err) {
+        console.error('❌ Error updating project:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+      res.json({ message: 'Project updated successfully' });
     }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-    res.json({ message: 'Project updated successfully' });
-  }
-);
+  );
 };
 
 
@@ -167,9 +188,36 @@ const deleteProject = async (req, res) => {
   }
 };
 
+const getAllProjects = (req, res, next) => {
+  const query = `
+   SELECT 
+  p.project_id,
+  p.project_name,
+  p.projectCategory,
+  p.projectManager,
+  p.priority,
+  p.status,
+  c.client_id,
+  c.client_name,
+  c.phone_number AS client_contact
+FROM projects p
+JOIN clients c ON p.client_id = c.client_id
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      return next(err);
+    }
+
+    res.json(results);
+  });
+};
+
+
 module.exports = {
   getAllProjects,
   createProject,
   updateProject,
-  deleteProject
+  deleteProject,
+  // getProjectProposals
 };
