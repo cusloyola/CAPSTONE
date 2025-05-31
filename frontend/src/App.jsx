@@ -72,7 +72,7 @@ import ProjectProposalProfile from "./roles/Admin/Project Management/ProjectProp
 
 
 //estimation (proposal)
-import ScopeOfWorks from "./roles/Admin/ProjectEstimation/ScopeOfWorks.jsx";
+import ScopeOfWorks from "./roles/Admin/ProjectEstimation/ScopeOfWorkProposal/ScopeOfWorks.jsx";
 import SowItems from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/sowItems.jsx";
 import SowTypes from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/sowTypes.jsx";
 import SOWTables from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/SOWTables.jsx";
@@ -81,7 +81,7 @@ import QuantityTakeOff from "./roles/Admin/ProjectEstimation/QuantityTakeOff/Qua
 
 
 import AllPendingProjects from "./roles/Admin/Project Management/ProjectTable/AllPendingProjects.jsx";
-import ProposalTable from "./roles/Admin/Project Management/ProjectProposal/ProposalTable.jsx";
+import ProposalTable from "./roles/Admin/Project Management/ProjectProposal/ProposalTable/ProposalTable.jsx";
 import ProposalDetails from "./roles/Admin/Project Management/ProjectProposal/ProposalDetails.jsx";
 
 

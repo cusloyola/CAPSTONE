@@ -55,6 +55,7 @@ const proposalRoutes = require('./routes/proposalRoutes');
 
 
 
+const sowproposalRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowproposalRoutes')
 
 
 
@@ -102,6 +103,8 @@ app.use("/api/files", fileRoutes); // This includes /api/files/upload
 app.use("/api/proposals", proposalRoutes);
 
 
+
+app.use("/api/sowproposal", sowproposalRoutes); // Mount sow proposal routes under /api/sowproposal
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {
