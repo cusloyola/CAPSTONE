@@ -1,143 +1,149 @@
-import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import React, { useState } from 'react';
+import { TreeTable } from 'primereact/treetable';
+import { Column } from 'primereact/column';
+import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
 
-const PROJECTS_API_URL = "http://localhost:5000/api/projects/";
+export default function QuantityTakeOffTable() {
+    const [nodes, setNodes] = useState([
+        {
+            key: '0',
+            data: { name: 'Excavation', size: '', type: '' },
+          
+        },
+    ]);
 
-const QuantityTakeOff = () => {
-    const { project_id } = useParams();
-    const [project, setProject] = useState(null);
+    // Find node by key helper
+    const findNodeByKey = (nodes, key) => {
+        const path = key.split('-');
+        let node;
+        while (path.length) {
+            const list = node ? node.children : nodes;
+            node = list[parseInt(path[0], 10)];
+            path.shift();
+        }
+        return node;
+    };
 
-    useEffect(() => {
-        fetch(PROJECTS_API_URL)
-            .then((res) => res.json())
-            .then((data) => {
-                const foundProject = data.find(
-                    (p) => String(p.project_id) === String(project_id)
-                );
-                setProject(foundProject || null);
-            })
-            .catch((err) => console.error(err));
-    }, [project_id]);
+    // Update node data on input change
+    const onEditorValueChange = (options, value) => {
+        const updatedNodes = [...nodes];
+        const node = findNodeByKey(updatedNodes, options.node.key);
+        node.data[options.field] = value;
+        setNodes(updatedNodes);
+    };
 
-    if (!project) return <div>Loading project details...</div>;
+    // InputText editor with Tailwind styling
+    const inputTextEditor = (options) => (
+        <InputText
+            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={options.rowData[options.field]}
+            onChange={(e) => onEditorValueChange(options, e.target.value)}
+        />
+    );
+
+
+    // Add new child or subchild row
+    const addRow = (nodeKey) => {
+        const updatedNodes = [...nodes];
+        const parentNode = findNodeByKey(updatedNodes, nodeKey);
+
+        const newKey = `${nodeKey}-${(parentNode.children || []).length}`;
+        const newRow = {
+            key: newKey,
+            data: { name: '', size: '', type: '' },
+        };
+
+        parentNode.children = [...(parentNode.children || []), newRow];
+        setNodes(updatedNodes);
+    };
+
+    // Actions column with add buttons styled in Tailwind
+    const actionTemplate = (rowData) => {
+        const key = rowData.key;
+        const depth = key.split('-').length;
+
+        return (
+            <div className="flex gap-2">
+                {depth === 1 && (
+                    <button
+                        onClick={() => addRow(key)}
+                        className="text-white bg-green-600 hover:bg-green-700 rounded px-3 py-1 text-xs font-semibold"
+                        type="button"
+                    >
+                        + Add Child
+                    </button>
+                )}
+                {depth === 2 && (
+                    <button
+                        onClick={() => addRow(key)}
+                        className="text-white bg-blue-600 hover:bg-blue-700 rounded px-3 py-1 text-xs font-semibold"
+                        type="button"
+                    >
+                        + Add Sub
+                    </button>
+                )}
+            </div>
+        );
+    };
 
     return (
-        <div className="p-4 space-y-6 bg-white shadow rounded">
-            <div className="bg-[#9559d1] text-white flex justify-between items-center p-4 rounded">
-                <h1 className="text-lg font-semibold">Volume Estimation</h1>
-                <div className="flex items-center space-x-2">
-                    {/* <Link
-                        to={`/AllPendingProjects/${project?.project_id}/estimation/scope-of-work/tables`}
-                        className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
-                    >
-                        Scope of Works Table
-                    </Link> */}
+        <div className="p-6 bg-white shadow rounded-lg max-w-7xl mx-auto">
+            <h2 className="text-xl font-semibold mb-6">Quantity Take-Off Table</h2>
+            <TreeTable
+                value={nodes}
+                editMode="cell"
+                tableStyle={{ minWidth: '60rem' }}
+                className="border border-gray-300 rounded" 
+            >
 
-                    <button className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100">
-                        Wala
-                    </button>
-                </div>
-
-            </div>
-
-            {/* Section 2: Filters */}
-            <div className="flex flex-wrap gap-4">
-                <div className="flex flex-col gap-2">
-                    <label className="block font-medium text-gray-700">
-                        Titles:
-                    </label>
-                    <select
-                        className="border p-2 rounded w-48"
-                    >
-                        <option value="">All Titles</option>
-                    </select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                    <label className="block font-medium text-gray-700">
-                        Work Types
-                    </label>
-                    <select
-                    >
-                        <option value="">All Work Types</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-                <div>
-                    <label className="text-sm">
-                        Show
-                        <select
-                            className="mx-2 border p-1 rounded"
-                        >
-                            <option value={1}>1</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                        </select>
-                        entries
-                    </label>
-                </div>
-                <div className="flex items-center gap-2"> <label className="block font-medium text-gray-700">
-                    Search:
-                </label>
-                    <input
-                        id="searchInput"
-                        type="text"
-                        className="border p-2 rounded w-64"
-                    />
-                </div>
-            </div>
-
-            <table className="table-auto w-full border border-gray-300 text-sm">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="border px-4 py-2 text-left">Category (Work Type)</th>
-                        <th className="border px-4 py-2 text-left">Work Item (Specific Task)</th>
-                        <th className="border px-4 py-2 text-left">Unit of Measure</th>
-                        <th className="border px-4 py-2 text-left">Sequence Order</th>
-                        <th className="border px-4 py-2 text-left">Status</th>
-                        <th className="border px-4 py-2 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2">
-                        <div className="flex gap-x-2">
-                            <button className="bg-yellow-500 text-white px-6 h-10 rounded hover:bg-yellow-700">Edit</button>
-                            <button className="bg-red-600 text-white px-6 h-10 rounded hover:bg-red-700">Delete</button>
-                        </div>
-                    </td>
-                </tbody>
-            </table>
-
-
-            <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm">
-                <p>
-                    Showing to  of entries
-                </p>
-
-                <div className="flex gap-2 mt-2 sm:mt-0">
-                    <button
-
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        Previous
-                    </button>
-                    <button
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        Next
-                    </button>
-                </div>
-            </div>
+                <Column
+                    field="name"
+                    header="Work Item (Specific Task)"
+                    expander
+                    editor={(options) => {
+                        const depth = options.node.key.split('-').length;
+                        if (depth === 2 || depth === 3) return inputTextEditor(options);
+                        return null;
+                    }}
+                    style={{ height: '3.5rem' }}
+                    className="text-sm"
+                />
+                <Column
+                    field="size"
+                    header="Length"
+                    editor={inputTextEditor}
+                    style={{ height: '3.5rem' }}
+                    className="text-sm"
+                />
+                <Column
+                    field="size"
+                    header="Width"
+                    editor={inputTextEditor}
+                    style={{ height: '3.5rem' }}
+                    className="text-sm"
+                />
+                <Column
+                    field="size"
+                    header="Height"
+                    editor={inputTextEditor}
+                    style={{ height: '3.5rem' }}
+                    className="text-sm"
+                />
+                <Column
+                    field="size"
+                    header="Volume"
+                    style={{ height: '3.5rem' }}
+                    className="text-sm"
+                />
+                <Column
+                    body={actionTemplate}
+                    header="Actions"
+                    style={{ width: '10rem' }}
+                    className="text-sm"
+                />
+            </TreeTable>
         </div>
-
     );
-};
-
-export default QuantityTakeOff;
+}

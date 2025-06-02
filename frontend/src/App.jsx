@@ -78,6 +78,10 @@ import SowTypes from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/sowType
 import SOWTables from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/SOWTables.jsx";
 
 import QuantityTakeOff from "./roles/Admin/ProjectEstimation/QuantityTakeOff/QuantityTakeOff.jsx";
+import BillOfQuantities from "./roles/Admin/ProjectEstimation/BillOfQuantities/BillOfQuantities.jsx";
+import BillOfMaterials from "./roles/Admin/ProjectEstimation/BillOfMaterials/BillOfMaterials.jsx";
+import FinalCostEstimation from "./roles/Admin/ProjectEstimation/FinalCostEstimation/FinalCostEstimation.jsx";
+
 
 
 import AllPendingProjects from "./roles/Admin/Project Management/ProjectTable/AllPendingProjects.jsx";
@@ -133,6 +137,10 @@ export default function App() {
                 <Route path="proposals/:proposal_id" element={<ProposalDetails />}>
                   <Route path="scope-of-work" element={<ScopeOfWorks />} />
                   <Route path="quantity-take-off" element={<QuantityTakeOff />} />
+                  <Route path="bill-of-quantities" element={<BillOfQuantities />} />
+                  <Route path="bill-of-materials" element={<BillOfMaterials />} />
+                  <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
+
                   {/* <Route path="boq" element={<BillOfQuantities />} />
                   <Route path="bom" element={<BillOfMaterials />} />
                   <Route path="final" element={<FinalCostEstimation />} /> */}

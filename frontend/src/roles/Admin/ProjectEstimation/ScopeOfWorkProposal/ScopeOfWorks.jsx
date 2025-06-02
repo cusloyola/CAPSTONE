@@ -2,54 +2,63 @@ import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import AddSowModal from "./AddSowModal";
 
-const SOW_API_URL = "http://localhost:5000/api/sowproposal/sow-work-items";
+const SOW_API_URL = "http://localhost:5000/api/sowproposal/sow-list";
 
 const ScopeOfWorks = () => {
-  const { project_id } = useParams();
-  const [project, setProject] = useState(null);
+  const { project_id, proposal_id } = useParams();
 
   const [showAddModal, setShowAddModal] = useState(false);
-const [sowWorkItems, setSowWorkItems] = useState([]);
+  const [sowWorkItems, setSowWorkItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
 
-  // Fetch SOW items once on component mount
- useEffect(() => {
-  fetchSowWorkItems();
-}, []);
-useEffect(() => {
-  if (showAddModal) {
+  console.log("🔍 useParams -> project_id:", project_id, "| proposal_id:", proposal_id);
+
+  const fetchSowWorkItems = () => {
+    if (!proposal_id) {
+      console.warn("No proposal_id provided, skipping fetch");
+      return;
+    }
+
+    fetch(`${SOW_API_URL}/${proposal_id}`) 
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch");
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setSowWorkItems(data);
+        } else {
+          console.warn("Unexpected data format:", data);
+          setSowWorkItems([]);
+        }
+      })
+      .catch((err) => console.error("Error fetching SOW items:", err));
+  };
+
+  // Fetch when the component mounts
+  useEffect(() => {
     fetchSowWorkItems();
-  }
-}, [showAddModal]);
+  }, [proposal_id]); // refetch if proposal_id changes
+
+  // Also fetch when the Add Modal opens (optional, if needed)
+  useEffect(() => {
+    if (showAddModal) {
+      fetchSowWorkItems();
+    }
+  }, [showAddModal]);
+
+  const handleClose = () => setShowAddModal(false);
 
 
-  
-const fetchSowWorkItems = () => {
-  fetch(SOW_API_URL)
-    .then((res) => res.json())
-    .then((data) => {
-      console.log("API response:", data);
-      if (data && Array.isArray(data.data)) {
-        setSowWorkItems(data.data);
-      } else if (Array.isArray(data)) {
-        // If data is directly an array
-        setSowWorkItems(data);
-      } else {
-        console.warn("Unexpected API response format:", data);
-        setSowWorkItems([]);
-      }
-    })
-    .catch((err) => console.error("Failed to fetch SOW items:", err));
+  const handleSelectItem = (newItems) => {
+  setSowWorkItems((prev) => {
+    const existingIds = new Set(prev.map(i => i.work_item_id));
+    const filteredNew = newItems.filter(i => !existingIds.has(i.work_item_id));
+    return [...prev, ...filteredNew];
+  });
+  setShowAddModal(false);
 };
 
-
-  const handleAddItem = (item) => {
-    // Avoid duplicates
-    if (!selectedItems.some(i => i.work_item_id === item.work_item_id)) {
-      setSelectedItems((prev) => [...prev, item]);
-    }
-    setShowAddModal(false);
-  };
 
   return (
     <div className="p-4 space-y-6 bg-white shadow rounded">
@@ -69,22 +78,23 @@ const fetchSowWorkItems = () => {
           >
             Add Scope of Work
           </button>
+
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4">
         <div className="flex flex-col gap-2">
-          <label className="block font-medium text-gray-700">Titles:</label>
+          <label className="block font-medium text-gray-700">Categories:</label>
           <select className="border p-2 rounded w-48">
-            <option value="">All Titles</option>
+            <option value="">All Categories</option>
           </select>
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="block font-medium text-gray-700">Work Types</label>
+          <label className="block font-medium text-gray-700">Work Items:</label>
           <select>
-            <option value="">All Work Types</option>
+            <option value="">All Work Items</option>
           </select>
         </div>
       </div>
@@ -107,7 +117,6 @@ const fetchSowWorkItems = () => {
             id="searchInput"
             type="text"
             className="border p-2 rounded w-64"
-            // You can add search logic later
           />
         </div>
       </div>
@@ -133,10 +142,9 @@ const fetchSowWorkItems = () => {
           ) : (
             sowWorkItems.map((item) => (
               <tr key={item.work_item_id}>
-                {/* Use item.type_name or item.category depending on API response */}
                 <td className="border px-4 py-2">{item.category || item.type_name}</td>
                 <td className="border px-4 py-2">{item.item_title}</td>
-                  <td className="border px-4 py-2">{item.unit_of_measure}</td>
+                <td className="border px-4 py-2">{item.unit_of_measure}</td>
                 <td className="border px-4 py-2">{item.sequence_order}</td>
                 <td className="border px-4 py-2">Active</td>
                 <td className="border px-4 py-2">
@@ -169,12 +177,14 @@ const fetchSowWorkItems = () => {
       </div>
 
       {showAddModal && (
-        <AddSowModal
-          sowWorkItems={sowWorkItems}
-          onClose={() => setShowAddModal(false)}
-          onSelectItem={handleAddItem}
-        />
-      )}
+  <AddSowModal
+    proposal_id={proposal_id}
+    onClose={handleClose}
+    onSelectItem={handleSelectItem}
+    existingItemIds={new Set(selectedItems.map(item => item.work_item_id))}
+  />
+)}
+
     </div>
   );
 };

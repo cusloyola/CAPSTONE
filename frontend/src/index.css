@@ -641,3 +641,21 @@ span.flatpickr-weekday,
 .subtotal-row .ag-cell[col-id="totalAmount"] {
   border-left: none;  /* Remove the border between Labor Cost and Total Amount */
 }
+
+
+/* Make table cells and headers have borders */
+.p-treetable th,
+.p-treetable td {
+  border: 1px solid #D1D5DB; /* Tailwind's gray-300 */
+  padding: 0.5rem 0.75rem;    /* spacing like Tailwind p-2 px-3 */
+}
+
+/* Optional: collapse borders so no double borders */
+.p-treetable table {
+  border-collapse: collapse;
+}
+
+/* Optional: row hover effect */
+.p-treetable tbody tr:hover {
+  background-color: #F3F4F6; /* Tailwind gray-100 */
+}

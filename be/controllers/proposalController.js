@@ -15,6 +15,8 @@ const getProposalByProject = (req, res) => {
     });
 };
 
+
+
 const addProposalByProject = (req, res) => {
     const { project_id } = req.params;
     const { proposal_title, description, proposalStatus = "pending" } = req.body;
@@ -32,23 +34,9 @@ const addProposalByProject = (req, res) => {
 
         const proposal_id = result.insertId;
 
-        // Now insert into estimation table and link it to the proposal
-        const insertEstimationSQL = `
-            INSERT INTO estimation_proposal (proposal_id)
-            VALUES (?)
-        `;
-
-        db.query(insertEstimationSQL, [proposal_id], (estimationErr, estimationResult) => {
-            if (estimationErr) {
-                console.error("Error creating estimation:", estimationErr);
-                return res.status(500).json({ error: "Proposal added but failed to create estimation" });
-            }
-
-            return res.status(201).json({
-                message: "Proposal and estimation created",
-                proposal_id,
-                estimation_id: estimationResult.insertId
-            });
+        return res.status(201).json({
+            message: "Proposal created successfully",
+            proposal_id
         });
     });
 };
@@ -79,5 +67,5 @@ const deleteProposalByProject = (req, res) => {
 module.exports = {
     getProposalByProject,
     addProposalByProject,
-    deleteProposalByProject
+    deleteProposalByProject,
 };
