@@ -1,4 +1,4 @@
-const db = require ('../../config/db');
+const db = require('../../config/db');
 
 const getAllSOWWorkItems = (req, res) => {
   const proposal_id = req.query.proposal_id;
@@ -82,12 +82,81 @@ const addSOWWorkItems = async (req, res) => {
   }
 };
 
+const getAllWorkItemsRaw = (req, res) => {
+  const sql = `
+    SELECT work_item_id, item_title, item_description, unit_of_measure, sequence_order
+    FROM sow_work_items
+    ORDER BY sequence_order
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("DB error:", err);
+      return res.status(500).json({ error: "DB error" });
+    }
+    res.json(results);
+  });
+};
 
+// ADD
+const addWorkItem = (req, res) => {
+  const { item_title, item_description, unit_of_measure, sequence_order, work_type_id } = req.body;
+  const sql = `
+    INSERT INTO sow_work_items (work_type_id, item_title, item_description, unit_of_measure, sequence_order)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  db.query(sql, [work_type_id, item_title, item_description, unit_of_measure, sequence_order], (err, result) => {
+    if (err) {
+      console.error("Add Work Item DB error:", err);
+      return res.status(500).json({ error: "DB error", details: err });
+    }
+    res.json({ success: true, id: result.insertId });
+  });
+};
 
+// UPDATE
+const updateWorkItem = (req, res) => {
+  const { id } = req.params;
+  const { item_title, item_description, unit_of_measure, sequence_order } = req.body;
+  const sql = `
+    UPDATE sow_work_items
+    SET item_title=?, item_description=?, unit_of_measure=?, sequence_order=?
+    WHERE work_item_id=?
+  `;
+  db.query(sql, [item_title, item_description, unit_of_measure, sequence_order, id], (err) => {
+    if (err) return res.status(500).json({ error: "DB error" });
+    res.json({ success: true });
+  });
+};
+
+// DELETE
+const deleteWorkItem = (req, res) => {
+  const { id } = req.params;
+  const sql = `DELETE FROM sow_work_items WHERE work_item_id=?`;
+  db.query(sql, [id], (err) => {
+    if (err) return res.status(500).json({ error: "DB error" });
+    res.json({ success: true });
+  });
+};
+
+const getAllWorkTypes = (req, res) => {
+  const sql = "SELECT work_type_id, type_name, type_description, sequence_order FROM sow_work_types ORDER BY sequence_order";
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("DB error:", err);
+      return res.status(500).json({ error: "DB error" });
+    }
+    res.json(results);
+  });
+};
 
 module.exports = {
   getAllSOWWorkItems,
   addSOWWorkItems,
-  getSowWorkItemsByProposal
+  getSowWorkItemsByProposal,
+  getAllWorkItemsRaw,
+  addWorkItem,
+  updateWorkItem,
+  deleteWorkItem,
+  getAllWorkTypes,
 
 };
