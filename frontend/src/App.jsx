@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
 import ProtectedRoute from "./pages/AuthPages/ProtectedRoute.jsx";
 
@@ -19,24 +19,18 @@ import AdminReports from "./roles/Admin/Reports.jsx";
 import MaterialRequestManagement from "./roles/Admin/MaterialRequestManagemet.jsx";
 import EmployeeManagement from "./roles/Admin/EmployeeManagement.jsx";
 
-
 // site
 import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
 import SiteProgressTracking from "./roles/SiteEngineer/SiteProgressTacking.jsx"
 import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
 
-
-
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
-
 import UserManagement from "./roles/Admin/UserManagement.jsx";
 
 // toast
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-
 
 import SafetyEngineerDashboard from "./roles/SafetyEngineer/SafetyEngineerDashboard.jsx";
 
@@ -70,7 +64,6 @@ import BOMTable from "./roles/Admin/Estimation/BOMTable.jsx";
 import ProjectsCRUD from "./roles/Admin/Project Management/ProjectsCRUD.jsx";
 import ProjectProposalProfile from "./roles/Admin/Project Management/ProjectProposalProfile.jsx";
 
-
 //estimation (proposal)
 import ScopeOfWorks from "./roles/Admin/ProjectEstimation/ScopeOfWorkProposal/ScopeOfWorks.jsx";
 import SowItems from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/sowItems.jsx";
@@ -82,12 +75,9 @@ import BillOfQuantities from "./roles/Admin/ProjectEstimation/BillOfQuantities/B
 import BillOfMaterials from "./roles/Admin/ProjectEstimation/BillOfMaterials/BillOfMaterials.jsx";
 import FinalCostEstimation from "./roles/Admin/ProjectEstimation/FinalCostEstimation/FinalCostEstimation.jsx";
 
-
-
 import AllPendingProjects from "./roles/Admin/Project Management/ProjectTable/AllPendingProjects.jsx";
 import ProposalTable from "./roles/Admin/Project Management/ProjectProposal/ProposalTable/ProposalTable.jsx";
 import ProposalDetails from "./roles/Admin/Project Management/ProjectProposal/ProposalDetails.jsx";
-
 
 import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
@@ -98,25 +88,22 @@ import UploadDocument from "./roles/Admin/File Management/UploadDocument.jsx";
 import SubFolderPage from "./roles/Admin/File Management/SubFolderPage.jsx";
 import Task from "./roles/Admin/Task Management/TaskSchedule.jsx";
 
-
-
 export default function App() {
   return (
     <UserProvider>
       <Router>
         <ScrollToTop />
         <Routes>
-          {/* Public Routes */}
+          {/* Redirect root to /signin */}
+          <Route path="/" element={<Navigate to="/signin" replace />} />
 
+          {/* Public Route: Sign In */}
           <Route path="/signin" element={<SignIn />} />
           {/* <Route path="/signup" element={<SignUp />} /> */}
 
-
-
           {/* Protected Routes */}
           <Route element={<AppLayout />}>
-            <Route path="/signin" element={<SignIn />} />
-
+            {/* Admin Protected */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
               <Route path="/AdminBOM" element={<AdminBOM />} />
@@ -127,7 +114,6 @@ export default function App() {
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
               <Route path="/UserManagement" element={<UserManagement />} />
               <Route path="/AdminCalendar" element={<Calendar />} />
-
 
               <Route path="/AddProject" element={<ProjectsCRUD />} />
               <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
@@ -140,29 +126,15 @@ export default function App() {
                   <Route path="bill-of-quantities" element={<BillOfQuantities />} />
                   <Route path="bill-of-materials" element={<BillOfMaterials />} />
                   <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
-
-                  {/* <Route path="boq" element={<BillOfQuantities />} />
-                  <Route path="bom" element={<BillOfMaterials />} />
-                  <Route path="final" element={<FinalCostEstimation />} /> */}
                 </Route>
               </Route>
 
-
-
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work" element={<ScopeOfWorks />} />
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables" element={<SOWTables />} />
-              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowItems" element={<sowItems />} />
-              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowTypes" element={<sowTypes />} />
+              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowItems" element={<SowItems />} />
+              <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowTypes" element={<SowTypes />} />
 
-
-
-
-
-
-
-
-
-              <Route path="/Estimation/BOMTable/:bomId" element={<BOMTable />} />  {/* Updated to include :bomId */}
+              <Route path="/Estimation/BOMTable/:bomId" element={<BOMTable />} />
               <Route path="/Reports" element={<AdminReports />} />
               <Route path="/MaterialRequestManagement" element={<MaterialRequestManagement />} />
               <Route path="/EmployeeManagement" element={<EmployeeManagement />} />
@@ -173,49 +145,50 @@ export default function App() {
 
               <Route path="/TaskManagement" element={<Task />} />
 
-              <Route path="/" element={<FilePage />} />
               <Route path="/clients/:clientId/folders" element={<FolderPage />} />
               <Route path="/clients/:clientId/folders/:folderId" element={<SubFolderPage />} />
               <Route path="/clients/:clientId/folders/:folderId/upload" element={<UploadDocument />} />
-
+              <Route path="/file-page" element={<FilePage />} />
             </Route>
 
-
-
+            {/* Site Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
               <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
               <Route path="/SiteProgressTracking" element={<SiteProgressTracking />} />
               <Route path="/RequestMaterial" element={<RequestMaterial />} />
               <Route path="/ViewRequestHistory" element={<MaterialRequestHistory />} />
-
             </Route>
+
+            {/* Safety Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
             </Route>
 
-            {/* Other Pages */}
-            <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/blank" element={<Blank />} />
+            {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<UserProfiles />} />
+              <Route path="/blank" element={<Blank />} />
 
-            {/* UI Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
+              {/* UI Elements */}
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/avatars" element={<Avatars />} />
+              <Route path="/badge" element={<Badges />} />
+              <Route path="/buttons" element={<Buttons />} />
+              <Route path="/images" element={<Images />} />
+              <Route path="/videos" element={<Videos />} />
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
+              {/* Charts */}
+              <Route path="/line-chart" element={<LineChart />} />
+              <Route path="/bar-chart" element={<BarChart />} />
 
-            {/* Tables & Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
-            <Route path="/basic-tables" element={<BasicTables />} />
+              {/* Tables & Forms */}
+              <Route path="/form-elements" element={<FormElements />} />
+              <Route path="/basic-tables" element={<BasicTables />} />
+            </Route>
           </Route>
 
-          {/* 404 Not Found */}
-          <Route path="*" element={<NotFound />} />
+          {/* 404 Not Found: redirect to /signin */}
+          <Route path="*" element={<Navigate to="/signin" replace />} />
         </Routes>
       </Router>
       {/*TOAST*/}

@@ -40,7 +40,7 @@ exports.login = (req, res) => {
             res.json({
                 message: "Login successful",
                 token,
-                user: { id: user.user_id, email: user.email, role: user.role },
+                user: { id: user.user_id, name: user.full_name, phone: user.phone_number, email: user.email, role: user.role },
             });
         } catch (error) {
             console.error("❌ Password comparison error:", error);
