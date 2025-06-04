@@ -23,6 +23,10 @@ app.use((req, res, next) => {
 });
 
 // ✅ Import Routes
+
+const sowWorkTypesRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowWorkTypesRoutes');
+const sowproposalRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowproposalRoutes')
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
@@ -55,7 +59,7 @@ const proposalRoutes = require('./routes/proposalRoutes');
 
 
 
-const sowproposalRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowproposalRoutes')
+
 
 
 
@@ -67,6 +71,9 @@ if (!fs.existsSync(uploadDir)) {
 
 
 // ✅ Use Routes
+app.use('/api/work-types', sowWorkTypesRoutes);
+
+
 app.use("/api", employeeManagementRoutes); // Mount employee management routes under /api
 app.use("/api/request-materials", requestMaterialRoutes); 
 app.use("/api/user-accounts", userManagementController);
