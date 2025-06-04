@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
-
 const SowTypes = () => {
   const [workTypes, setWorkTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
 
   // State for Delete Modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedType, setSelectedType] = useState(null);
   const [deletedTypeName, setDeletedTypeName] = useState(null);
-
 
   // State for Add Modal
   const [showAddModal, setShowAddModal] = useState(false);
@@ -23,13 +20,11 @@ const SowTypes = () => {
   const [showAddSuccessModal, setShowAddSuccessModal] = useState(false);
   const [addedTypeName, setAddedTypeName] = useState(null);
 
-
   // State for Edit Modal (integrated)
   const [showEditModal, setShowEditModal] = useState(false);
   const [editWorkTypeData, setEditWorkTypeData] = useState(null); // Data for the work type being edited
   const [showEditSuccessModal, setShowEditSuccessModal] = useState(false);
   const [editedTypeName, setEditedTypeName] = useState(null);
-
 
   // Internal form data for the integrated Edit Modal
   const [editFormData, setEditFormData] = useState({
@@ -39,12 +34,14 @@ const SowTypes = () => {
     sequence_order: "",
   });
 
+  // State for Search and Pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [itemsPerPage, setItemsPerPage] = useState(10); // Default items per page
+  const [currentPage, setCurrentPage] = useState(1);
 
   const modalRef = useRef(null); // Ref for the edit modal content
 
-
   const API_URL = "http://localhost:5000/api/work-types";
-
 
   // Function to fetch data, made reusable
   const fetchData = async () => {
@@ -61,14 +58,12 @@ const SowTypes = () => {
     }
   };
 
-
   // Initial data fetch on component mount
   useEffect(() => {
     fetchData();
   }, []);
 
-
-  // Effect to update editFormData when editWorkTypeData changes (i.e., when edit modal opens/work type selected)
+  // Effect to update editFormData when editWorkTypeData changes
   useEffect(() => {
     if (editWorkTypeData) {
       setEditFormData({
@@ -86,8 +81,46 @@ const SowTypes = () => {
         sequence_order: "",
       });
     }
-  }, [editWorkTypeData, showEditModal]); // Depend on editWorkTypeData and showEditModal
+  }, [editWorkTypeData, showEditModal]);
 
+  // --- Search and Pagination Logic ---
+  const filteredWorkTypes = workTypes.filter((type) => {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    return (
+      type.type_name.toLowerCase().includes(lowerCaseSearchTerm) ||
+      type.type_description.toLowerCase().includes(lowerCaseSearchTerm) ||
+      String(type.sequence_order).includes(lowerCaseSearchTerm) // Search by sequence number as string
+    );
+  });
+
+  // Calculate pagination values
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredWorkTypes.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredWorkTypes.length / itemsPerPage);
+
+  // --- Handlers for Search and Pagination ---
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page on new search
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when items per page changes
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
 
   // --- Delete Operations ---
   const handleDeleteClick = (type) => {
@@ -95,28 +128,22 @@ const SowTypes = () => {
     setShowDeleteModal(true);
   };
 
-
   const confirmDelete = async () => {
     try {
       const deleteUrl = `${API_URL}/${selectedType.work_type_id}`;
       await axios.delete(deleteUrl);
-
 
       setDeletedTypeName(selectedType.type_name);
       fetchData(); // Re-fetch data to ensure consistency
       setShowSuccessModal(true);
     } catch (err) {
       console.error("Delete failed:", err);
-      // Using a custom modal for alerts instead of browser's alert()
-      // For simplicity, I'm using an alert here, but for a real app,
-      // you'd use a state-driven custom modal like the success/delete modals.
       alert("Failed to delete work type. Please try again.");
     } finally {
       setShowDeleteModal(false);
       setSelectedType(null);
     }
   };
-
 
   // --- Add Operations ---
   const handleAddNewItem = () => {
@@ -126,19 +153,16 @@ const SowTypes = () => {
     setShowAddModal(true);
   };
 
-
   const handleAddSubmit = async () => {
     if (!newTypeName.trim()) {
       alert("Type Name is required");
       return;
     }
 
-
     if (Number(newSequenceOrder) < 0) {
       alert("Sequence Order cannot be negative.");
       return;
     }
-
 
     try {
       const payload = {
@@ -147,14 +171,11 @@ const SowTypes = () => {
         sequence_order: Number(newSequenceOrder) || 0,
       };
 
-
       await axios.post(API_URL, payload);
       await fetchData();
 
-
       setAddedTypeName(newTypeName);
       setShowAddSuccessModal(true);
-
 
       setNewTypeName("");
       setNewTypeDescription("");
@@ -166,7 +187,6 @@ const SowTypes = () => {
     }
   };
 
-
   const handleAddCancel = () => {
     setNewTypeName("");
     setNewTypeDescription("");
@@ -174,13 +194,11 @@ const SowTypes = () => {
     setShowAddModal(false);
   };
 
-
   // --- Edit Operations (for the integrated modal) ---
   const handleEditClick = (type) => {
     setEditWorkTypeData(type); // Set the full work type object to populate the form
     setShowEditModal(true);
   };
-
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -190,22 +208,18 @@ const SowTypes = () => {
     }));
   };
 
-
   const handleEditSubmit = async (e) => {
     e.preventDefault(); // Prevent default form submission
-
 
     if (!editFormData.type_name.trim()) {
       alert("Type Name is required");
       return;
     }
 
-
     if (Number(editFormData.sequence_order) < 0) {
       alert("Sequence Order cannot be negative.");
       return;
     }
-
 
     try {
       const payload = {
@@ -213,7 +227,6 @@ const SowTypes = () => {
         type_description: editFormData.type_description,
         sequence_order: Number(editFormData.sequence_order) || 0,
       };
-
 
       await axios.put(`${API_URL}/${editFormData.work_type_id}`, payload);
       setEditedTypeName(payload.type_name);
@@ -228,12 +241,10 @@ const SowTypes = () => {
     }
   };
 
-
   const handleEditClose = () => {
     setShowEditModal(false);
     setEditWorkTypeData(null); // Clear the selected work type data on close
   };
-
 
   return (
     <div className="p-4 space-y-6 bg-white shadow rounded relative">
@@ -247,25 +258,33 @@ const SowTypes = () => {
         </button>
       </div>
 
-
       <div className="flex justify-between items-center">
         <label className="text-sm">
           Show
-          <select className="mx-2 border p-1 rounded">
-            <option value={1}>1</option>
+          <select
+            className="mx-2 border p-1 rounded"
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+          >
+            <option value={5}>5</option> {/* Added 5 as an option */}
+            <option value={10}>10</option>
             <option value={25}>25</option>
             <option value={50}>50</option>
           </select>
           entries
         </label>
 
-
         <div className="flex items-center gap-2">
           <label className="block font-medium text-gray-700">Search:</label>
-          <input type="text" className="border p-2 rounded w-64" />
+          <input
+            type="text"
+            className="border p-2 rounded w-64"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="Search work types..."
+          />
         </div>
       </div>
-
 
       <table className="table-auto w-full border border-gray-300 text-sm">
         <thead className="bg-gray-100">
@@ -289,14 +308,14 @@ const SowTypes = () => {
                 {error}
               </td>
             </tr>
-          ) : workTypes.length === 0 ? (
+          ) : currentItems.length === 0 ? (
             <tr>
               <td colSpan="4" className="text-center p-4">
                 No work types found.
               </td>
             </tr>
           ) : (
-            workTypes.map((type) => (
+            currentItems.map((type) => (
               <tr key={type.work_type_id}>
                 <td className="border px-4 py-2">{type.type_name}</td>
                 <td className="border px-4 py-2">{type.type_description}</td>
@@ -323,22 +342,29 @@ const SowTypes = () => {
         </tbody>
       </table>
 
-
       <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm">
         <p>
-          Showing {workTypes.length > 0 ? `1 to ${workTypes.length}` : 0} of{" "}
-          {workTypes.length} entries
+          Showing {indexOfFirstItem + 1} to{" "}
+          {Math.min(indexOfLastItem, filteredWorkTypes.length)} of{" "}
+          {filteredWorkTypes.length} entries (Total: {workTypes.length})
         </p>
         <div className="flex gap-2 mt-2 sm:mt-0">
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled>
+          <button
+            className="px-3 py-1 border rounded disabled:opacity-50"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+          >
             Previous
           </button>
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled>
+          <button
+            className="px-3 py-1 border rounded disabled:opacity-50"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
             Next
           </button>
         </div>
       </div>
-
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
@@ -367,7 +393,6 @@ const SowTypes = () => {
         </div>
       )}
 
-
       {/* Delete Success Modal */}
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -385,7 +410,6 @@ const SowTypes = () => {
           </div>
         </div>
       )}
-
 
       {/* Add Success Modal */}
       {showAddSuccessModal && (
@@ -405,7 +429,6 @@ const SowTypes = () => {
         </div>
       )}
 
-
       {/* Edit Success Modal */}
       {showEditSuccessModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -424,13 +447,11 @@ const SowTypes = () => {
         </div>
       )}
 
-
       {/* Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-lg font-semibold mb-4">Add New Work Type</h2>
-
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1" htmlFor="typeName">
@@ -446,7 +467,6 @@ const SowTypes = () => {
               />
             </div>
 
-
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1" htmlFor="typeDescription">
                 Type Description
@@ -459,7 +479,6 @@ const SowTypes = () => {
                 placeholder="Enter type description"
               />
             </div>
-
 
             <div className="mb-6">
               <label className="block text-sm font-medium mb-1" htmlFor="sequenceOrder">
@@ -487,7 +506,6 @@ const SowTypes = () => {
               />
             </div>
 
-
             <div className="flex justify-end gap-3">
               <button
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
@@ -505,7 +523,6 @@ const SowTypes = () => {
           </div>
         </div>
       )}
-
 
       {/* Integrated Edit Modal */}
       {showEditModal && (
@@ -541,13 +558,11 @@ const SowTypes = () => {
               </svg>
             </button>
 
-
             {/* Modal content: your form */}
             <>
               <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
                 Edit Work Type
               </h3>
-
 
               <form onSubmit={handleEditSubmit} className="mt-4 space-y-4">
                 {/* Type Name */}
@@ -569,25 +584,25 @@ const SowTypes = () => {
                   />
                 </div>
 
-
                 {/* Type Description */}
-                <div>
-                  <label
-                    htmlFor="type_description"
-                    className="block font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Type Description
-                  </label>
-                  <input
-                    type="text"
-                    id="type_description"
-                    name="type_description"
-                    value={editFormData.type_description}
-                    onChange={handleEditChange}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm"
-                  />
-                </div>
+     <div>
+  <label
+    htmlFor="type_description"
+    className="block font-medium text-gray-700 dark:text-gray-300"
+  >
+    Type Description
+  </label>
+
+  <textarea
+    id="type_description"
+    name="type_description"
+    value={editFormData.type_description}
+    onChange={handleEditChange}
+    required
+    rows={5} // Adjust the number of visible lines
+    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 sm:text-sm resize-y overflow-auto"
+  ></textarea>
+</div>
 
 
                 {/* Sequence Order */}
@@ -621,7 +636,6 @@ const SowTypes = () => {
                   />
                 </div>
 
-
                 {/* Buttons */}
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
@@ -647,8 +661,4 @@ const SowTypes = () => {
   );
 };
 
-
 export default SowTypes;
-
-
-
