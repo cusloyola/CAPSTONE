@@ -19,7 +19,7 @@ const ScopeOfWorks = () => {
       return;
     }
 
-    fetch(`${SOW_API_URL}/${proposal_id}`) 
+    fetch(`${SOW_API_URL}/${proposal_id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch");
         return res.json();
@@ -51,13 +51,13 @@ const ScopeOfWorks = () => {
 
 
   const handleSelectItem = (newItems) => {
-  setSowWorkItems((prev) => {
-    const existingIds = new Set(prev.map(i => i.work_item_id));
-    const filteredNew = newItems.filter(i => !existingIds.has(i.work_item_id));
-    return [...prev, ...filteredNew];
-  });
-  setShowAddModal(false);
-};
+    setSowWorkItems((prev) => {
+      const existingIds = new Set(prev.map(i => i.work_item_id));
+      const filteredNew = newItems.filter(i => !existingIds.has(i.work_item_id));
+      return [...prev, ...filteredNew];
+    });
+    setShowAddModal(false);
+  };
 
 
   return (
@@ -144,7 +144,7 @@ const ScopeOfWorks = () => {
               <tr key={item.work_item_id}>
                 <td className="border px-4 py-2">{item.category || item.type_name}</td>
                 <td className="border px-4 py-2">{item.item_title}</td>
-                <td className="border px-4 py-2">{item.unit_of_measure}</td>
+                <td className="border px-4 py-2">{item.unitCode}</td>
                 <td className="border px-4 py-2">{item.sequence_order}</td>
                 <td className="border px-4 py-2">Active</td>
                 <td className="border px-4 py-2">
@@ -177,13 +177,13 @@ const ScopeOfWorks = () => {
       </div>
 
       {showAddModal && (
-  <AddSowModal
-    proposal_id={proposal_id}
-    onClose={handleClose}
-    onSelectItem={handleSelectItem}
-    existingItemIds={new Set(selectedItems.map(item => item.work_item_id))}
-  />
-)}
+        <AddSowModal
+          proposal_id={proposal_id}
+          onClose={handleClose}
+          onSelectItem={handleSelectItem}
+          existingItemIds={new Set(selectedItems.map(item => item.work_item_id))}
+        />
+      )}
 
     </div>
   );

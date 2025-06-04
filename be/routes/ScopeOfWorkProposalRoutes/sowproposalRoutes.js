@@ -4,6 +4,8 @@ const sowproposalController = require('../../controllers/ScopeofWorkProposal/sow
 
 router.get('/sow-work-items/all-work-items', sowproposalController.getAllSOWWorkItems);  // full list
 router.get("/sow-list/:proposal_id", sowproposalController.getSowWorkItemsByProposal);
+
+
 router.post('/sow-work-items/add', sowproposalController.addSOWWorkItems);
 router.get('/sow-work-items/raw', sowproposalController.getAllWorkItemsRaw);
 router.post('/sow-work-items', sowproposalController.addWorkItem);

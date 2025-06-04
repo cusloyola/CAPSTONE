@@ -7,14 +7,23 @@ const getAllSOWWorkItems = (req, res) => {
   }
 
   const sql = `
-    SELECT s.work_item_id, s.item_title, s.unit_of_measure, s.sequence_order,
-           t.type_name AS category
-    FROM sow_work_items s
-    JOIN sow_work_types t ON s.work_type_id = t.work_type_id
-    WHERE s.work_item_id NOT IN (
-      SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
+   SELECT
+    s.work_item_id,
+    s.item_title,
+    u.unitCode, 
+    s.sequence_order,
+    t.type_name AS category
+FROM
+    sow_work_items s
+JOIN
+    sow_work_types t ON s.work_type_id = t.work_type_id
+JOIN
+    unit_of_measure u ON s.unitID = u.unitID 
+WHERE
+    s.work_item_id NOT IN (
+        SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
     )
-    ORDER BY s.sequence_order
+ORDER BY s.sequence_order;
   `;
 
   db.query(sql, [proposal_id], (err, results) => {
@@ -35,13 +44,19 @@ const getSowWorkItemsByProposal = (req, res) => {
   }
 
   const sql = `
-    SELECT s.work_item_id, s.item_title, s.unit_of_measure, s.sequence_order,
-           t.type_name AS category
-    FROM sow_work_items s
-    JOIN sow_work_types t ON s.work_type_id = t.work_type_id
-    JOIN sow_proposal p ON s.work_item_id = p.work_item_id
-    WHERE p.proposal_id = ?
-    ORDER BY s.sequence_order
+   SELECT
+    sp.work_item_id,
+    swi.item_title,
+    u.unitCode,
+    swi.sequence_order,
+    wt.type_name AS category
+FROM sow_proposal sp
+JOIN sow_work_items swi ON sp.work_item_id = swi.work_item_id
+JOIN unit_of_measure u ON swi.unitID = u.unitID
+JOIN sow_work_types wt ON swi.work_type_id = wt.work_type_id
+WHERE sp.proposal_id = ?
+ORDER BY swi.sequence_order;
+
   `;
 
   db.query(sql, [proposal_id], (err, results) => {
@@ -82,12 +97,33 @@ const addSOWWorkItems = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
 const getAllWorkItemsRaw = (req, res) => {
   const sql = `
-    SELECT work_item_id, item_title, item_description, unit_of_measure, sequence_order
-    FROM sow_work_items
-    ORDER BY sequence_order
+    SELECT 
+      w.work_item_id, 
+      w.item_title, 
+      w.item_description, 
+      w.unitID, 
+      u.unitCode,
+      w.sequence_order
+    FROM 
+      sow_work_items w
+    JOIN 
+      unit_of_measure u ON w.unitID = u.unitID
+    ORDER BY 
+      w.sequence_order
   `;
+
   db.query(sql, (err, results) => {
     if (err) {
       console.error("DB error:", err);
@@ -99,12 +135,12 @@ const getAllWorkItemsRaw = (req, res) => {
 
 // ADD
 const addWorkItem = (req, res) => {
-  const { item_title, item_description, unit_of_measure, sequence_order, work_type_id } = req.body;
+  const { item_title, item_description, unitID, sequence_order, work_type_id } = req.body;
   const sql = `
-    INSERT INTO sow_work_items (work_type_id, item_title, item_description, unit_of_measure, sequence_order)
+    INSERT INTO sow_work_items (work_type_id, item_title, item_description, unitID, sequence_order)
     VALUES (?, ?, ?, ?, ?)
   `;
-  db.query(sql, [work_type_id, item_title, item_description, unit_of_measure, sequence_order], (err, result) => {
+  db.query(sql, [work_type_id, item_title, item_description, unitID, sequence_order], (err, result) => {
     if (err) {
       console.error("Add Work Item DB error:", err);
       return res.status(500).json({ error: "DB error", details: err });
@@ -116,13 +152,13 @@ const addWorkItem = (req, res) => {
 // UPDATE
 const updateWorkItem = (req, res) => {
   const { id } = req.params;
-  const { item_title, item_description, unit_of_measure, sequence_order } = req.body;
+  const { item_title, item_description, unitID, sequence_order } = req.body;
   const sql = `
     UPDATE sow_work_items
-    SET item_title=?, item_description=?, unit_of_measure=?, sequence_order=?
+    SET item_title=?, item_description=?, unitID=?, sequence_order=?
     WHERE work_item_id=?
   `;
-  db.query(sql, [item_title, item_description, unit_of_measure, sequence_order, id], (err) => {
+  db.query(sql, [item_title, item_description, unitID, sequence_order, id], (err) => {
     if (err) return res.status(500).json({ error: "DB error" });
     res.json({ success: true });
   });

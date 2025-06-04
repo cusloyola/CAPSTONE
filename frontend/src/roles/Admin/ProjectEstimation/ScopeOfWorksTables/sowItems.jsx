@@ -8,7 +8,7 @@ const SowItems = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [unitFilter, setUnitFilter] = useState("");
-    const [entriesPerPage, setEntriesPerPage] = useState(25);
+    const [entriesPerPage, setEntriesPerPage] = useState(15);
     const [currentPage, setCurrentPage] = useState(1);
     const [showForm, setShowForm] = useState(false);
     const [editItem, setEditItem] = useState(null);
@@ -16,7 +16,7 @@ const SowItems = () => {
     const [form, setForm] = useState({
         item_title: "",
         item_description: "",
-        unit_of_measure: "",
+        unitCode: "",
         sequence_order: "",
         work_type_id: "",
     });
@@ -72,7 +72,7 @@ const SowItems = () => {
             await res.json();
             setShowForm(false);
             setEditItem(null);
-            setForm({ item_title: "", item_description: "", unit_of_measure: "", sequence_order: "", work_type_id: "" });
+            setForm({ item_title: "", item_description: "", unitCode: "", sequence_order: "", work_type_id: "" });
             fetchItems();
         } catch (err) {
             alert("Error saving item: " + err.message);
@@ -91,7 +91,7 @@ const SowItems = () => {
     // Open form for add
     const openAddForm = () => {
         setEditItem(null);
-        setForm({ item_title: "", item_description: "", unit_of_measure: "", sequence_order: "", work_type_id: "" });
+        setForm({ item_title: "", item_description: "", unitCode: "", sequence_order: "", work_type_id: "" });
         setShowForm(true);
     };
 
@@ -101,7 +101,7 @@ const SowItems = () => {
         setForm({
             item_title: item.item_title,
             item_description: item.item_description,
-            unit_of_measure: item.unit_of_measure,
+            unitCode: item.unitCode,
             sequence_order: item.sequence_order,
             work_type_id: item.work_type_id ? String(item.work_type_id) : ""
         });
@@ -112,7 +112,7 @@ const SowItems = () => {
     const filtered = items.filter(item =>
         (item.item_title?.toLowerCase().includes(search.toLowerCase()) ||
             item.item_description?.toLowerCase().includes(search.toLowerCase())) &&
-        (unitFilter ? item.unit_of_measure === unitFilter : true)
+        (unitFilter ? item.unitCode === unitFilter : true)
     );
 
     // Pagination
@@ -120,7 +120,7 @@ const SowItems = () => {
     const paginated = filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
 
     // Unique units for filter dropdown
-    const units = Array.from(new Set(items.map(i => i.unit_of_measure).filter(Boolean)));
+    const units = Array.from(new Set(items.map(i => i.unitCode).filter(Boolean)));
 
     return (
         <div className="p-4 space-y-6 bg-white shadow rounded">
@@ -176,8 +176,8 @@ const SowItems = () => {
                                     <input
                                         className="border p-2 rounded w-full"
                                         placeholder="Unit of Measure"
-                                        value={form.unit_of_measure}
-                                        onChange={e => setForm({ ...form, unit_of_measure: e.target.value })}
+                                        value={form.unitCode}
+                                        onChange={e => setForm({ ...form, unitCode: e.target.value })}
                                         required
                                     />
                                 </td>
@@ -258,7 +258,7 @@ const SowItems = () => {
                             onChange={e => { setEntriesPerPage(Number(e.target.value)); setCurrentPage(1); }}
                         >
                             <option value={1}>1</option>
-                            <option value={25}>25</option>
+                            <option value={15}>15</option>
                             <option value={50}>50</option>
                         </select>
                         entries
@@ -301,7 +301,7 @@ const SowItems = () => {
                         <tr key={item.work_item_id}>
                             <td className="border px-4 py-2">{item.item_title}</td>
                             <td className="border px-4 py-2">{item.item_description}</td>
-                            <td className="border px-4 py-2">{item.unit_of_measure}</td>
+                            <td className="border px-4 py-2">{item.unitCode}</td>
                             <td className="border px-4 py-2">{item.sequence_order}</td>
                             <td className="border px-4 py-2">
                                 <div className="flex gap-x-2">

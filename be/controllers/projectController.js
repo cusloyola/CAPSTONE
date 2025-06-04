@@ -20,10 +20,7 @@ const db = require('../config/db');
 //     res.json(results);
 //   });
 // };
-
 const createProject = (req, res) => {
-  console.log(req.body); // Log the incoming request body
-
   const {
     project_name,
     projectCategory,
@@ -35,23 +32,11 @@ const createProject = (req, res) => {
     end_date,
     status,
     budget,
-    client_id
+    client_id,
+    number_of_floors 
   } = req.body;
 
-  console.log({
-    project_name,
-    projectCategory,
-    location,
-    locationArea,
-    priority,
-    projectManager,
-    start_date,
-    end_date,
-    status,
-    budget,
-    client_id
-  });
-
+  // Check required fields
   if (
     project_name == null ||
     projectCategory == null ||
@@ -63,19 +48,21 @@ const createProject = (req, res) => {
     end_date == null ||
     status == null ||
     budget == null ||
-    client_id == null
+    client_id == null ||
+    number_of_floors == null
   ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const query = `
+  // Step 1: Insert the new project
+  const projectQuery = `
     INSERT INTO projects 
-    (project_name, projectCategory, location, locationArea, priority, projectManager, start_date, end_date, status, budget, client_id) 
+    (project_name, projectCategory, location, locationArea, priority, projectManager, start_date, end_date, status, budget, client_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(
-    query,
+    projectQuery,
     [
       project_name,
       projectCategory,
@@ -91,18 +78,43 @@ const createProject = (req, res) => {
     ],
     (err, result) => {
       if (err) {
-        console.error('❌ Error adding project:', err);
+        console.error('❌ Error inserting project:', err);
         return res.status(500).json({ error: 'Database error' });
       }
-      res.status(201).json({ message: 'Project added successfully', project_id: result.insertId });
+
+      const project_id = result.insertId;
+
+      // Step 2: Insert floors dynamically
+      const floorValues = [];
+      for (let i = 1; i <= number_of_floors; i++) {
+        const floorCode = `Floor ${i}`;
+        const floorLabel = `Floor ${i}`;
+        floorValues.push([project_id, floorCode, floorLabel]);
+      }
+
+      const floorQuery = `
+        INSERT INTO project_floors (project_id, floor_code, floor_label)
+        VALUES ?
+      `;
+
+      db.query(floorQuery, [floorValues], (floorErr) => {
+        if (floorErr) {
+          console.error('❌ Error inserting project floors:', floorErr);
+          return res.status(500).json({ error: 'Error inserting floors' });
+        }
+
+        res.status(201).json({
+          message: 'Project and floors created successfully',
+          project_id
+        });
+      });
     }
   );
 };
 
 
-
 const updateProject = (req, res) => {
- const { project_id } = req.params; // The project ID from the URL (e.g., /projects/:id)
+  const { project_id } = req.params; // The project ID from the URL (e.g., /projects/:id)
   const {
     project_name,
     projectCategory,

@@ -22,6 +22,7 @@ const AddNewProjectForm = () => {
         budget: '',
         status: 'Proposed',
         projectManager: '',
+        number_of_floors: '',
 
     });
 
@@ -72,7 +73,7 @@ const AddNewProjectForm = () => {
                 end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
             };
 
-            console.log('Submitting project payload:', payload);  
+            console.log('Submitting project payload:', payload);
 
             const response = await axios.post(PROJECTS_API_URL, payload);
             console.log('Project created:', response.data);
@@ -89,7 +90,7 @@ const AddNewProjectForm = () => {
                 <h1 className="text-3xl font-bold mb-8">Add New Project</h1>
 
                 {/* Row 1 */}
-                <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="grid gap-6 mb-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Project Name</label>
                         <input
@@ -101,6 +102,10 @@ const AddNewProjectForm = () => {
                             required
                         />
                     </div>
+                </div>
+
+                {/*Row 2 */}
+                <div className="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Project Category</label>
                         <select
@@ -116,7 +121,20 @@ const AddNewProjectForm = () => {
                             <option value="Industrial">Industrial</option>
                         </select>
                     </div>
+
+                     <div>
+                        <label className="block text-gray-700 font-medium mb-1">Number of Floors</label>
+                        <input
+                            type="text"
+                            name="number_of_floors"
+                            className="w-full border rounded px-4 py-2"
+                            value={formData.number_of_floors}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
                 </div>
+
 
                 {/* Row 2 */}
                 <div className="grid grid-cols-2 gap-6 mb-6">
