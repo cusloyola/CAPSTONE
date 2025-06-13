@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from "react-router-dom";
+
 import { TreeTable } from 'primereact/treetable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
+import AddQtoModal from './AddQtoModal';
 
-export default function QuantityTakeOffTable() {
+const QuantityTakeOffTable = () => {
+    const { proposal_id } = useParams();
+
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedItems, setSelectedItems] = useState([]);
+
     const [nodes, setNodes] = useState([
         {
             key: '0',
@@ -14,14 +22,8 @@ export default function QuantityTakeOffTable() {
                     key: '0-0',
                     data: { name: 'Footing', length: '', width: '', height: '', volume: '' },
                     children: [
-                        {
-                            key: '0-0-0',
-                            data: { name: 'Floor 1', length: '', width: '', height: '', volume: '' },
-                        },
-                        {
-                            key: '0-0-1',
-                            data: { name: 'Floor 2', length: '', width: '', height: '', volume: '' },
-                        },
+                        { key: '0-0-0', data: { name: 'Floor 1', length: '', width: '', height: '', volume: '' } },
+                        { key: '0-0-1', data: { name: 'Floor 2', length: '', width: '', height: '', volume: '' } },
                     ],
                 },
             ],
@@ -34,19 +36,20 @@ export default function QuantityTakeOffTable() {
                     key: '1-0',
                     data: { name: 'Mezzanine', length: '', width: '', height: '', volume: '' },
                     children: [
-                        {
-                            key: '1-0-0',
-                            data: { name: 'MB1', length: '', width: '', height: '', volume: '' },
-                        },
-                        {
-                            key: '1-0-1',
-                            data: { name: 'MB2', length: '', width: '', height: '', volume: '' },
-                        },
+                        { key: '1-0-0', data: { name: 'MB1', length: '', width: '', height: '', volume: '' } },
+                        { key: '1-0-1', data: { name: 'MB2', length: '', width: '', height: '', volume: '' } },
                     ],
                 },
             ],
         },
     ]);
+
+    const handleOpenModal = () => setShowAddModal(true);
+    const handleCloseModal = () => setShowAddModal(false);
+
+    const handleSelectItem = (items) => {
+        setSelectedItems(prev => [...prev, ...items]);
+    };
 
     const findNodeByKey = (nodes, key) => {
         const path = key.split('-');
@@ -86,16 +89,9 @@ export default function QuantityTakeOffTable() {
         setNodes(updatedNodes);
     };
 
+    // Open modal instead of directly adding
     const addParentRow = () => {
-        const updatedNodes = [...nodes];
-        const newKey = `${updatedNodes.length}`;
-        const newRow = {
-            key: newKey,
-            data: { name: 'New Parent', length: '', width: '', height: '', volume: '' },
-            children: [],
-        };
-        updatedNodes.push(newRow);
-        setNodes(updatedNodes);
+        handleOpenModal();
     };
 
     const actionTemplate = (rowData) => {
@@ -108,9 +104,7 @@ export default function QuantityTakeOffTable() {
                     <Button
                         onClick={() => addRow(key)}
                         label={depth === 1 ? '+ Add Child' : '+ Add Sub'}
-                        className={`text-xs px-3 py-1 rounded ${
-                            depth === 1 ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
-                        } text-white`}
+                        className={`text-xs px-3 py-1 rounded ${depth === 1 ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
                     />
                 )}
             </div>
@@ -127,7 +121,8 @@ export default function QuantityTakeOffTable() {
                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded"
                 />
             </div>
-            <TreeTable value={nodes} editMode="cell" tableStyle={{ minWidth: '60rem' }}>
+
+            <TreeTable value={nodes} editmode="cell" tableStyle={{ minWidth: '60rem' }}>
                 <Column field="name" header="Work Item" expander editor={inputEditor} style={{ width: '25%' }} />
                 <Column field="length" header="Length" editor={inputEditor} style={{ width: '15%' }} />
                 <Column field="width" header="Width" editor={inputEditor} style={{ width: '15%' }} />
@@ -135,6 +130,16 @@ export default function QuantityTakeOffTable() {
                 <Column field="volume" header="Volume" editor={inputEditor} style={{ width: '15%' }} />
                 <Column header="Actions" body={actionTemplate} style={{ width: '15%' }} />
             </TreeTable>
+
+            {showAddModal && (
+                <AddQtoModal
+                    proposal_id={proposal_id}
+                    onClose={handleCloseModal}
+                    onSelectItem={handleSelectItem}
+                />
+            )}
         </div>
     );
-}
+};
+
+export default QuantityTakeOffTable;

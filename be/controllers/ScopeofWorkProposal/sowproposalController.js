@@ -68,6 +68,70 @@ ORDER BY swi.sequence_order;
   });
 };
 
+const getSOWfromTable = (req, res) => {
+  const { proposal_id } = req.query;
+
+  if (!proposal_id) {
+    return res.status(400).json({ error: "proposal_id is required" });
+  }
+
+  const workItemsSql = `
+    SELECT
+      swi.work_item_id,
+      swi.item_title,
+      swi.unitID,
+      swi.sequence_order,
+      swi.work_type_id,
+      swi.parent_id,
+      swi.compute_type
+    FROM sow_work_items swi
+    WHERE swi.work_item_id IN (
+      SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
+    )
+    OR swi.parent_id IN (
+      SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
+    )
+    ORDER BY swi.sequence_order
+  `;
+
+  db.query(workItemsSql, [proposal_id, proposal_id], (err, workItems) => {
+    if (err) {
+      console.error("❌ Error fetching SOW work items:", err);
+      return res.status(500).json({ error: "Server error fetching work items" });
+    }
+
+    const hasFloorBasedItems = workItems.some(item => item.compute_type === 'sum_per_floors');
+
+    if (!hasFloorBasedItems) {
+      return res.status(200).json({ workItems, floors: [] });
+    }
+
+   const floorSql = `
+  SELECT pf.floor_id, pf.floor_code, pf.floor_label  -- <--- Add floor_label here
+  FROM proposals p
+  JOIN projects pr ON p.project_id = pr.project_id
+  JOIN project_floors pf ON pr.project_id = pf.project_id
+  WHERE p.proposal_id = ?
+`;
+
+    db.query(floorSql, [proposal_id], (err, floors) => {
+      if (err) {
+        console.error("❌ Error fetching floors:", err);
+        return res.status(500).json({ error: "Server error fetching floors" });
+      }
+
+      return res.status(200).json({ workItems, floors });
+    });
+  });
+};
+
+
+
+
+
+
+
+
 
 const addSOWWorkItems = async (req, res) => {
   try {
@@ -187,6 +251,10 @@ const getAllWorkTypes = (req, res) => {
 
 module.exports = {
   getAllSOWWorkItems,
+  getSOWfromTable,
+  
+
+  
   addSOWWorkItems,
   getSowWorkItemsByProposal,
   getAllWorkItemsRaw,
