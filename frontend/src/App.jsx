@@ -25,6 +25,9 @@ import SiteProgressTracking from "./roles/SiteEngineer/SiteProgressTacking.jsx"
 import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
 
+// safety
+import WeeklySafetyReport from "./roles/SafetyEngineer/SafetyReport.jsx";
+
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 import UserManagement from "./roles/Admin/UserManagement.jsx";
 
@@ -162,6 +165,7 @@ export default function App() {
             {/* Safety Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
+                <Route path="/SafetyReport" element={<WeeklySafetyReport />} />
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}

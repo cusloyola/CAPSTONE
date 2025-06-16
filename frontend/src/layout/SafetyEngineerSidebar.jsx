@@ -51,12 +51,10 @@ const navItems = [
   //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
   // },
   {
-    name: "Request Material",
+    name: "Report",
     icon: <ListIcon />, // Assuming ListIcon is imported from a library like @mui/icons-material
     subItems: [
-        { name: "Submit Material Request", path: "/RequestMaterial", pro: false },
-        { name: "View Request History", path: "/ViewRequestHistory", pro: false }, // Added subItem
-        
+        { name: "Weekly Safety Report", path: "/SafetyReport", pro: false },
     ],
 },
   // {
