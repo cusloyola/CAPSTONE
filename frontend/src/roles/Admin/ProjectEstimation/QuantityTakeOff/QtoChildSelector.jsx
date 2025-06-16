@@ -1,22 +1,47 @@
-// QtoChildSelector.jsx (Your provided code - no changes needed here for the loop fix)
 import React, { useState, useEffect } from "react";
 import QtoChildList from "./QtoChildList";
-import QtoDimensionInput from "./QTO Dimensions/QtoInputDimensions"; // Note: file name is QtoInputDimensions, not QtoDimensionInput
+import QtoDimensionInput from "./QTO Dimensions/QtoInputDimensions";
 
-const QtoChildSelector = ({ parent, setParent, onBack, floors }) => {
+// 🔧 Utility function to shallow compare children only
+const shallowCompareChildren = (prev, next) => {
+  if (!prev || !next || !Array.isArray(prev.children) || !Array.isArray(next.children)) return false;
+  if (prev.children.length !== next.children.length) return false;
+
+  return prev.children.every((child, i) => {
+    const nextChild = next.children[i];
+
+    const sameDimensions =
+      JSON.stringify(child.dimensionsPerFloor) === JSON.stringify(nextChild.dimensionsPerFloor) &&
+      JSON.stringify(child.custom_item_dimensions_by_floor) === JSON.stringify(nextChild.custom_item_dimensions_by_floor) &&
+      JSON.stringify(child.dimensions) === JSON.stringify(nextChild.dimensions);
+
+    return (
+      child.work_item_id === nextChild.work_item_id &&
+      child.checked === nextChild.checked &&
+      sameDimensions
+    );
+  });
+};
+
+
+const QtoChildSelector = ({ parent, setParent, onBack, floors, proposal_id }) => {
   const [currentPage, setCurrentPage] = useState("childList");
 
   useEffect(() => {
-    console.log("QtoChildSelector mounted");
+    console.log("🔵 QtoChildSelector mounted");
     console.log("Initial parent data:", parent);
   }, []);
 
   useEffect(() => {
-    console.log("Current page changed to:", currentPage);
+    console.log("📄 Current page:", currentPage);
   }, [currentPage]);
 
+  useEffect(() => {
+    console.log("🟢 Parent state updated:", parent);
+  }, [parent]);
+
   const toggleChildSelection = (childId) => {
-    console.log("Toggling child with ID:", childId);
+    console.log("🔁 Toggling child with ID:", childId);
 
     const updated = {
       ...parent,
@@ -27,23 +52,33 @@ const QtoChildSelector = ({ parent, setParent, onBack, floors }) => {
       )
     };
 
-    console.log("Updated parent after toggle:", updated);
+    console.log("✅ Updated parent after toggle:", updated);
     setParent(updated);
   };
 
   const updateDimension = (...args) => {
-    // Scenario 1: QtoInputDimensions sent the full updated parent object
-    if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null && 'work_item_id' in args[0]) {
+    if (
+      args.length === 1 &&
+      typeof args[0] === "object" &&
+      args[0] !== null &&
+      "children" in args[0]
+    ) {
       const updatedParentFromInput = args[0];
-      console.log("Updating parent with dimensionsPerFloor (from QtoInputDimensions):", updatedParentFromInput);
-      setParent(updatedParentFromInput);
+
+      // ✅ Prevent re-setting same data to avoid infinite loop
+      if (!shallowCompareChildren(parent, updatedParentFromInput)) {
+        console.log("🔄 Updating parent with new dimension data.");
+        setParent(updatedParentFromInput);
+      } else {
+        console.log("⛔ No change in dimensions, skipping update.");
+      }
+
       return;
     }
 
-    // Scenario 2: QtoInputDimensions sent childId, field, value (for simple compute_type)
     if (args.length === 3) {
       const [childId, field, value] = args;
-      console.log(`Updating simple dimension: Child ID: ${childId} - Field: ${field} - Value: ${value}`);
+      console.log(`✏️ Updating basic dimension: Child ID: ${childId}, Field: ${field}, Value: ${value}`);
 
       setParent(prevParent => {
         if (!prevParent) return null;
@@ -53,26 +88,26 @@ const QtoChildSelector = ({ parent, setParent, onBack, floors }) => {
         }
 
         if (prevParent.children && prevParent.children.length > 0) {
-          const updatedChildren = prevParent.children.map(child => {
-            if (child.work_item_id === childId) {
-              return { ...child, [field]: value };
-            }
-            return child;
-          });
+          const updatedChildren = prevParent.children.map(child =>
+            child.work_item_id === childId
+              ? { ...child, [field]: value }
+              : child
+          );
           return { ...prevParent, children: updatedChildren };
         }
+
         return prevParent;
       });
       return;
     }
 
-    console.warn("updateDimension called with unexpected arguments:", args);
+    console.warn("⚠️ updateDimension called with unexpected arguments:", args);
   };
 
   const goToDimensions = () => {
-    console.log("Checking selected children...");
+    console.log("📌 Checking selected children...");
     const hasSelected = parent.children?.some(child => child.checked);
-    console.log("Has selected child?", hasSelected);
+    console.log("✅ Has selected child?", hasSelected);
 
     if (hasSelected) {
       setCurrentPage("dimensionList");
@@ -95,9 +130,14 @@ const QtoChildSelector = ({ parent, setParent, onBack, floors }) => {
       {currentPage === "dimensionList" && (
         <QtoDimensionInput
           parent={parent}
-          updateChildDimensions={updateDimension} // This is the prop that calls the above function
-          onBack={() => setCurrentPage("childList")} // This onBack is no longer used by QtoInputDimensions
-          onDone={() => console.log("Final parent state:", parent)} // This onDone is no longer used by QtoInputDimensions
+          updateChildDimensions={updateDimension}
+            sow_proposal_id={proposal_id} // ✅ Make sure this is passed
+
+          onBack={() => setCurrentPage("childList")}
+          onDone={() => {
+            console.log("✅ Final parent state onDone:");
+            console.dir(parent, { depth: null });
+          }}
           floors={floors || []}
         />
       )}

@@ -201,7 +201,7 @@ const WeeklySafetyStepper = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded shadow-md relative">
+    <div className="p-6 bg-white rounded shadow-md relative w-[1200px] center">
       <div className="text-xl text-gray-600 mb-4 text-right font-bold">{currentTime}</div>
 
       <h2 className="text-2xl font-bold mb-4">Weekly Safety Report</h2>

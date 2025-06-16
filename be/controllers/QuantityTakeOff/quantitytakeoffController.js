@@ -1,40 +1,161 @@
-// const db = require('../../config/db');
+const db = require('../../config/db');
+
+const addQtoEntries = async (req, res) => {
+  try {
+    const { qto_entries } = req.body;
+
+    if (!qto_entries || !Array.isArray(qto_entries) || qto_entries.length === 0) {
+      return res.status(400).json({ message: "No QTO entries provided" });
+    }
+
+    const insertPromises = qto_entries.map(entry => {
+      const {
+        sow_proposal_id,
+        label = null,
+        length = null,
+        width = null,
+        depth = null,
+        floor_id = null,
+        units = 1,
+        work_item_id = null
+      } = entry;
+
+      const l = parseFloat(length) || 0;
+      const w = parseFloat(width) || 0;
+      const d = parseFloat(depth) || 0;
+      const u = parseFloat(units) || 1;
+
+      const calculated_value = l * w * d * u;
+
+      return db.query(
+        `INSERT INTO qto_dimensions 
+          (sow_proposal_id, work_item_id, label, length, width, depth, floor_id ,units, calculated_value) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [sow_proposal_id, work_item_id, label, length, width, depth, floor_id , units, calculated_value]
+      );
+    });
+
+    await Promise.all(insertPromises);
+
+    res.status(201).json({ message: "QTO entries added successfully" });
+
+  } catch (error) {
+    console.error("Error adding QTO entries:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
-// const addQtoEntries = async (req, res) => {
-//   try {
-//     const { qto_entries } = req.body;
+const saveQtoTotals = async (req, res) => {
+  try {
+    const { totals } = req.body;
 
-//     if (!qto_entries || !Array.isArray(qto_entries) || qto_entries.length === 0) {
-//       return res.status(400).json({ message: "No QTO entries provided" });
-//     }
+    if (!totals || !Array.isArray(totals) || totals.length === 0) {
+      return res.status(400).json({ message: "No totals provided" });
+    }
 
-//     const insertPromises = qto_entries.map(entry => {
-//       const {
-//         sow_proposal_id,
-//         length = null,
-//         width = null,
-//         height = null,
-//         quantity = null,
-//         computed_value = null,
-//         notes = null,
-//       } = entry;
+    const insertPromises = totals.map(({ sow_proposal_id, work_item_id, total_volume }) => {
+      return db.query(
+        `INSERT INTO qto_children_totals (sow_proposal_id, work_item_id, total_volume)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE total_volume = VALUES(total_volume)`,
+        [sow_proposal_id, work_item_id, total_volume]
+      );
+    });
 
-//       // Optional: Validate required fields here (e.g. sow_proposal_id, unit_type)
+    await Promise.all(insertPromises);
 
-//       return db.query(
-//         `INSERT INTO qto_entries 
-//           (sow_proposal_id, length, width, height, quantity, computed_value, notes) 
-//          VALUES (?, ?, ?,  ?, ?, ?, ?)`,
-//         [sow_proposal_id, length, width, height, quantity, computed_value, notes]
-//       );
-//     });
+    res.status(201).json({ message: "QTO totals saved successfully" });
 
-//     await Promise.all(insertPromises);
+  } catch (error) {
+    console.error("Error saving QTO totals:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
-//     res.status(201).json({ message: "QTO entries added successfully" });
-//   } catch (error) {
-//     console.error("Error inserting QTO entries:", error);
-//     res.status(500).json({ message: "Internal server error" });
+
+
+const getQtoDimensions = (req, res) => {
+const proposal_id = req.params.proposal_id;
+
+
+  if (!proposal_id) {
+    return res.status(400).json({ error: "Missing proposal_id" });
+  }
+
+    const sql = `
+   SELECT 
+  pw.item_title AS parent_title, 
+  cw.item_title AS item_title,
+  qd.label,
+  qd.length,
+  qd.width,
+  qd.depth,
+  qd.units,
+  qd.calculated_value,
+  pf.floor_code,
+  pf.floor_label
+FROM qto_dimensions qd
+JOIN sow_proposal sp ON qd.sow_proposal_id = sp.sow_proposal_id
+JOIN sow_work_items cw ON qd.work_item_id = cw.work_item_id
+JOIN sow_work_items pw ON cw.parent_id = pw.work_item_id
+JOIN proposals p ON sp.proposal_id = p.proposal_id
+LEFT JOIN project_floors pf ON qd.floor_id = pf.floor_id
+WHERE p.proposal_id = ?
+
+  `;
+
+  db.query(sql,  [proposal_id], (err, results) => {
+    if(err){
+      console.error("DB error:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+    res.json(results);
+  });
+};
+
+
+
+// const getAllSOWWorkItems = (req, res) => {
+//   const proposal_id = req.query.proposal_id;
+//   if (!proposal_id) {
+//     return res.status(400).json({ error: "Missing proposal_id" });
 //   }
+
+//   const sql = `
+//    SELECT
+//     s.work_item_id,
+//     s.item_title,
+//     u.unitCode, 
+//     s.sequence_order,
+//     t.type_name AS category
+// FROM
+//     sow_work_items s
+// JOIN
+//     sow_work_types t ON s.work_type_id = t.work_type_id
+// JOIN
+//     unit_of_measure u ON s.unitID = u.unitID 
+// WHERE
+//     s.work_item_id NOT IN (
+//         SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
+//     )
+// ORDER BY s.sequence_order;
+//   `;
+
+//   db.query(sql, [proposal_id], (err, results) => {
+//     if (err) {
+//       console.error("DB error:", err);
+//       return res.status(500).json({ error: "DB error" });
+//     }
+//     res.json(results);
+//   });
 // };
+
+
+
+module.exports = {
+  addQtoEntries,
+    saveQtoTotals,
+    getQtoDimensions
+
+};

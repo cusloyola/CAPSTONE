@@ -75,8 +75,10 @@ const getSOWfromTable = (req, res) => {
     return res.status(400).json({ error: "proposal_id is required" });
   }
 
-  const workItemsSql = `
+  // 1. Fetch selected parent items (with sow_proposal_id)
+  const parentSql = `
     SELECT
+      sp.sow_proposal_id,
       swi.work_item_id,
       swi.item_title,
       swi.unitID,
@@ -84,43 +86,78 @@ const getSOWfromTable = (req, res) => {
       swi.work_type_id,
       swi.parent_id,
       swi.compute_type
-    FROM sow_work_items swi
-    WHERE swi.work_item_id IN (
-      SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
-    )
-    OR swi.parent_id IN (
-      SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
-    )
-    ORDER BY swi.sequence_order
+    FROM sow_proposal sp
+    JOIN sow_work_items swi ON sp.work_item_id = swi.work_item_id
+    WHERE sp.proposal_id = ?
   `;
 
-  db.query(workItemsSql, [proposal_id, proposal_id], (err, workItems) => {
+  db.query(parentSql, [proposal_id], (err, parentItems) => {
     if (err) {
-      console.error("❌ Error fetching SOW work items:", err);
-      return res.status(500).json({ error: "Server error fetching work items" });
+      console.error("❌ Error fetching parents:", err);
+      return res.status(500).json({ error: "Error fetching parent items" });
     }
 
-    const hasFloorBasedItems = workItems.some(item => item.compute_type === 'sum_per_floors');
+    const parentIds = parentItems.map(p => p.work_item_id);
 
-    if (!hasFloorBasedItems) {
-      return res.status(200).json({ workItems, floors: [] });
+    if (parentIds.length === 0) {
+      return res.status(200).json({ workItems: [], floors: [] });
     }
 
-   const floorSql = `
-  SELECT pf.floor_id, pf.floor_code, pf.floor_label  -- <--- Add floor_label here
-  FROM proposals p
-  JOIN projects pr ON p.project_id = pr.project_id
-  JOIN project_floors pf ON pr.project_id = pf.project_id
-  WHERE p.proposal_id = ?
-`;
+    // 2. Fetch children of those parent IDs
+    const childSql = `
+      SELECT
+        swi.work_item_id,
+        swi.item_title,
+        swi.unitID,
+        swi.sequence_order,
+        swi.work_type_id,
+        swi.parent_id,
+        swi.compute_type
+      FROM sow_work_items swi
+      WHERE swi.parent_id IN (?)
+    `;
 
-    db.query(floorSql, [proposal_id], (err, floors) => {
+    db.query(childSql, [parentIds], (err, childItems) => {
       if (err) {
-        console.error("❌ Error fetching floors:", err);
-        return res.status(500).json({ error: "Server error fetching floors" });
+        console.error("❌ Error fetching children:", err);
+        return res.status(500).json({ error: "Error fetching child items" });
       }
 
-      return res.status(200).json({ workItems, floors });
+      // 3. Attach sow_proposal_id from parents to each child
+      const enrichedChildren = childItems.map(child => {
+        const parent = parentItems.find(p => p.work_item_id === child.parent_id);
+        return {
+          ...child,
+          sow_proposal_id: parent?.sow_proposal_id || null
+        };
+      });
+
+      const allItems = [...parentItems, ...enrichedChildren];
+
+      // 4. Check if any item is floor-based
+      const hasFloorBasedItems = allItems.some(item => item.compute_type === 'sum_per_floors');
+
+      if (!hasFloorBasedItems) {
+        return res.status(200).json({ workItems: allItems, floors: [] });
+      }
+
+      // 5. Fetch floor data
+      const floorSql = `
+        SELECT pf.floor_id, pf.floor_code, pf.floor_label
+        FROM proposals p
+        JOIN projects pr ON p.project_id = pr.project_id
+        JOIN project_floors pf ON pr.project_id = pf.project_id
+        WHERE p.proposal_id = ?
+      `;
+
+      db.query(floorSql, [proposal_id], (err, floors) => {
+        if (err) {
+          console.error("❌ Error fetching floors:", err);
+          return res.status(500).json({ error: "Error fetching floors" });
+        }
+
+        return res.status(200).json({ workItems: allItems, floors });
+      });
     });
   });
 };

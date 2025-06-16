@@ -1,44 +1,51 @@
 // QTO Dimensions/CustomVolumeInput.jsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid'; // For unique row IDs
 
-// Helper function to calculate volume for a single row
-const calculateVolume = (length, width, depth, count = 1) => {
-  const l = parseFloat(length);
-  const w = parseFloat(width);
-  const d = parseFloat(depth);
-  const c = parseFloat(count);
-  // Ensure we return 0 if any essential input is not a valid number
-  if (isNaN(l) || isNaN(w) || isNaN(d) || isNaN(c)) {
-    return 0;
-  }
-  return (l * w * d * c);
-};
+
 
 const CustomVolumeInput = ({
   selectedItems = [], // Items from parent with compute_type: 'custom'
-  updateChildDimensions = () => {}, // Function to update the main parent object
+  updateChildDimensions = () => { }, // Function to update the main parent object
   parent, // The full parent object from the context
   floors = [] // Array of floor objects
 }) => {
 
-  // Main state: Maps work_item_id to a floor-keyed object of custom dimension rows
-  // Structure: { [work_item_id]: { [floor_id]: [{ id: 'uuid', label: '', length: '', width: '', depth: '', count: '' }, ...] } }
-  const [customDimensionsData, setCustomDimensionsData] = useState(() => {
-    const initialData = {};
-    selectedItems.forEach(item => {
-      // Ensure item's custom_item_dimensions_by_floor is initialized, merging existing data
-      initialData[item.work_item_id] = item.custom_item_dimensions_by_floor || {};
 
-      // For each floor, ensure an array exists, even if empty
-      floors.forEach(floor => {
-        if (!initialData[item.work_item_id][floor.floor_id]) {
-          initialData[item.work_item_id][floor.floor_id] = [];
-        }
+  const [customDimensionsData, setCustomDimensionsData] = useState({});
+  const lastSerializedDataRef = useRef('');
+
+
+
+  // Helper function to calculate volume for a single row
+  const calculateVolume = (length, width, depth, count) => {
+    const l = parseFloat(length) || 0;
+    const w = parseFloat(width) || 0;
+    const d = parseFloat(depth) || 0;
+    const c = parseFloat(count) || 0;
+    return l * w * d * c;
+  };
+
+  const calculateItemFloorTotalVolume = (itemId, floorId) => {
+    const rows = customDimensionsData[itemId]?.[floorId] || [];
+    return rows.reduce((total, row) => total + calculateVolume(row.length, row.width, row.depth, row.count), 0);
+  };
+
+
+  const totalProjectCustomVolume = useMemo(() => {
+    let total = 0;
+    Object.keys(customDimensionsData).forEach(itemId => {
+      Object.keys(customDimensionsData[itemId] || {}).forEach(floorId => {
+        const rows = customDimensionsData[itemId][floorId] || [];
+        rows.forEach(row => {
+          total += calculateVolume(row.length, row.width, row.depth, row.count);
+        });
       });
     });
-    return initialData;
-  });
+    return total;
+  }, [customDimensionsData]);
+
+
 
   // State for the currently active floor tab
   const [activeFloorId, setActiveFloorId] = useState(floors[0]?.floor_id || null);
@@ -51,119 +58,98 @@ const CustomVolumeInput = ({
   }, [floors, activeFloorId]);
 
 
-  // --- Callbacks for State Updates ---
+  const addRow = (itemId) => {
+    setCustomDimensionsData(prev => {
+      const newRow = {
+        id: Date.now(), // or uuid
+        label: '',
+        length: '',
+        width: '',
+        depth: '',
+        count: 1
+      };
 
-  // Function to add a new row for a specific item on the active floor
-  const addRow = useCallback((itemId) => {
-    if (!activeFloorId) return;
-
-    setCustomDimensionsData(prevData => {
-      const newRow = { id: uuidv4(), label: '', length: '', width: '', depth: '', count: '1' };
-      const updatedFloorRows = [
-        ...(prevData[itemId]?.[activeFloorId] || []),
-        newRow
-      ];
+      const existing = prev[itemId]?.[activeFloorId] || [];
 
       return {
-        ...prevData,
+        ...prev,
         [itemId]: {
-          ...(prevData[itemId] || {}),
-          [activeFloorId]: updatedFloorRows
+          ...prev[itemId],
+          [activeFloorId]: [...existing, newRow]
         }
       };
     });
-  }, [activeFloorId]);
+  };
 
-  // Function to remove a row for a specific item on the active floor
-  const removeRow = useCallback((itemId, rowIdToRemove) => {
-    if (!activeFloorId) return;
 
-    setCustomDimensionsData(prevData => {
-      const updatedFloorRows = (prevData[itemId]?.[activeFloorId] || []).filter(row => row.id !== rowIdToRemove);
+  const removeRow = (itemId, rowId) => {
+    setCustomDimensionsData(prev => {
+      const filteredRows = (prev[itemId]?.[activeFloorId] || []).filter(row => row.id !== rowId);
 
       return {
-        ...prevData,
+        ...prev,
         [itemId]: {
-          ...(prevData[itemId] || {}),
-          [activeFloorId]: updatedFloorRows
+          ...prev[itemId],
+          [activeFloorId]: filteredRows
         }
       };
     });
-  }, [activeFloorId]);
+  };
 
-  // Function to handle changes in input fields for a specific row
-  const handleFieldChange = useCallback((itemId, rowId, fieldName, value) => {
-    if (!activeFloorId) return;
-
-    setCustomDimensionsData(prevData => {
-      const updatedFloorRows = (prevData[itemId]?.[activeFloorId] || []).map(row =>
-        row.id === rowId ? { ...row, [fieldName]: value } : row
-      );
-
-      return {
-        ...prevData,
-        [itemId]: {
-          ...(prevData[itemId] || {}),
-          [activeFloorId]: updatedFloorRows
+  const handleFieldChange = (itemId, rowId, field, value) => {
+    setCustomDimensionsData(prev => {
+      const updated = (prev[itemId]?.[activeFloorId] || []).map(row => {
+        if (row.id === rowId) {
+          return {
+            ...row,
+            [field]: field === "label" ? value : parseFloat(value) || 0
+          };
         }
-      };
-    });
-  }, [activeFloorId]);
-
-
-  // --- Derived State & Total Calculations (Memoized for Performance) ---
-
-  // Memoized function to calculate total volume for a single item on a single floor
-  const calculateItemFloorTotalVolume = useCallback((itemId, floorId) => {
-    const dimensionsForFloor = customDimensionsData[itemId]?.[floorId] || [];
-    return dimensionsForFloor.reduce((sum, row) => sum + calculateVolume(row.length, row.width, row.depth, row.count), 0);
-  }, [customDimensionsData]);
-
-  // Memoized function to calculate the grand total custom volume across all items and floors
-  const totalProjectCustomVolume = useMemo(() => {
-    let grandTotal = 0;
-    selectedItems.forEach(item => {
-      floors.forEach(floor => {
-        grandTotal += calculateItemFloorTotalVolume(item.work_item_id, floor.floor_id);
+        return row;
       });
+
+      return {
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          [activeFloorId]: updated
+        }
+      };
     });
-    return grandTotal;
-  }, [selectedItems, floors, calculateItemFloorTotalVolume]);
-
-
-  // --- Effect to Propagate State Changes Up to Parent ---
-  // This effect will run whenever customDimensionsData changes,
-  // pushing the updated data structure back to the parent component.
+  };
   useEffect(() => {
-    // Create a deep copy of the parent object to avoid direct mutation
     const updatedParent = JSON.parse(JSON.stringify(parent));
 
-    // Update dimensions for child items with compute_type 'custom'
+    // Update custom dimensions for children
     updatedParent.children = updatedParent.children?.map(child => {
-        if (child.compute_type === 'custom' && customDimensionsData[child.work_item_id]) {
-            return {
-                ...child,
-                custom_item_dimensions_by_floor: customDimensionsData[child.work_item_id]
-            };
-        }
-        return child;
+      if (child.compute_type === 'custom' && customDimensionsData[child.work_item_id]) {
+        return {
+          ...child,
+          custom_item_dimensions_by_floor: customDimensionsData[child.work_item_id],
+        };
+      }
+      return child;
     });
 
-    // If the parent itself is a 'custom' item and selected (e.g., a top-level work item)
-    if (parent.compute_type === 'custom' && parent.checked && customDimensionsData[parent.work_item_id]) {
-        updatedParent.custom_item_dimensions_by_floor = customDimensionsData[parent.work_item_id];
+    // If parent itself is a custom item
+    if (
+      parent.compute_type === 'custom' &&
+      parent.checked &&
+      customDimensionsData[parent.work_item_id]
+    ) {
+      updatedParent.custom_item_dimensions_by_floor = customDimensionsData[parent.work_item_id];
     }
 
-    updateChildDimensions(updatedParent);
-
-  }, [customDimensionsData, updateChildDimensions, parent, selectedItems]);
-
+    // Serialize and compare
+    const serialized = JSON.stringify(updatedParent);
+    if (lastSerializedDataRef.current !== serialized) {
+      lastSerializedDataRef.current = serialized;
+      updateChildDimensions(updatedParent);
+    }
+  }, [customDimensionsData, updateChildDimensions]);
 
   return (
-    // THE KEY CHANGE IS HERE: Added a fixed height and overflow-y-auto to the main container.
-    // max-h-[600px] is an example, adjust this height as needed for your layout.
-    // overflow-y-auto enables vertical scrolling when content exceeds max-height.
-    // border border-gray-200 and rounded-lg are for visual clarity of the "box".
+
     <div className="space-y-8 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md max-h-[450px] overflow-y-auto custom-scrollable-box">
       <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Custom Item Dimensions</h3>
 

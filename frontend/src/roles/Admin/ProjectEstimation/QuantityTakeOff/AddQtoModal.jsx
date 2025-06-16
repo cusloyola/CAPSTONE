@@ -39,7 +39,7 @@ const AddQtoModal = ({ proposal_id, onClose }) => {
       .catch(err => {
         console.error("Error fetching SOW table:", err);
         setWorkItems([]);
-        setFloors(1);
+setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
       });
   }, [proposal_id]);
 
@@ -139,6 +139,8 @@ const AddQtoModal = ({ proposal_id, onClose }) => {
             onBack={() => setCurrentPage(1)}
             onNext={() => setCurrentPage(3)}
             floors={floors}
+  sow_proposal_id={selectedParent?.sow_proposal_id} // ✅ FIXED
+
           />
         )}
 
