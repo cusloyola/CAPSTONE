@@ -163,7 +163,7 @@ const QtoDimensionInput = ({
           });
         });
       }
-console.log("🧪 Found SIMPLE item:", item.work_item_id, qtoDimensions[item.work_item_id]);
+      console.log("🧪 Found SIMPLE item:", item.work_item_id, qtoDimensions[item.work_item_id]);
 
 
       totalVolumes[item.work_item_id] = total;
@@ -215,7 +215,29 @@ console.log("🧪 Found SIMPLE item:", item.work_item_id, qtoDimensions[item.wor
       console.error("QTO submission error:", error);
       alert("❌ An error occurred while submitting QTO entries.");
     }
+
+   try {
+  const parentTotalsResponse = await fetch("http://localhost:5000/api/qto/save-parent-totals", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ proposal_id: sow_proposal_id }), // required by your controller
+  });
+
+  const parentTotalsData = await parentTotalsResponse.json();
+
+  if (!parentTotalsResponse.ok) {
+    alert("⚠ Child totals saved, but failed to save parent totals: " + parentTotalsData.message);
+  } else {
+    console.log("✅ Parent totals saved.");
+  }
+} catch (error) {
+  console.error("❌ Failed to save parent totals:", error);
+  alert("❌ An error occurred while saving parent totals.");
+}
+  
   };
+
+
 
 
   const hasSumPerColumnChild = selectedItems.some(child => child.compute_type === "sum_per_columns");

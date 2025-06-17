@@ -22,7 +22,7 @@ const ProjectProposalProfile = () => {
     if (!project) return <div>Loading project details...</div>;
 
     return (
-        <div className="flex h-screen p-4 bg-gray-100 gap-4">
+        <div className="flex h-screen   gap-4">
             {/* Left Sidebar */}
             <div className="w-1/5 bg-white px-6 py-12 shadow rounded flex flex-col items-center">
                 <img

@@ -4,6 +4,7 @@ const quantitytakeoffController = require('../../controllers/QuantityTakeOff/qua
 
 router.post('/add', quantitytakeoffController.addQtoEntries);
 router.post('/save-totals', quantitytakeoffController.saveQtoTotals); 
+router.post('/save-parent-totals', quantitytakeoffController.saveQtoParentTotals);
 router.get('/:proposal_id',quantitytakeoffController.getQtoDimensions);
 
 

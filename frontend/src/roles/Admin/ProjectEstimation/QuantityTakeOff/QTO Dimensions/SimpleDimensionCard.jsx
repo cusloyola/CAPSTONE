@@ -7,7 +7,7 @@ const calculateVolume = (length, width, depth, units = 1) => {
   const d = parseFloat(depth);
   const u = parseFloat(units);
   if (isNaN(l) || isNaN(w) || isNaN(d) || isNaN(u)) return 0;
-  return l * w * d * u;
+  return parseFloat((l * w * d * u).toFixed(3)); // <== consistent rounding
 };
 
 const SimpleDimensionCard = ({ selectedItems, qtoDimensions, updateQtoDimensions }) => {

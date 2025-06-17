@@ -31,7 +31,7 @@ const addQtoEntries = async (req, res) => {
         `INSERT INTO qto_dimensions 
           (sow_proposal_id, work_item_id, label, length, width, depth, floor_id ,units, calculated_value) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [sow_proposal_id, work_item_id, label, length, width, depth, floor_id , units, calculated_value]
+        [sow_proposal_id, work_item_id, label, length, width, depth, floor_id, units, calculated_value]
       );
     });
 
@@ -73,17 +73,49 @@ const saveQtoTotals = async (req, res) => {
   }
 };
 
+const saveQtoParentTotals = async (req, res) => {
+  const { proposal_id } = req.body;
+
+  if (!proposal_id) {
+    return res.status(400).json({ message: "Missing proposal_id" });
+  }
+
+  try {
+    const sql = `
+  INSERT INTO qto_parent_totals (sow_proposal_id, work_item_id, total_value)
+  SELECT 
+    qct.sow_proposal_id,
+    sw.parent_id AS work_item_id,
+    SUM(qct.total_volume) AS total_value
+  FROM qto_children_totals qct
+  JOIN sow_work_items sw ON qct.work_item_id = sw.work_item_id
+  JOIN sow_proposal sp ON sp.sow_proposal_id = qct.sow_proposal_id
+WHERE qct.sow_proposal_id = ?
+  GROUP BY qct.sow_proposal_id, sw.parent_id
+  ON DUPLICATE KEY UPDATE total_value = VALUES(total_value)
+`;
+
+
+    await db.query(sql, [proposal_id]);
+
+    res.status(200).json({ message: "Parent totals updated" });
+  } catch (err) {
+    console.error("Failed to save parent totals:", err);
+    res.status(500).json({ message: "Error saving parent totals" });
+  }
+};
+
 
 
 const getQtoDimensions = (req, res) => {
-const proposal_id = req.params.proposal_id;
+  const proposal_id = req.params.proposal_id;
 
 
   if (!proposal_id) {
     return res.status(400).json({ error: "Missing proposal_id" });
   }
 
-    const sql = `
+  const sql = `
    SELECT 
   pw.item_title AS parent_title, 
   cw.item_title AS item_title,
@@ -94,19 +126,24 @@ const proposal_id = req.params.proposal_id;
   qd.units,
   qd.calculated_value,
   pf.floor_code,
-  pf.floor_label
-FROM qto_dimensions qd
-JOIN sow_proposal sp ON qd.sow_proposal_id = sp.sow_proposal_id
-JOIN sow_work_items cw ON qd.work_item_id = cw.work_item_id
-JOIN sow_work_items pw ON cw.parent_id = pw.work_item_id
-JOIN proposals p ON sp.proposal_id = p.proposal_id
-LEFT JOIN project_floors pf ON qd.floor_id = pf.floor_id
-WHERE p.proposal_id = ?
+  pf.floor_label,
+qpt.total_value AS parent_total_value
+
+    FROM qto_dimensions qd
+    JOIN sow_proposal sp ON qd.sow_proposal_id = sp.sow_proposal_id
+    JOIN sow_work_items cw ON qd.work_item_id = cw.work_item_id
+    JOIN sow_work_items pw ON cw.parent_id = pw.work_item_id
+    JOIN proposals p ON sp.proposal_id = p.proposal_id
+    LEFT JOIN project_floors pf ON qd.floor_id = pf.floor_id
+  LEFT JOIN qto_parent_totals qpt 
+  ON qpt.sow_proposal_id = qd.sow_proposal_id AND qpt.work_item_id = pw.work_item_id
+
+    WHERE p.proposal_id = ?
 
   `;
 
-  db.query(sql,  [proposal_id], (err, results) => {
-    if(err){
+  db.query(sql, [proposal_id], (err, results) => {
+    if (err) {
       console.error("DB error:", err);
       return res.status(500).json({ error: "Internal server error" });
     }
@@ -116,46 +153,11 @@ WHERE p.proposal_id = ?
 
 
 
-// const getAllSOWWorkItems = (req, res) => {
-//   const proposal_id = req.query.proposal_id;
-//   if (!proposal_id) {
-//     return res.status(400).json({ error: "Missing proposal_id" });
-//   }
-
-//   const sql = `
-//    SELECT
-//     s.work_item_id,
-//     s.item_title,
-//     u.unitCode, 
-//     s.sequence_order,
-//     t.type_name AS category
-// FROM
-//     sow_work_items s
-// JOIN
-//     sow_work_types t ON s.work_type_id = t.work_type_id
-// JOIN
-//     unit_of_measure u ON s.unitID = u.unitID 
-// WHERE
-//     s.work_item_id NOT IN (
-//         SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
-//     )
-// ORDER BY s.sequence_order;
-//   `;
-
-//   db.query(sql, [proposal_id], (err, results) => {
-//     if (err) {
-//       console.error("DB error:", err);
-//       return res.status(500).json({ error: "DB error" });
-//     }
-//     res.json(results);
-//   });
-// };
-
-
 
 module.exports = {
   addQtoEntries,
-    saveQtoTotals,
-    getQtoDimensions
+  saveQtoTotals,
+  saveQtoParentTotals,
+  getQtoDimensions
 
 };
