@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import QtoParentList from "./QtoParentList";
 import QtoChildSelector from "./QtoChildSelector";
 import QtoDimensionInput from "./QTO Dimensions/QtoInputDimensions";
+import RebarInputDimensions from "./Rebar Dimensions/RebarInputDimensions";
 
 const QTO_API_VOLUME = "http://localhost:5000/api/sowproposal/sow-work-items/sow-table/";
 
@@ -12,7 +13,6 @@ const AddQtoModal = ({ proposal_id, onClose }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedParent, setSelectedParent] = useState(null);
   const [floors, setFloors] = useState([]);
-
 
   useEffect(() => {
     fetch(`${QTO_API_VOLUME}?proposal_id=${proposal_id}`)
@@ -29,17 +29,15 @@ const AddQtoModal = ({ proposal_id, onClose }) => {
         }
 
         if (Array.isArray(floors) && floors.length > 0) {
-          setFloors(floors); // ✅ store floor list instead of just count
-          console.log("Floor codes:", floors.map(f => f.floor_code));
+          setFloors(floors);
         } else {
-          setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]); // fallback
+          setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
         }
-
       })
       .catch(err => {
         console.error("Error fetching SOW table:", err);
         setWorkItems([]);
-setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
+        setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
       });
   }, [proposal_id]);
 
@@ -48,7 +46,14 @@ setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
     const roots = [];
 
     items.forEach(item => {
-      map[item.work_item_id] = { ...item, children: [], checked: false, length: "", width: "", height: "" };
+      map[item.work_item_id] = {
+        ...item,
+        children: [],
+        checked: false,
+        length: "",
+        width: "",
+        height: ""
+      };
     });
 
     items.forEach(item => {
@@ -74,7 +79,6 @@ setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
     });
 
     setWorkItems(updated);
-
     const updatedParent = updated.find(item => item.work_item_id === selectedParent.work_item_id);
     if (updatedParent) setSelectedParent(updatedParent);
   };
@@ -91,10 +95,36 @@ setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
     });
 
     setWorkItems(updated);
-
-    // Sync latest children state in selectedParent
     const updatedParent = updated.find(item => item.work_item_id === selectedParent.work_item_id);
     if (updatedParent) setSelectedParent(updatedParent);
+  };
+
+  const renderDimensionInput = () => {
+    if (!selectedParent) return null;
+
+    if (selectedParent.compute_type === "rebar") {
+      console.log("🎯 Rendering RebarDimensionInput");
+      return (
+        <RebarInputDimensions
+          parent={selectedParent}
+          updateChildDimensions={updateChildDimensions}
+          onBack={() => setCurrentPage(2)}
+          onDone={onClose}
+          floors={floors}
+        />
+      );
+    }
+
+    console.log("🧮 Rendering QtoDimensionInput");
+    return (
+      <QtoDimensionInput
+        parent={selectedParent}
+        updateChildDimensions={updateChildDimensions}
+        onBack={() => setCurrentPage(2)}
+        onDone={onClose}
+        floors={floors}
+      />
+    );
   };
 
   return (
@@ -123,40 +153,30 @@ setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
             categoryFilter={categoryFilter}
             setCategoryFilter={setCategoryFilter}
             onSelectParent={(parent) => {
-              parent.floors = floors; // 🔁 embed floors into parent directly
-              setSelectedParent(parent);
+              const fullParent = workItems.find(item => item.work_item_id === parent.work_item_id);
+              fullParent.floors = floors;
+              setSelectedParent(fullParent);
               setCurrentPage(2);
             }}
-
           />
         )}
 
-        {currentPage === 2 && selectedParent && (
-          <QtoChildSelector
-            parent={selectedParent}
-            setParent={setSelectedParent}
-            toggleChildSelection={toggleChildSelection}
-            onBack={() => setCurrentPage(1)}
-            onNext={() => setCurrentPage(3)}
-            floors={floors}
-  sow_proposal_id={selectedParent?.sow_proposal_id} // ✅ FIXED
+       {currentPage === 2 && selectedParent && (
+  <QtoChildSelector
+    parent={selectedParent}
+    setParent={setSelectedParent}
+    onBack={() => setCurrentPage(1)}
+    onDone={() => {
+      // ✅ Jump to page 3 directly after children selected
+      setCurrentPage(3);
+    }}
+    floors={floors}
+    proposal_id={proposal_id}
+  />
+)}
 
-          />
-        )}
 
-        {currentPage === 3 && selectedParent && (
-          <>
-            {console.log("✅ Final selectedParent on Page 3:", selectedParent)}
-            {console.log("✅ Checked children:", selectedParent.children.filter(c => c.checked))}
-            <QtoDimensionInput
-              parent={selectedParent}
-              updateChildDimensions={updateChildDimensions}
-              onBack={() => setCurrentPage(2)}
-              onDone={onClose}
-              floors={floors}
-            />
-          </>
-        )}
+        {currentPage === 3 && renderDimensionInput()}
       </div>
     </div>
   );

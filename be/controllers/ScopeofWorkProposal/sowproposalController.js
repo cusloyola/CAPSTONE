@@ -85,7 +85,8 @@ const getSOWfromTable = (req, res) => {
       swi.sequence_order,
       swi.work_type_id,
       swi.parent_id,
-      swi.compute_type
+      swi.compute_type,
+      swi.quantity_type
     FROM sow_proposal sp
     JOIN sow_work_items swi ON sp.work_item_id = swi.work_item_id
     WHERE sp.proposal_id = ?
@@ -112,7 +113,9 @@ const getSOWfromTable = (req, res) => {
         swi.sequence_order,
         swi.work_type_id,
         swi.parent_id,
-        swi.compute_type
+        swi.compute_type,
+              swi.quantity_type
+
       FROM sow_work_items swi
       WHERE swi.parent_id IN (?)
     `;
@@ -289,9 +292,9 @@ const getAllWorkTypes = (req, res) => {
 module.exports = {
   getAllSOWWorkItems,
   getSOWfromTable,
-  
 
-  
+
+
   addSOWWorkItems,
   getSowWorkItemsByProposal,
   getAllWorkItemsRaw,

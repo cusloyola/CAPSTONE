@@ -57,10 +57,9 @@ const fileRoutes = require('./routes/fileRoutes'); // Import fileRoutes
 
 const proposalRoutes = require('./routes/proposalRoutes');
 
-const quantitytakeoffRoutes = require('./routes/QuantityTakeOffRoutes/quantitytakeoffRoutes')
+const quantitytakeoffRoutes = require('./routes/QuantityTakeOffRoutes/quantitytakeoffRoutes');
 
-
-
+const rebarRoutes = require('./routes/Rebar/rebarRoutes');
 
 
 // Ensure the uploads directory exists
@@ -116,6 +115,7 @@ app.use("/api/sowproposal", sowproposalRoutes); // Mount sow proposal routes und
 app.use("/api/qto", quantitytakeoffRoutes);
 
 
+app.use('/api/rebar', rebarRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

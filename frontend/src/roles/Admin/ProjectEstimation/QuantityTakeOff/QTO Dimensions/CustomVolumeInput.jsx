@@ -144,7 +144,9 @@ const CustomVolumeInput = ({
     const serialized = JSON.stringify(updatedParent);
     if (lastSerializedDataRef.current !== serialized) {
       lastSerializedDataRef.current = serialized;
-      updateChildDimensions(updatedParent);
+      console.log("📦 [CustomVolumeInput] Sending customDimensionsData:", customDimensionsData);
+
+updateChildDimensions(updatedParent, customDimensionsData); // Now synced!
     }
   }, [customDimensionsData, updateChildDimensions]);
 

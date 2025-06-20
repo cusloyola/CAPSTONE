@@ -12,7 +12,6 @@ const calculateVolume = (length, width, depth, units = 1) => {
   return l * w * d * u;
 };
 
-
 const QtoDimensionInput = ({
   parent,
   updateChildDimensions = () => { },
@@ -20,29 +19,40 @@ const QtoDimensionInput = ({
   onBack = () => { },
   onDone = () => { },
 }) => {
-  const sow_proposal_id = parent?.sow_proposal_id; // ✅ safely get from parent
+
+  const sow_proposal_id = parent?.sow_proposal_id;
   console.log("✅ sow_proposal_id from parent:", sow_proposal_id);
 
-
-  const [qtoDimensions, setQtoDimensions] = useState({});
-
-  // 🔒 Prevent infinite loop: only update local state when parent changes meaningfully
-  useEffect(() => {
-    if (!parent || !Array.isArray(parent.children)) return;
+  const initialQtoDimensions = () => {
+    if (!parent || !Array.isArray(parent.children)) return {};
 
     const newDimensions = {};
-
     parent.children.forEach(child => {
       if (child.checked) {
-        newDimensions[child.work_item_id] = child.dimensions || [];
+        if (child.compute_type === 'simple') {
+          newDimensions[child.work_item_id] = child.simple_item_dimensions || [];
+        } else if (child.compute_type === 'custom') {
+          newDimensions[child.work_item_id] = child.custom_item_dimensions_by_floor || {};
+        }
       }
     });
 
     if (parent.checked && !parent.children?.length) {
-      newDimensions[parent.work_item_id] = parent.dimensions || [];
+      if (parent.compute_type === 'simple') {
+        newDimensions[parent.work_item_id] = parent.simple_item_dimensions || [];
+      } else if (parent.compute_type === 'custom') {
+        newDimensions[parent.work_item_id] = parent.custom_item_dimensions_by_floor || {};
+      }
     }
 
-    setQtoDimensions(newDimensions);
+    return newDimensions;
+  };
+
+  const [qtoDimensions, setQtoDimensions] = useState(initialQtoDimensions);
+
+
+  useEffect(() => {
+    setQtoDimensions(initialQtoDimensions());
   }, [parent]);
 
   if (!parent || floors.length === 0) {
@@ -71,25 +81,26 @@ const QtoDimensionInput = ({
       </div>
     );
   }
+  const handleUpdateParentChildren = (updatedParent, dimensionsData = {}) => {
+    console.log("🛠️ Updating QTO dimensions");
+    console.log("📌 updatedParent:", updatedParent);
+    console.log("📥 new dimensionsData:", dimensionsData);
 
-  const updateQtoDimensions = (itemId, newRows) => {
-    setQtoDimensions(prev => ({
-      ...prev,
-      [itemId]: newRows
-    }));
+    setQtoDimensions(prev => {
+      const merged = { ...prev };
+
+      for (const [key, value] of Object.entries(dimensionsData)) {
+        merged[key] = value; // ✅ merge or replace only that work_item_id
+      }
+
+      return merged;
+    });
   };
-
 
   useEffect(() => {
-    console.log("sow_proposal_id in QtoDimensionInput:", sow_proposal_id);
-  }, [sow_proposal_id]);
+    console.log("🔁 [QTO] qtoDimensions state changed:", qtoDimensions);
+  }, [qtoDimensions]);
 
-
-  const handleUpdateParentChildren = (updatedParent, dimensionsData = {}) => {
-    // Avoid triggering loop if nothing has changed
-    updateChildDimensions(updatedParent);
-    setQtoDimensions(dimensionsData);
-  };
 
   const handleSubmitQTO = async () => {
     const qto_entries = [];
@@ -98,32 +109,12 @@ const QtoDimensionInput = ({
     selectedItems.forEach(item => {
       let total = 0;
 
-      if (item.compute_type === "sum_per_floors" && item.dimensionsPerFloor) {
-        Object.entries(item.dimensionsPerFloor).forEach(([floorCode, row]) => {
-          const computedValue = calculateVolume(row.length, row.width, row.depth, row.units);
-          total += computedValue;
-
-          const matchedFloor = floors.find(f => f.floor_code === floorCode);
-
-          qto_entries.push({
-            sow_proposal_id,
-            work_item_id: parseInt(item.work_item_id),
-            label: null,
-            length: parseFloat(row.length) || 0,
-            width: parseFloat(row.width) || 0,
-            depth: parseFloat(row.depth) || 0,
-            units: parseFloat(row.units) || 1,
-            computed_value: computedValue,
-            floor_id: matchedFloor?.floor_id || null
-          });
-        });
-
-      } else if (
+      if (
         item.compute_type === "custom" &&
-        item.custom_item_dimensions_by_floor &&
-        typeof item.custom_item_dimensions_by_floor === "object"
+        typeof qtoDimensions[item.work_item_id] === "object"
       ) {
-        Object.entries(item.custom_item_dimensions_by_floor).forEach(([floorId, rows]) => {
+        Object.entries(qtoDimensions[item.work_item_id]).forEach(([floorId, rows]) => {
+
           rows.forEach(row => {
             const computedValue = calculateVolume(row.length, row.width, row.depth, row.count);
             total += computedValue;
@@ -136,7 +127,7 @@ const QtoDimensionInput = ({
               width: parseFloat(row.width) || 0,
               depth: parseFloat(row.depth) || 0,
               units: parseFloat(row.count) || 1,
-              computed_value: computedValue,
+              computed_value: parseFloat(computedValue.toFixed(2)),
               floor_id: parseInt(floorId) || null
             });
           });
@@ -147,7 +138,7 @@ const QtoDimensionInput = ({
         Array.isArray(qtoDimensions[item.work_item_id])
       ) {
         qtoDimensions[item.work_item_id].forEach(row => {
-          const computedValue = calculateVolume(row.length, row.width, row.depth, row.units);
+          const computedValue = calculateVolume(row.length, row.width, row.depth, row.count || row.units);
           total += computedValue;
 
           qto_entries.push({
@@ -157,19 +148,22 @@ const QtoDimensionInput = ({
             length: parseFloat(row.length) || 0,
             width: parseFloat(row.width) || 0,
             depth: parseFloat(row.depth) || 0,
-            units: parseFloat(row.units) || 1,
+            units: parseFloat(row.count || row.units) || 1,
             computed_value: parseFloat(computedValue.toFixed(2)),
             floor_id: null
           });
         });
       }
-      console.log("🧪 Found SIMPLE item:", item.work_item_id, qtoDimensions[item.work_item_id]);
 
+      console.log("📌 Submitting QTO - current qtoDimensions:", qtoDimensions);
+      console.log("📋 Selected Items:", selectedItems);
 
+      console.log(`🧪 Found ${item.compute_type?.toUpperCase()} item:`, item.work_item_id, qtoDimensions[item.work_item_id]);
       totalVolumes[item.work_item_id] = total;
     });
 
-    console.log("✅ Final QTO Entries:", qto_entries);
+    console.log("✅ Final QTO Entries (pre-submit):", qto_entries);
+
 
     if (qto_entries.length === 0) {
       alert("❌ No QTO entries to submit.");
@@ -216,36 +210,29 @@ const QtoDimensionInput = ({
       alert("❌ An error occurred while submitting QTO entries.");
     }
 
-   try {
-  const parentTotalsResponse = await fetch("http://localhost:5000/api/qto/save-parent-totals", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ proposal_id: sow_proposal_id }), // required by your controller
-  });
+    try {
+      const parentTotalsResponse = await fetch("http://localhost:5000/api/qto/save-parent-totals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposal_id: sow_proposal_id }),
+      });
 
-  const parentTotalsData = await parentTotalsResponse.json();
+      const parentTotalsData = await parentTotalsResponse.json();
 
-  if (!parentTotalsResponse.ok) {
-    alert("⚠ Child totals saved, but failed to save parent totals: " + parentTotalsData.message);
-  } else {
-    console.log("✅ Parent totals saved.");
-  }
-} catch (error) {
-  console.error("❌ Failed to save parent totals:", error);
-  alert("❌ An error occurred while saving parent totals.");
-}
-  
+      if (!parentTotalsResponse.ok) {
+        alert("⚠ Child totals saved, but failed to save parent totals: " + parentTotalsData.message);
+      } else {
+        console.log("✅ Parent totals saved.");
+      }
+    } catch (error) {
+      console.error("❌ Failed to save parent totals:", error);
+      alert("❌ An error occurred while saving parent totals.");
+    }
   };
 
 
-
-
-  const hasSumPerColumnChild = selectedItems.some(child => child.compute_type === "sum_per_columns");
-  const hasSumPerFloorsChild = selectedItems.some(child => child.compute_type === "sum_per_floors");
   const hasCustomChild = selectedItems.some(child => child.compute_type === "custom");
-  const hasSimpleDimensionChild = selectedItems.some(child =>
-    !["sum_per_columns", "sum_per_floors", "custom"].includes(child.compute_type)
-  );
+  const hasSimpleDimensionChild = selectedItems.some(child => child.compute_type === "simple");
 
   return (
     <div className="space-y-6">
@@ -253,28 +240,10 @@ const QtoDimensionInput = ({
       <p className="text-base text-gray-600 dark:text-gray-300 mb-6">
         <span className="font-semibold">{parent.item_title}</span> — {parent.category || "General Items"}
       </p>
-
-      {hasSumPerColumnChild && (
-        <SumPerColumnsTable
-          selectedItems={selectedItems}
-          updateChildDimensions={handleUpdateParentChildren}
-          parent={parent}
-        />
-      )}
-      {hasSumPerFloorsChild && (
-        <SumPerFloorsCards
-          selectedItems={selectedItems}
-          floors={floors}
-          updateChildDimensions={handleUpdateParentChildren}
-          parent={parent}
-        />
-      )}
       {hasCustomChild && (
         <CustomVolumeInput
           selectedItems={selectedItems}
           updateChildDimensions={handleUpdateParentChildren}
-
-
           parent={parent}
           floors={floors}
         />
@@ -282,13 +251,9 @@ const QtoDimensionInput = ({
       {hasSimpleDimensionChild && (
         <SimpleDimensionCard
           selectedItems={selectedItems}
-          qtoDimensions={qtoDimensions}
           updateChildDimensions={handleUpdateParentChildren}
-          updateQtoDimensions={updateQtoDimensions} // ✅ Stable reference
           parent={parent}
         />
-
-
       )}
 
       <div className="mt-8 flex justify-between items-center py-4 border-t border-gray-200 dark:border-gray-700">

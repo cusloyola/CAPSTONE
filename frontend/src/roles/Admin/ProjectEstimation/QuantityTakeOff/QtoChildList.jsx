@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-
+import React from "react";
 
 const QtoChildList = ({
   childItems = [],
@@ -7,16 +6,23 @@ const QtoChildList = ({
   onBack,
   toggleChildSelection
 }) => {
-// Inside QtoChildList.jsx
-const handleAdd = () => {
-  const selectedChildren = childItems.filter(child => child.checked);
-  if (selectedChildren.length === 0) {
-    alert("Please select at least one sub-scope item.");
-    return;
-  }
-  console.log("handleAdd called with:", selectedChildren);
-  onAddChildren(); // ✅ just call it — don't pass selectedChildren
-};
+  const handleAdd = () => {
+    if (childItems.length === 0) {
+      // If no children at all (e.g., rebar), just proceed
+      console.warn("⚠️ No sub-scope items. Proceeding...");
+      onAddChildren?.();
+      return;
+    }
+
+    const selectedChildren = childItems.filter(child => child.checked);
+    if (selectedChildren.length === 0) {
+      alert("Please select at least one sub-scope item.");
+      return;
+    }
+
+    console.log("handleAdd called with:", selectedChildren);
+    onAddChildren(); // ✅ Just proceed — no need to pass selectedChildren
+  };
 
   return (
     <>
@@ -36,7 +42,9 @@ const handleAdd = () => {
         className="overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         style={{ maxHeight: "120vh" }}
       >
-        {childItems.length === 0 && <p>No child items available.</p>}
+        {childItems.length === 0 && (
+          <p className="text-gray-500 italic">No sub-scope items found for this work item.</p>
+        )}
 
         {childItems.map(child => {
           const isSelected = child.checked;
@@ -73,7 +81,7 @@ const handleAdd = () => {
         <button
           type="button"
           onClick={handleAdd}
-          className={`bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700`}
+          className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
         >
           Add ▶
         </button>
