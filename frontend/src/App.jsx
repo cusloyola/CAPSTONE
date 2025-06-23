@@ -27,7 +27,7 @@ import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx"
 
 // safety
 import WeeklySafetyReport from "./roles/SafetyEngineer/SafetyReport.jsx";
-
+import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 import UserManagement from "./roles/Admin/UserManagement.jsx";
 
@@ -90,6 +90,7 @@ import FolderPage from "./roles/Admin/File Management/FolderPage.jsx";
 import UploadDocument from "./roles/Admin/File Management/UploadDocument.jsx";
 import SubFolderPage from "./roles/Admin/File Management/SubFolderPage.jsx";
 import Task from "./roles/Admin/Task Management/TaskSchedule.jsx";
+// import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 
 export default function App() {
   return (
@@ -166,6 +167,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
                 <Route path="/SafetyReport" element={<WeeklySafetyReport />} />
+                <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}
