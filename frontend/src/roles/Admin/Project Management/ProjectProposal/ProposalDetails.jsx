@@ -5,8 +5,8 @@ const ProposalDetails = () => {
     const steps = [
         { to: "scope-of-work", label: "Scope of Works", number: 1 },
         { to: "quantity-take-off", label: "Quantity Take-Off", number: 2 },
-        { to: "bill-of-quantities", label: "Bill of Quantities", number: 3 },
-        { to: "bill-of-materials", label: "Bill of Materials", number: 4 },
+        { to: "material-unit-cost", label: "Material Unit", number: 3 },
+        { to: "labor-unit-cost", label: "Labor Unit", number: 4 },
         { to: "final-cost-estimation", label: "Final Cost Estimation", number: 5 },
     ];
 

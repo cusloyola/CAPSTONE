@@ -74,6 +74,10 @@ import SowTypes from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/sowType
 import SOWTables from "./roles/Admin/ProjectEstimation/ScopeOfWorksTables/SOWTables.jsx";
 
 import QuantityTakeOffTable from "./roles/Admin/ProjectEstimation/QuantityTakeOff/QTOCrud/QuantityTakeOff.jsx";
+import MaterialUnitCost from "./roles/Admin/ProjectEstimation/MaterialUnitCost/MUCCrud/MaterialUnitCost.jsx";
+import LaborUnitCost from "./roles/Admin/ProjectEstimation/LaborUnitCost/LUCCrud/LaborUnitCost.jsx";
+
+
 import BillOfQuantities from "./roles/Admin/ProjectEstimation/BillOfQuantities/BillOfQuantities.jsx";
 import BillOfMaterials from "./roles/Admin/ProjectEstimation/BillOfMaterials/BillOfMaterials.jsx";
 import FinalCostEstimation from "./roles/Admin/ProjectEstimation/FinalCostEstimation/FinalCostEstimation.jsx";
@@ -126,8 +130,11 @@ export default function App() {
                 <Route path="proposals/:proposal_id" element={<ProposalDetails />}>
                   <Route path="scope-of-work" element={<ScopeOfWorks />} />
                   <Route path="quantity-take-off" element={<QuantityTakeOffTable />} />
-                  <Route path="bill-of-quantities" element={<BillOfQuantities />} />
-                  <Route path="bill-of-materials" element={<BillOfMaterials />} />
+                  <Route path="material-unit-cost" element={<MaterialUnitCost />} />
+                  <Route path="labor-unit-cost" element={<LaborUnitCost />} />
+
+                  {/* <Route path="bill-of-quantities" element={<BillOfQuantities />} />
+                  <Route path="bill-of-materials" element={<BillOfMaterials />} /> */}
                   <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
                 </Route>
               </Route>
@@ -165,7 +172,7 @@ export default function App() {
             {/* Safety Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
-                <Route path="/SafetyReport" element={<WeeklySafetyReport />} />
+              <Route path="/SafetyReport" element={<WeeklySafetyReport />} />
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}

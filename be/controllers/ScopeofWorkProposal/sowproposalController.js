@@ -289,6 +289,49 @@ const getAllWorkTypes = (req, res) => {
   });
 };
 
+const getWorkTypesAndItemsByProposal = (req, res) => {
+    const { proposal_id } = req.params;
+
+    const sql = `
+        SELECT 
+            swt.work_type_id,
+            swt.type_name,
+            swt.sequence_order,
+            swi.work_item_id,
+            swi.item_title
+        FROM sow_proposal sp
+        JOIN sow_work_items swi ON sp.work_item_id = swi.work_item_id
+        JOIN sow_work_types swt ON swi.work_type_id = swt.work_type_id
+        WHERE sp.proposal_id = ?
+        ORDER BY swt.sequence_order, swi.item_title
+    `;
+
+    db.query(sql, [proposal_id], (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching SOW grouped items:", err);
+            return res.status(500).json({ error: "Database error" });
+        }
+
+        const grouped = {};
+        results.forEach(row => {
+            const { work_type_id, type_name, work_item_id, item_title } = row;
+            if (!grouped[work_type_id]) {
+                grouped[work_type_id] = {
+                    work_type_id,
+                    type_name,
+                    items: []
+                };
+            }
+            grouped[work_type_id].items.push({ work_item_id, item_title });
+        });
+
+        console.log("✅ SOW Grouped Items:", Object.values(grouped));
+        res.json(Object.values(grouped));
+    });
+};
+
+
+
 module.exports = {
   getAllSOWWorkItems,
   getSOWfromTable,
@@ -302,5 +345,7 @@ module.exports = {
   updateWorkItem,
   deleteWorkItem,
   getAllWorkTypes,
+
+  getWorkTypesAndItemsByProposal
 
 };

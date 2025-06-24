@@ -7,6 +7,9 @@ router.post('/save-totals', quantitytakeoffController.saveQtoTotals);
 router.post('/save-parent-totals', quantitytakeoffController.saveQtoParentTotals);
 router.get('/:proposal_id',quantitytakeoffController.getQtoDimensions);
 
+router.put('/update', quantitytakeoffController.UpdateQtoDimension);
+router.delete('/delete/:qto_id', quantitytakeoffController.deleteQtoDimension);
+
 
 
 

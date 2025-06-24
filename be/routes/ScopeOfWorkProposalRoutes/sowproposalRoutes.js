@@ -18,4 +18,7 @@ router.get("/work-types", sowproposalController.getAllWorkTypes);
 
 
 
+router.get('/sow-work-items/proposal/:proposal_id', sowproposalController.getWorkTypesAndItemsByProposal);
+
+
 module.exports = router;

@@ -62,6 +62,12 @@ const quantitytakeoffRoutes = require('./routes/QuantityTakeOffRoutes/quantityta
 const rebarRoutes = require('./routes/Rebar/rebarRoutes');
 
 
+const laborunitcostRoutes = require('./routes/LaborUnitCostRoutes/laborunitcostRoutes');
+
+const materialunitcostRoutes = require('./routes/MaterialUnitCostRoutes/materialunitcostRoutes');
+
+const finalcostestimationRoutes = require('./routes/FinalCostEstimationRoutes/finalcostestimationRoutes');
+
 // Ensure the uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -116,6 +122,13 @@ app.use("/api/qto", quantitytakeoffRoutes);
 
 
 app.use('/api/rebar', rebarRoutes);
+
+app.use('/api/laborunitcost', laborunitcostRoutes);
+
+app.use('/api/materialunitcost', materialunitcostRoutes);
+
+app.use('/api/cost-estimation', finalcostestimationRoutes);
+
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {
