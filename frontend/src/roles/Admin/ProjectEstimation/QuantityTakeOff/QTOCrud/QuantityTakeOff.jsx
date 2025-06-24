@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { TreeTable } from 'primereact/treetable';
 import { Column } from 'primereact/column';
-import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { FaPencilAlt, FaTrashAlt, FaCalculator } from 'react-icons/fa';
+import { FaPencilAlt, FaTrashAlt, FaCalculator, FaEllipsisH } from 'react-icons/fa';
 
 import EditQTOModal from './EditQTOModal';
 import AddQtoModal from '../AddQtoModal';
@@ -42,13 +41,16 @@ const QuantityTakeOffTable = () => {
                 parent_title,
                 item_title,
                 label,
+                units,
                 length,
                 width,
                 depth,
                 calculated_value,
                 floor_label,
                 floor_code,
-                parent_total_value, // 👈 must match SQL alias
+                parent_total_value,
+                child_total_volume,
+
             } = entry;
 
             let parentNode = tree.find((n) => n.data.name === parent_title);
@@ -72,24 +74,26 @@ const QuantityTakeOffTable = () => {
                     data: {
                         name: item_title,
                         nodeType: 'child',
+                        volume: child_total_volume ? parseFloat(child_total_volume).toFixed(2) : '—',
                     },
                     children: [],
                 };
                 parentNode.children.push(childNode);
             }
 
+
             const rowNode = {
                 key: `${childNode.key}-r-${childNode.children.length}`,
                 data: {
                     name: label,
-                    floor:
-                        floor_label || floor_code
-                            ? `${floor_label ?? ''}${floor_label && floor_code ? ' - ' : ''}${floor_code ?? ''}`
-                            : '—',
+                    nodeType: 'label',
+                    floor: floor_label || floor_code ? `${floor_label ?? ''}${floor_label && floor_code ? ' - ' : ''}${floor_code ?? ''}` : '—',
                     length,
                     width,
                     depth,
+                    units,
                     volume: calculated_value,
+                    qto_id: entry.qto_id,
                 },
             };
 
@@ -99,6 +103,16 @@ const QuantityTakeOffTable = () => {
         return tree;
     };
 
+    const findNodeByKey = (nodes, key) => {
+        for (const node of nodes) {
+            if (node.key === key) return node;
+            if (node.children?.length) {
+                const found = findNodeByKey(node.children, key);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
 
     const actionTemplate = (node) => {
         const [open, setOpen] = useState(false);
@@ -114,22 +128,22 @@ const QuantityTakeOffTable = () => {
             return () => document.removeEventListener('mousedown', handleClickOutside);
         }, []);
 
-        // Skip action button for child group headers (e.g., "nodeType === child")
-        if (!node || (node.data?.nodeType !== 'child' && node.data?.nodeType !== 'parent')) return null;
+        if (!node || (node.data?.nodeType !== 'label' && node.data?.nodeType !== 'parent')) return null;
 
         const isParent = node.data.nodeType === 'parent';
 
         return (
-            <div className="relative inline-block text-left" ref={dropdownRef}>
-                <Button
-                    label="More Actions"
-                    icon="pi pi-chevron-down"
-                    className="text-sm px-3 py-1 bg-gray-100 border rounded shadow-sm"
+            <div className="relative inline-block" ref={dropdownRef}>
+                <button
                     onClick={() => {
-                        setSelectedRowData(node.data); // either parent or row
+                        setSelectedRowData(node);
                         setOpen((prev) => !prev);
                     }}
-                />
+                    className="p-2 rounded hover:bg-gray-100"
+                >
+                    <FaEllipsisH className="text-gray-600" />
+                </button>
+
                 {open && (
                     <div className="absolute z-50 mt-2 right-0 w-40 bg-white border border-gray-200 rounded shadow-lg">
                         {isParent ? (
@@ -137,7 +151,6 @@ const QuantityTakeOffTable = () => {
                                 <button
                                     className="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={() => {
-                                        // 🔧 Logic for adding allowance
                                         alert(`Edit allowance for: ${node.data.name}`);
                                         setOpen(false);
                                     }}
@@ -145,11 +158,9 @@ const QuantityTakeOffTable = () => {
                                     <FaPencilAlt className="text-blue-600" />
                                     Add Allowance
                                 </button>
-
                                 <button
                                     className="block w-full text-left px-4 py-2 text-sm text-indigo-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={() => {
-                                        // 🔧 Logic for rounding off
                                         alert(`Round off volume for: ${node.data.name}`);
                                         setOpen(false);
                                     }}
@@ -159,11 +170,11 @@ const QuantityTakeOffTable = () => {
                                 </button>
                             </>
                         ) : (
-
                             <>
                                 <button
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                    className="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={() => {
+                                        setSelectedRowData(node);
                                         setShowRowModal(true);
                                         setOpen(false);
                                     }}
@@ -174,6 +185,7 @@ const QuantityTakeOffTable = () => {
                                 <button
                                     className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                     onClick={() => {
+                                        setSelectedRowData(node.data);
                                         setShowDeleteModal(true);
                                         setOpen(false);
                                     }}
@@ -189,7 +201,6 @@ const QuantityTakeOffTable = () => {
         );
     };
 
-
     return (
         <div className="p-6 bg-white rounded-lg max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -203,7 +214,6 @@ const QuantityTakeOffTable = () => {
 
             <TreeTable
                 value={nodes}
-                selectOnEdit={false}
                 tableStyle={{ minWidth: '60rem' }}
                 rowClassName={(node) => {
                     if (node.data.nodeType === 'parent') return 'qto-parent-row';
@@ -232,19 +242,25 @@ const QuantityTakeOffTable = () => {
                 visible={showRowModal}
                 data={selectedRowData}
                 onClose={() => setShowRowModal(false)}
+                onSuccess={() => {
+                    setShowRowModal(false);
+                    fetch(`${QTO_DIMENSION_API}/${proposal_id}`)
+                        .then((res) => res.json())
+                        .then((data) => setNodes(buildTreeStructure(data)));
+                }}
             />
-
 
             <DeleteQTOModal
                 visible={showDeleteModal}
                 data={selectedRowData}
                 onClose={() => setShowDeleteModal(false)}
                 onDelete={() => {
-                    alert(`Deleted row: ${selectedRowData.name}`);
-                    setShowDeleteModal(false);
+                    fetch(`${QTO_DIMENSION_API}/${proposal_id}`)
+                        .then(res => res.json())
+                        .then(data => setNodes(buildTreeStructure(data)))
+                        .catch(error => console.error("Error refreshing table after delete:", error)); // Add error handling for fetch
                 }}
             />
-
         </div>
     );
 };

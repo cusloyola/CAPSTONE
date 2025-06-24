@@ -14,71 +14,33 @@ const SimpleDimensionCard = ({
     parent = {},
     updateChildDimensions
 }) => {
-    const [dimensionsData, setDimensionsData] = useState({});
-    const lastSerializedDataRef = useRef('');
+   
+const pendingUpdatesRef = useRef({});
 
-    useEffect(() => {
-        setDimensionsData(prev => {
-            const initialData = {};
-            let changed = false;
+const [dimensionsData, setDimensionsData] = useState(() => {
+  const initial = {};
+  selectedItems.forEach(item => {
+    const itemId = item.work_item_id;
+    const existing = parent.children?.find(child => child.work_item_id === itemId)?.simple_item_dimensions || [];
 
-            selectedItems.forEach(item => {
-                const itemId = item.work_item_id;
-                const existing = parent.children?.find(child => child.work_item_id === itemId)?.simple_item_dimensions || [];
-
-               if (!prev[itemId]) {
-    initialData[itemId] = existing.length === 0 && (item.length || item.width || item.depth || item.units)
-        ? [{
-            id: uuidv4(),
-            label: 'Default Entry',
-            length: item.length || '',
-            width: item.width || '',
-            depth: item.depth || '',
-            count: item.units || '1'
+    initial[itemId] = existing.length === 0 && (item.length || item.width || item.depth || item.units)
+      ? [{
+          id: uuidv4(),
+          label: 'Default Entry',
+          length: item.length || '',
+          width: item.width || '',
+          depth: item.depth || '',
+          count: item.units || '1'
         }]
-        : existing;
-    changed = true;
-} else {
-    initialData[itemId] = prev[itemId]; // keep unchanged
-}
-            });
+      : existing;
+  });
+  return initial;
+});
 
-            return changed ? initialData : prev;
-        });
-    }, [selectedItems, parent]);
 
-    useEffect(() => {
-        const updatedParent = JSON.parse(JSON.stringify(parent));
 
-        updatedParent.children = updatedParent.children?.map(child => {
-            if (child.compute_type === 'simple' && dimensionsData[child.work_item_id]) {
-                return {
-                    ...child,
-                    simple_item_dimensions: dimensionsData[child.work_item_id]
-                };
-            }
-            return child;
-        });
 
-        if (
-            parent.compute_type === 'simple' &&
-            parent.checked &&
-            dimensionsData[parent.work_item_id]
-        ) {
-            updatedParent.simple_item_dimensions = dimensionsData[parent.work_item_id];
-        }
-
-        const serialized = JSON.stringify(updatedParent);
-        if (lastSerializedDataRef.current !== serialized) {
-            lastSerializedDataRef.current = serialized;
-            console.log("📤 Syncing updated parent with dimensionsData:");
-console.log("📁 dimensionsData:", dimensionsData);
-console.log("📌 updatedParent:", updatedParent);
-
-             (updatedParent, dimensionsData);
-        }
-    }, [dimensionsData, updateChildDimensions, parent]);
-
+  
    const addRow = useCallback((itemId) => {
     console.log(`➕ Adding row for item: ${itemId}`);
     setDimensionsData(prev => {
@@ -120,20 +82,25 @@ console.log("📌 updatedParent:", updatedParent);
       row.id === rowId ? { ...row, [fieldName]: value } : row
     );
 
-    const newData = {
+    // store it for syncing in next render
+    pendingUpdatesRef.current[itemId] = updatedRows;
+
+    return {
       ...prev,
       [itemId]: updatedRows
     };
-
-    // ✅ Push the update up to QtoDimensionInput
-    updateChildDimensions(
-      { work_item_id: itemId },
-      { [itemId]: updatedRows }
-    );
-
-    return newData;
   });
-}, [updateChildDimensions]);
+}, []);
+
+useEffect(() => {
+  const pending = pendingUpdatesRef.current;
+  if (Object.keys(pending).length > 0) {
+    for (const [itemId, updatedRows] of Object.entries(pending)) {
+      updateChildDimensions({ work_item_id: itemId }, { [itemId]: updatedRows });
+    }
+    pendingUpdatesRef.current = {}; // clear it
+  }
+}, [dimensionsData]); // runs after dimensionsData update
 
 
     const calculateItemTotalVolume = useCallback((itemId) => {

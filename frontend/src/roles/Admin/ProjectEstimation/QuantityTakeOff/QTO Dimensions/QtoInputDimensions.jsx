@@ -179,30 +179,10 @@ const QtoDimensionInput = ({
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert("❌ Failed to submit QTO entries: " + data.message);
-        return;
-      }
+    alert("✅ QTO entries submitted successfully!");
 
-      const totalsPayload = Object.entries(totalVolumes).map(([work_item_id, total_volume]) => ({
-        sow_proposal_id,
-        work_item_id: parseInt(work_item_id),
-        total_volume: parseFloat(total_volume.toFixed(2))
-      }));
 
-      const totalsResponse = await fetch("http://localhost:5000/api/qto/save-totals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ totals: totalsPayload }),
-      });
-
-      const totalsData = await totalsResponse.json();
-
-      if (!totalsResponse.ok) {
-        alert("⚠ QTO entries saved, but failed to save totals: " + totalsData.message);
-      } else {
-        alert("✅ QTO entries and totals submitted successfully!");
-      }
+    
 
       onDone();
     } catch (error) {

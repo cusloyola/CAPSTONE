@@ -1,142 +1,121 @@
 import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
-
-const PROJECTS_API_URL = "http://localhost:5000/api/projects/";
+import { useParams } from "react-router-dom";
+import { FaFileExport } from "react-icons/fa";
+import AddModalFinalEntry from "./AddModalFinalEntry";
 
 const FinalCostEstimation = () => {
-    const { project_id } = useParams();
-    const [project, setProject] = useState(null);
+    const { proposal_id } = useParams();
+    const [costData, setCostData] = useState([]);
+    const [showExport, setShowExport] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+
+    const fetchCostData = async () => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/cost-estimation/proposal/${proposal_id}/final-cost`);
+            if (!res.ok) throw new Error("Failed to fetch cost data.");
+            const data = await res.json();
+            setCostData(data);
+        } catch (err) {
+            console.error("Error fetching cost data:", err);
+        }
+    };
 
     useEffect(() => {
-        fetch(PROJECTS_API_URL)
-            .then((res) => res.json())
-            .then((data) => {
-                const foundProject = data.find(
-                    (p) => String(p.project_id) === String(project_id)
-                );
-                setProject(foundProject || null);
-            })
-            .catch((err) => console.error(err));
-    }, [project_id]);
+        fetchCostData();
+    }, [proposal_id]);
 
-    if (!project) return <div>Loading project details...</div>;
+    const handleExportExcel = () => {
+        console.log("Exporting to Excel...");
+        setShowExport(false);
+    };
+
+    const handleExportPDF = () => {
+        console.log("Exporting to PDF...");
+        setShowExport(false);
+    };
 
     return (
         <div className="p-4 space-y-6 bg-white shadow rounded">
+            {/* Header */}
             <div className="bg-[#9559d1] text-white flex justify-between items-center p-4 rounded">
-                <h1 className="text-lg font-semibold">Volume Estimation</h1>
-                <div className="flex items-center space-x-2">
-                    {/* <Link
-                        to={`/AllPendingProjects/${project?.project_id}/estimation/scope-of-work/tables`}
-                        className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
+                <h1 className="text-lg font-semibold">Final Cost Estimation</h1>
+                <div className="relative">
+                    <button
+                        className="p-2 hover:text-gray-100 hover:bg-[#8142c2] rounded-full transition"
+                        onClick={() => setShowExport(prev => !prev)}
+                        title="Export Options"
                     >
-                        Scope of Works Table
-                    </Link> */}
-
-                    <button className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100">
-                        Wala
+                        <FaFileExport className="text-xl text-white" />
                     </button>
-                </div>
-
-            </div>
-
-            {/* Section 2: Filters */}
-            <div className="flex flex-wrap gap-4">
-                <div className="flex flex-col gap-2">
-                    <label className="block font-medium text-gray-700">
-                        Titles:
-                    </label>
-                    <select
-                        className="border p-2 rounded w-48"
-                    >
-                        <option value="">All Titles</option>
-                    </select>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                    <label className="block font-medium text-gray-700">
-                        Work Types
-                    </label>
-                    <select
-                    >
-                        <option value="">All Work Types</option>
-                    </select>
-                </div>
-            </div>
-
-            <div className="flex justify-between items-center">
-                <div>
-                    <label className="text-sm">
-                        Show
-                        <select
-                            className="mx-2 border p-1 rounded"
-                        >
-                            <option value={1}>1</option>
-                            <option value={25}>25</option>
-                            <option value={50}>50</option>
-                        </select>
-                        entries
-                    </label>
-                </div>
-                <div className="flex items-center gap-2"> <label className="block font-medium text-gray-700">
-                    Search:
-                </label>
-                    <input
-                        id="searchInput"
-                        type="text"
-                        className="border p-2 rounded w-64"
-                    />
-                </div>
-            </div>
-
-            <table className="table-auto w-full border border-gray-300 text-sm">
-                <thead className="bg-gray-100">
-                    <tr>
-                        <th className="border px-4 py-2 text-left">Category (Work Type)</th>
-                        <th className="border px-4 py-2 text-left">Work Item (Specific Task)</th>
-                        <th className="border px-4 py-2 text-left">Unit of Measure</th>
-                        <th className="border px-4 py-2 text-left">Sequence Order</th>
-                        <th className="border px-4 py-2 text-left">Status</th>
-                        <th className="border px-4 py-2 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2"></td>
-                    <td className="border px-4 py-2">
-                        <div className="flex gap-x-2">
-                            <button className="bg-yellow-500 text-white px-6 h-10 rounded hover:bg-yellow-700">Edit</button>
-                            <button className="bg-red-600 text-white px-6 h-10 rounded hover:bg-red-700">Delete</button>
+                    {showExport && (
+                        <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow z-10">
+                            <button onClick={handleExportExcel} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Export to Excel</button>
+                            <button onClick={handleExportPDF} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Export to PDF</button>
                         </div>
-                    </td>
-                </tbody>
-            </table>
-
-
-            <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm">
-                <p>
-                    Showing to  of entries
-                </p>
-
-                <div className="flex gap-2 mt-2 sm:mt-0">
-                    <button
-
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        Previous
-                    </button>
-                    <button
-                        className="px-3 py-1 border rounded disabled:opacity-50"
-                    >
-                        Next
-                    </button>
+                    )}
                 </div>
             </div>
-        </div>
 
+            {/* Add Entry Button */}
+            <div className="flex justify-end">
+                <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    onClick={() => setShowAddModal(true)}
+                >
+                    + Add Entry
+                </button>
+            </div>
+
+            {/* Cost Estimation Table */}
+            {costData.length > 0 ? (
+                <table className="table-auto w-full border border-gray-300 text-sm">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th rowSpan="2" className="border px-4 py-2 text-left">No.</th>
+                            <th rowSpan="2" className="border px-4 py-2 text-left">Description/Scope of Works</th>
+                            <th rowSpan="2" className="border px-4 py-2 text-left">Quantity</th>
+                            <th rowSpan="2" className="border px-4 py-2 text-left">Unit</th>
+                            <th colSpan="2" className="border px-4 py-2 text-center">Material Cost</th>
+                            <th colSpan="2" className="border px-4 py-2 text-center">Labor Cost</th>
+                            <th rowSpan="2" className="border px-4 py-2 text-left">Total Amount</th>
+                        </tr>
+                        <tr>
+                            <th className="border px-4 py-2 text-left">U/C</th>
+                            <th className="border px-4 py-2 text-left">Amount</th>
+                            <th className="border px-4 py-2 text-left">U/C</th>
+                            <th className="border px-4 py-2 text-left">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {costData.map((row, index) => (
+                            <tr key={row.sow_proposal_id || index}>
+                                <td className="border px-4 py-2">{index + 1}</td>
+                                <td className="border px-4 py-2">{row.description}</td>
+                                <td className="border px-4 py-2">{row.quantity}</td>
+                                <td className="border px-4 py-2">{row.unit}</td>
+                                <td className="border px-4 py-2">₱{parseFloat(row.material_uc).toFixed(2)}</td>
+                                <td className="border px-4 py-2">₱{parseFloat(row.material_amount).toFixed(2)}</td>
+                                <td className="border px-4 py-2">₱{parseFloat(row.labor_uc).toFixed(2)}</td>
+                                <td className="border px-4 py-2">₱{parseFloat(row.labor_amount).toFixed(2)}</td>
+                                <td className="border px-4 py-2 font-bold">₱{parseFloat(row.total_amount).toFixed(2)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            ) : (
+                <p className="text-center text-gray-500 mt-4">No cost data available for this proposal.</p>
+            )}
+
+            {/* Modal */}
+            {showAddModal && (
+                <AddModalFinalEntry
+                    proposalId={proposal_id}
+                    onClose={() => setShowAddModal(false)}
+                    onSaveSuccess={fetchCostData}
+                />
+
+            )}
+        </div>
     );
 };
 
