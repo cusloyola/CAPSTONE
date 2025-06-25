@@ -18,6 +18,7 @@ import InventortManagement from "./roles/Admin/InventoryManagement.jsx"
 import AdminReports from "./roles/Admin/Reports.jsx";
 import MaterialRequestManagement from "./roles/Admin/MaterialRequestManagemet.jsx";
 import EmployeeManagement from "./roles/Admin/EmployeeManagement.jsx";
+import ViewSafetyReportAdmin from "./roles/Admin/Safety Report/SafetyReportsManagement.jsx";
 
 // site
 import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
@@ -28,6 +29,7 @@ import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx"
 // safety
 import WeeklySafetyReport from "./roles/SafetyEngineer/SafetyReport.jsx";
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
+
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 import UserManagement from "./roles/Admin/UserManagement.jsx";
 
@@ -94,6 +96,7 @@ import FolderPage from "./roles/Admin/File Management/FolderPage.jsx";
 import UploadDocument from "./roles/Admin/File Management/UploadDocument.jsx";
 import SubFolderPage from "./roles/Admin/File Management/SubFolderPage.jsx";
 import Task from "./roles/Admin/Task Management/TaskSchedule.jsx";
+
 // import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 
 export default function App() {
@@ -122,7 +125,7 @@ export default function App() {
               <Route path="/EmploymentContract" element={<EmploymentContract />} />
               <Route path="/UserManagement" element={<UserManagement />} />
               <Route path="/AdminCalendar" element={<Calendar />} />
-
+              <Route path="/SafetyReportsManagement" element={<ViewSafetyReportAdmin />} />
               <Route path="/AddProject" element={<ProjectsCRUD />} />
               <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
 

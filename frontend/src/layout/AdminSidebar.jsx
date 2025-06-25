@@ -99,6 +99,12 @@ const navItems = [
   //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   // },
   {
+    icon: <FolderIcon />,
+    name: "Safety Report",
+    subItems: [{ name: "Manage Safety Reports", path: "/SafetyReportsManagement", pro: false }],
+  },
+
+  {
     icon: <PieChartIcon />,
     name: "Reports and Analytics",
     subItems: [{ name: "Reports", path: "/Reports", pro: false }],
