@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 import PageMeta from '../../../components/common/PageMeta';
 import html2pdf from 'html2pdf.js';
-import { ActionButtons, StatusBadge } from './Buttons'; // Import the new components
+import { ActionButtons, StatusBadge } from './buttons'; // Import the new components
 import { ConfirmationModal } from './ConfirmationModal'; // Import the ConfirmationModal
 
 const ViewSafetyReportAdmin = () => {
