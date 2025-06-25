@@ -2,11 +2,13 @@
 import React, { useRef, useState } from 'react';
 import PageMeta from '../../../components/common/PageMeta';
 import html2pdf from 'html2pdf.js';
-import { ActionButtons, StatusBadge } from './buttons'; // Import the new components
+import { ActionButtons, StatusBadge } from './Buttons'; // Import the new components
+import { ConfirmationModal } from './ConfirmationModal'; // Import the ConfirmationModal
 
 const ViewSafetyReportAdmin = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReport, setSelectedReport] = useState(null); // State for summary modal
+  const [filterStatus, setFilterStatus] = useState('all'); // New state for status filter
   const [allReports, setAllReports] = useState([ // Using useState for reports to allow updates
     {
       report_id: 1,
@@ -95,14 +97,29 @@ const ViewSafetyReportAdmin = () => {
     },
   ]);
 
-  // Filter reports based on search query
-  const filteredReports = allReports.filter( // Use allReports state for filtering
-    (report) =>
-      report.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.activities.some((act) =>
-        act.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-  );
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [actionToPerform, setActionToPerform] = useState(null); // 'approve' or 'reject'
+  const [reportIdToActOn, setReportIdToActOn] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+
+  // Filter and sort reports
+  const filteredAndSortedReports = allReports
+    .filter((report) => {
+      // Apply search query filter
+      const matchesSearch =
+        report.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        report.activities.some((act) =>
+          act.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+      // Apply status filter
+      const matchesStatus =
+        filterStatus === 'all' || report.status === filterStatus;
+
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => new Date(b.report_date) - new Date(a.report_date)); // Sort by most recent date
+
 
   // useRef to hold references to elements for PDF generation
   const reportRefs = useRef({});
@@ -136,34 +153,58 @@ const ViewSafetyReportAdmin = () => {
     setSelectedReport(null);
   };
 
-  // Function to handle approving a report
-  const handleApprove = (reportId) => {
-    const updatedReports = allReports.map(report =>
-      report.report_id === reportId
-        ? { ...report, status: 'approved', reviewed_at: new Date().toISOString().split('T')[0] }
-        : report
-    );
-    setAllReports(updatedReports);
-    // Optionally close summary if open for this report
-    if (selectedReport && selectedReport.report_id === reportId) {
-      setSelectedReport(prev => ({ ...prev, status: 'approved', reviewed_at: new Date().toISOString().split('T')[0] }));
-    }
-    console.log(`Report ${reportId} approved.`);
+  // Open confirmation modal for approve
+  const handleApproveClick = (reportId) => {
+    setActionToPerform('approve');
+    setReportIdToActOn(reportId);
+    setShowConfirmModal(true);
   };
 
-  // Function to handle rejecting a report
-  const handleReject = (reportId) => {
-    const updatedReports = allReports.map(report =>
-      report.report_id === reportId
-        ? { ...report, status: 'rejected', reviewed_at: new Date().toISOString().split('T')[0] }
-        : report
-    );
-    setAllReports(updatedReports);
-    // Optionally close summary if open for this report
-    if (selectedReport && selectedReport.report_id === reportId) {
-      setSelectedReport(prev => ({ ...prev, status: 'rejected', reviewed_at: new Date().toISOString().split('T')[0] }));
+  // Open confirmation modal for reject
+  const handleRejectClick = (reportId) => {
+    setActionToPerform('reject');
+    setReportIdToActOn(reportId);
+    setShowConfirmModal(true);
+  };
+
+  // Confirm action in modal
+  const confirmAction = () => {
+    if (actionToPerform === 'approve') {
+      const updatedReports = allReports.map(report =>
+        report.report_id === reportIdToActOn
+          ? { ...report, status: 'approved', reviewed_at: new Date().toISOString().split('T')[0] }
+          : report
+      );
+      setAllReports(updatedReports);
+      setSuccessMessage(`Report ${reportIdToActOn} successfully APPROVED!`);
+      // Update selectedReport if the approved one is currently in summary view
+      if (selectedReport && selectedReport.report_id === reportIdToActOn) {
+        setSelectedReport(prev => ({ ...prev, status: 'approved', reviewed_at: new Date().toISOString().split('T')[0] }));
+      }
+    } else if (actionToPerform === 'reject') {
+      const updatedReports = allReports.map(report =>
+        report.report_id === reportIdToActOn
+          ? { ...report, status: 'rejected', reviewed_at: new Date().toISOString().split('T')[0] }
+          : report
+      );
+      setAllReports(updatedReports);
+      setSuccessMessage(`Report ${reportIdToActOn} successfully REJECTED!`);
+      // Update selectedReport if the rejected one is currently in summary view
+      if (selectedReport && selectedReport.report_id === reportIdToActOn) {
+        setSelectedReport(prev => ({ ...prev, status: 'rejected', reviewed_at: new Date().toISOString().split('T')[0] }));
+      }
     }
-    console.log(`Report ${reportId} rejected.`);
+    setShowConfirmModal(false);
+    setActionToPerform(null);
+    setReportIdToActOn(null);
+    setTimeout(() => setSuccessMessage(null), 3000); // Clear success message after 3 seconds
+  };
+
+  // Cancel action in modal
+  const cancelAction = () => {
+    setShowConfirmModal(false);
+    setActionToPerform(null);
+    setReportIdToActOn(null);
   };
 
 
@@ -177,22 +218,32 @@ const ViewSafetyReportAdmin = () => {
             Safety Reports Management
           </h2>
 
-          <div className="mb-8">
+          <div className="mb-8 flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
             <input
               type="text"
               placeholder="Search reports by project name or activity description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 placeholder-gray-500 shadow-sm"
+              className="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 placeholder-gray-500 shadow-sm"
             />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 shadow-sm"
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
           </div>
 
           <h3 className="text-xl font-semibold text-gray-800 mb-5">Recent Reports</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {filteredReports.slice(-3).map((report) => (
+            {filteredAndSortedReports.slice(0, 3).map((report) => ( // Use filteredAndSortedReports
               <div
                 key={report.report_id}
-                className="bg-white border border-gray-200 rounded-lg p-5 shadow-md hover:shadow-lg transition-shadow duration-300 relative group"
+                className="bg-white border border-gray-200 rounded-lg p-5 pb-20 shadow-md hover:shadow-lg transition-shadow duration-300 relative group" /* Added pb-20 for button space */
                 ref={(el) => (reportRefs.current[report.report_id] = el)}
               >
                 <h4 className="text-lg font-bold text-gray-900 mb-2">{report.project_name}</h4>
@@ -224,12 +275,13 @@ const ViewSafetyReportAdmin = () => {
                   <StatusBadge status={report.status} /> {/* Using StatusBadge component */}
                 </div>
 
-                <div className="flex justify-end space-x-3 mt-4">
+                {/* Actions div visible only on hover */}
+                <div className="flex justify-end absolute bottom-4 right-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <ActionButtons
                     onViewSummary={() => handleViewSummary(report)}
                     onDownloadPDF={() => downloadPDF(report.report_id)}
-                    onApprove={report.status !== 'approved' && report.status !== 'rejected' ? () => handleApprove(report.report_id) : undefined}
-                    onReject={report.status !== 'approved' && report.status !== 'rejected' ? () => handleReject(report.report_id) : undefined}
+                    onApprove={report.status === 'pending' ? () => handleApproveClick(report.report_id) : undefined}
+                    onReject={report.status === 'pending' ? () => handleRejectClick(report.report_id) : undefined}
                   />
                 </div>
               </div>
@@ -262,7 +314,7 @@ const ViewSafetyReportAdmin = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReports.map((report) => (
+                {filteredAndSortedReports.map((report) => ( // Use filteredAndSortedReports
                   <tr
                     key={report.report_id}
                     ref={(el) => (reportRefs.current[`table-${report.report_id}`] = el)}
@@ -279,10 +331,10 @@ const ViewSafetyReportAdmin = () => {
                         ? new Date(report.reviewed_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
                         : <span className="text-gray-500 italic">N/A</span>}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700"> {/* Removed max-w-xs truncate */}
+                    <td className="px-6 py-4 text-sm text-gray-700">
                       <ul className="list-disc list-inside space-y-1">
                         {report.activities.map((act, i) => (
-                          <li key={i}>{act.description}</li> 
+                          <li key={i}>{act.description}</li>
                         ))}
                       </ul>
                     </td>
@@ -293,8 +345,8 @@ const ViewSafetyReportAdmin = () => {
                       <ActionButtons
                         onViewSummary={() => handleViewSummary(report)}
                         onDownloadPDF={() => downloadPDF(report.report_id)}
-                        onApprove={report.status !== 'approved' && report.status !== 'rejected' ? () => handleApprove(report.report_id) : undefined}
-                        onReject={report.status !== 'approved' && report.status !== 'rejected' ? () => handleReject(report.report_id) : undefined}
+                        onApprove={report.status === 'pending' ? () => handleApproveClick(report.report_id) : undefined}
+                        onReject={report.status === 'pending' ? () => handleRejectClick(report.report_id) : undefined}
                         buttonSize="small" // Keep 'small' for compact buttons in table
                       />
                     </td>
@@ -378,6 +430,25 @@ const ViewSafetyReportAdmin = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        show={showConfirmModal}
+        title={`Confirm ${actionToPerform === 'approve' ? 'Approval' : 'Rejection'}`}
+        message={`Are you sure you want to ${actionToPerform} report ID ${reportIdToActOn}?`}
+        confirmText={actionToPerform === 'approve' ? 'Approve' : 'Reject'}
+        cancelText="Cancel"
+        onConfirm={confirmAction}
+        onCancel={cancelAction}
+        confirmButtonClass={actionToPerform === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+      />
+
+      {/* Success Message Toast */}
+      {successMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-fade-in-up">
+          {successMessage}
         </div>
       )}
     </>
