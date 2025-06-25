@@ -27,7 +27,8 @@ import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
 
 // safety
-import WeeklySafetyReport from "./roles/SafetyEngineer/SafetyReport.jsx";
+// import WeeklySafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx";
+import SafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx";
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
@@ -176,7 +177,7 @@ export default function App() {
             {/* Safety Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
-                <Route path="/SafetyReport" element={<WeeklySafetyReport />} />
+                <Route path="/SafetyReport" element={<SafetyReport />} />
                 <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
             </Route>
 
