@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { v4 as uuidv4 } from 'uuid';
 import { FaEllipsisH, FaTrashAlt, FaEraser } from "react-icons/fa";
-import { selectRenderer } from "handsontable/renderers";
 
 const LUCInputForm = ({ parent, onBack, onDone }) => {
     const [laborRates, setLaborRates] = useState([]);
@@ -24,25 +22,24 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
         setLucRows(prev => [
             ...prev,
             {
-                id: uuidv4(),
+                labor_entry_id: null, // for new row not saved yet
                 selectedLaborRateId: "",
                 quantity: "",
                 allowance: "",
                 averageOutput: "",
-                showDropdown: false,
-
+                showDropdown: false
             }
         ]);
     };
 
-    const handleRemoveRow = (id) => {
-        setLucRows(prev => prev.filter(row => row.id !== id));
+    const handleRemoveRow = (entryId) => {
+        setLucRows(prev => prev.filter(row => row.labor_entry_id !== entryId));
     };
 
-    const handleClearRow = (id) => {
+    const handleClearRow = (entryId) => {
         setLucRows(prev =>
             prev.map(row =>
-                row.id === id
+                row.labor_entry_id === entryId
                     ? {
                         ...row,
                         selectedLaborRateId: "",
@@ -55,10 +52,10 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
         );
     };
 
-    const handleRowChange = (id, key, value) => {
+    const handleRowChange = (entryId, key, value) => {
         setLucRows(prev =>
             prev.map(row =>
-                row.id === id
+                row.labor_entry_id === entryId
                     ? { ...row, [key]: value }
                     : row
             )
@@ -67,47 +64,45 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
 
     const handleSave = async () => {
         const finalRows = lucRows.map((row) => {
-            const selectedLabor = laborRates.find(
-                (lr) => lr.labor_rate_id === parseInt(row.selectedLaborRateId)
-            );
+    const selectedLabor = laborRates.find(
+        (lr) => lr.labor_rate_id === parseInt(row.selectedLaborRateId)
+    );
 
-            const quantity = parseFloat(row.quantity) || 0;
-            const allowance = parseFloat(row.allowance) || 0;
-            const averageOutput = parseFloat(row.averageOutput) || 1;
+    const quantity = parseFloat(row.quantity) || 0;
+    const allowance = parseFloat(row.allowance) || 0;
+    const averageOutput = parseFloat(row.averageOutput) || 1;
 
-            const laborCost = selectedLabor
-                ? ((selectedLabor.daily_rate * quantity) * (1 + allowance / 100)) / averageOutput
-                : 0;
+    if (!selectedLabor) return null;
 
-            return {
-                selectedLaborRateId: row.selectedLaborRateId,
-                quantity: quantity,
-                allowance: allowance,
-                averageOutput: averageOutput,
-                laborCost: laborCost.toFixed(2)
-            };
-        });
+    const laborCost = ((selectedLabor.daily_rate * quantity) * (1 + allowance / 100)) / averageOutput;
 
-        const totalLaborCost = finalRows.reduce((sum, r) => sum + parseFloat(r.laborCost), 0);
+    return {
+        selectedLaborRateId: selectedLabor.labor_rate_id,
+        quantity,
+        allowance,
+        averageOutput,
+        laborCost: parseFloat(laborCost.toFixed(2))
+    };
+}).filter(row => row !== null); 
+
+        const totalLaborCost = finalRows.reduce((sum, r) => sum + r.labor_row_cost, 0);
 
         try {
-            const res = await fetch("http://localhost:5000/api/laborunitcost/save", {
+            const res = await fetch("http://localhost:5000/api/laborunitcost/add", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
-
                 },
                 body: JSON.stringify({
                     sow_proposal_id: parent.sow_proposal_id,
                     laborCost: finalRows,
                     totalLaborCost: totalLaborCost.toFixed(2)
                 })
-
             });
 
             const result = await res.json();
 
-            if (!res.ok) throw new Error(result.message || " Error saving data");
+            if (!res.ok) throw new Error(result.message || "Error saving data");
 
             console.log("Saved: ", result.message);
             onDone(finalRows, totalLaborCost.toFixed(2));
@@ -115,13 +110,8 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
         } catch (err) {
             console.error("Failed to save labor details", err);
             alert("Failed to save labor details. Please try again");
-
         }
     };
-
-
-
-
 
     const getTotalLaborCost = () => {
         return lucRows.reduce((total, row) => {
@@ -141,8 +131,6 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
         }, 0).toFixed(2);
     };
 
-
-
     return (
         <div className="flex flex-col h-full">
             <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Cost Estimate: LUC</h2>
@@ -152,9 +140,6 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
             <div className="flex-1 overflow-y-auto space-y-8 p-4 custom-scrollable-box">
                 <h3 className="text-2xl font-bold mb-4 text-gray-900">Labor Unit Cost</h3>
                 <div className="border border-gray-200 rounded-xl shadow-inner p-6 bg-gray-50 mb-6">
-                    <h4 className="text-xl font-semibold mb-4 text-blue-700">
-                        Item: {parent.item_title}
-                    </h4>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-100">
@@ -169,16 +154,14 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                 </tr>
                             </thead>
                             <tbody>
-
                                 {lucRows.length === 0 ? (
                                     <tr>
                                         <td colSpan="7" className="text-center py-4 text-gray-400">
                                             No labor rows yet. Click " + Add Row " to begin.
                                         </td>
                                     </tr>
-
                                 ) : (
-                                    lucRows.map((row) => {
+                                    lucRows.map((row, index) => {
                                         const selectedLabor = laborRates.find(
                                             (lr) => lr.labor_rate_id === parseInt(row.selectedLaborRateId)
                                         );
@@ -193,20 +176,19 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                             : "0.00";
 
                                         return (
-                                            <tr key={row.id}>
+                                            <tr key={row.labor_entry_id ?? `temp-${index}`}>
                                                 <td className="px-4 py-4">
                                                     <select
                                                         value={row.selectedLaborRateId}
                                                         className="w-full rounded-lg"
-                                                        onChange={(e) => handleRowChange(row.id, "selectedLaborRateId", e.target.value)}
+                                                        onChange={(e) => handleRowChange(row.labor_entry_id, "selectedLaborRateId", e.target.value)}
                                                     >
                                                         <option value="">Select Labor Type</option>
                                                         {laborRates.map((lr) => {
                                                             const isSelectedElsewhere = lucRows.some(
                                                                 (r) =>
-                                                                    r.id !== row.id &&
-                                                                    r.selectedLaborRateId &&
-                                                                    r.selectedLaborRateId.toString() === lr.labor_rate_id.toString()
+                                                                    r.labor_entry_id !== row.labor_entry_id &&
+                                                                    r.selectedLaborRateId?.toString() === lr.labor_rate_id.toString()
                                                             );
 
                                                             return (
@@ -221,7 +203,6 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                         })}
                                                     </select>
                                                 </td>
-
                                                 <td className="px-4 py-4">
                                                     <span className="text-gray-800">{selectedLabor?.daily_rate?.toFixed(2) || "0.00"}</span>
                                                 </td>
@@ -231,7 +212,7 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                         min="0"
                                                         value={row.quantity}
                                                         className="w-32 rounded-lg border border-gray-300 p-2"
-                                                        onChange={(e) => handleRowChange(row.id, "quantity", e.target.value)}
+                                                        onChange={(e) => handleRowChange(row.labor_entry_id, "quantity", e.target.value)}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-4">
@@ -240,7 +221,7 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                         min="0"
                                                         value={row.averageOutput}
                                                         className="w-32 rounded-lg border border-gray-300 p-2"
-                                                        onChange={(e) => handleRowChange(row.id, "averageOutput", e.target.value)}
+                                                        onChange={(e) => handleRowChange(row.labor_entry_id, "averageOutput", e.target.value)}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-4">
@@ -249,7 +230,7 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                         min="0"
                                                         value={row.allowance}
                                                         className="w-32 rounded-lg border border-gray-300 p-2"
-                                                        onChange={(e) => handleRowChange(row.id, "allowance", e.target.value)}
+                                                        onChange={(e) => handleRowChange(row.labor_entry_id, "allowance", e.target.value)}
                                                     />
                                                 </td>
                                                 <td className="px-4 py-4">
@@ -259,10 +240,9 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                     <div className="relative inline-block text-left">
                                                         <button
                                                             onClick={() => {
-                                                                // Toggle this row's dropdown visibility
                                                                 setLucRows(prev =>
                                                                     prev.map(r =>
-                                                                        r.id === row.id
+                                                                        r.labor_entry_id === row.labor_entry_id
                                                                             ? { ...r, showDropdown: !r.showDropdown }
                                                                             : { ...r, showDropdown: false }
                                                                     )
@@ -277,9 +257,8 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                             <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
                                                                 <button
                                                                     onClick={() => {
-                                                                        handleClearRow(row.id);
-                                                                        // close dropdown
-                                                                        handleRowChange(row.id, "showDropdown", false);
+                                                                        handleClearRow(row.labor_entry_id);
+                                                                        handleRowChange(row.labor_entry_id, "showDropdown", false);
                                                                     }}
                                                                     className="block w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-gray-100 flex items-center gap-2"
                                                                 >
@@ -288,8 +267,7 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                                 </button>
                                                                 <button
                                                                     onClick={() => {
-                                                                        handleRemoveRow(row.id);
-                                                                        updateRow(row.id, "showDropdown", false);
+                                                                        handleRemoveRow(row.labor_entry_id);
                                                                     }}
                                                                     className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                                                 >
@@ -300,7 +278,6 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
                                                         )}
                                                     </div>
                                                 </td>
-
                                             </tr>
                                         );
                                     })
@@ -340,4 +317,5 @@ const LUCInputForm = ({ parent, onBack, onDone }) => {
         </div>
     );
 };
+
 export default LUCInputForm;

@@ -7,7 +7,7 @@ const MUCInputForm = ({ parent, onBack, onDone }) => {
     const computeMUC = () => {
         const mp = parseFloat(marketPrice) || 0;
         const alw = parseFloat(allowance) || 0;
-        return mp + (mp * alw / 100);
+        return mp * alw;
     };
 
     const handleClear = () => {
@@ -26,7 +26,7 @@ const MUCInputForm = ({ parent, onBack, onDone }) => {
             return;
         }
 
-        const materialUnitCost = parseFloat((mp + (mp * alw / 100)).toFixed(2));
+const materialUnitCost = parseFloat(mp * alw).toFixed(2);
 
         const payload = {
             sow_proposal_id: parent.sow_proposal_id,

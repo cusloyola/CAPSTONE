@@ -14,56 +14,56 @@ const SimpleDimensionCard = ({
     parent = {},
     updateChildDimensions
 }) => {
-   
-const pendingUpdatesRef = useRef({});
 
-const [dimensionsData, setDimensionsData] = useState(() => {
-  const initial = {};
-  selectedItems.forEach(item => {
-    const itemId = item.work_item_id;
-    const existing = parent.children?.find(child => child.work_item_id === itemId)?.simple_item_dimensions || [];
+    const pendingUpdatesRef = useRef({});
 
-    initial[itemId] = existing.length === 0 && (item.length || item.width || item.depth || item.units)
-      ? [{
-          id: uuidv4(),
-          label: 'Default Entry',
-          length: item.length || '',
-          width: item.width || '',
-          depth: item.depth || '',
-          count: item.units || '1'
-        }]
-      : existing;
-  });
-  return initial;
-});
+    const [dimensionsData, setDimensionsData] = useState(() => {
+        const initial = {};
+        selectedItems.forEach(item => {
+            const itemId = item.work_item_id;
+            const existing = parent.children?.find(child => child.work_item_id === itemId)?.simple_item_dimensions || [];
 
-
-
-
-  
-   const addRow = useCallback((itemId) => {
-    console.log(`➕ Adding row for item: ${itemId}`);
-    setDimensionsData(prev => {
-        const newRow = {
-            id: uuidv4(),
-            label: '',
-            length: '',
-            width: '',
-            depth: '',
-            count: '1'
-        };
-
-        const currentItemDimensions = prev[itemId] || [];
-
-        const updated = {
-            ...prev,
-            [itemId]: [...currentItemDimensions, newRow]
-        };
-
-        console.log("📦 Updated dimensionsData after addRow:", updated);
-        return updated;
+            initial[itemId] = existing.length === 0 && (item.length || item.width || item.depth || item.units)
+                ? [{
+                    id: uuidv4(),
+                    label: 'Default Entry',
+                    length: item.length || '',
+                    width: item.width || '',
+                    depth: item.depth || '',
+                    count: item.units || '1'
+                }]
+                : existing;
+        });
+        return initial;
     });
-}, []);
+
+
+
+
+
+    const addRow = useCallback((itemId) => {
+        console.log(`➕ Adding row for item: ${itemId}`);
+        setDimensionsData(prev => {
+            const newRow = {
+                id: uuidv4(),
+                label: '',
+                length: '',
+                width: '',
+                depth: '',
+                count: '1'
+            };
+
+            const currentItemDimensions = prev[itemId] || [];
+
+            const updated = {
+                ...prev,
+                [itemId]: [...currentItemDimensions, newRow]
+            };
+
+            console.log("📦 Updated dimensionsData after addRow:", updated);
+            return updated;
+        });
+    }, []);
 
 
     const removeRow = useCallback((itemId, rowId) => {
@@ -76,31 +76,31 @@ const [dimensionsData, setDimensionsData] = useState(() => {
         });
     }, []);
 
-  const handleFieldChange = useCallback((itemId, rowId, fieldName, value) => {
-  setDimensionsData(prev => {
-    const updatedRows = (prev[itemId] || []).map(row =>
-      row.id === rowId ? { ...row, [fieldName]: value } : row
-    );
+    const handleFieldChange = useCallback((itemId, rowId, fieldName, value) => {
+        setDimensionsData(prev => {
+            const updatedRows = (prev[itemId] || []).map(row =>
+                row.id === rowId ? { ...row, [fieldName]: value } : row
+            );
 
-    // store it for syncing in next render
-    pendingUpdatesRef.current[itemId] = updatedRows;
+            // store it for syncing in next render
+            pendingUpdatesRef.current[itemId] = updatedRows;
 
-    return {
-      ...prev,
-      [itemId]: updatedRows
-    };
-  });
-}, []);
+            return {
+                ...prev,
+                [itemId]: updatedRows
+            };
+        });
+    }, []);
 
-useEffect(() => {
-  const pending = pendingUpdatesRef.current;
-  if (Object.keys(pending).length > 0) {
-    for (const [itemId, updatedRows] of Object.entries(pending)) {
-      updateChildDimensions({ work_item_id: itemId }, { [itemId]: updatedRows });
-    }
-    pendingUpdatesRef.current = {}; // clear it
-  }
-}, [dimensionsData]); // runs after dimensionsData update
+    useEffect(() => {
+        const pending = pendingUpdatesRef.current;
+        if (Object.keys(pending).length > 0) {
+            for (const [itemId, updatedRows] of Object.entries(pending)) {
+                updateChildDimensions({ work_item_id: itemId }, { [itemId]: updatedRows });
+            }
+            pendingUpdatesRef.current = {}; // clear it
+        }
+    }, [dimensionsData]); // runs after dimensionsData update
 
 
     const calculateItemTotalVolume = useCallback((itemId) => {
@@ -120,21 +120,21 @@ useEffect(() => {
     const isInvalid = (val) => val !== '' && (isNaN(parseFloat(val)) || parseFloat(val) < 0);
 
     useEffect(() => {
-  console.log("🧮 SimpleDimensionCard - initial selectedItems:", selectedItems);
-}, [selectedItems]);
+        console.log("🧮 SimpleDimensionCard - initial selectedItems:", selectedItems);
+    }, [selectedItems]);
 
-useEffect(() => {
-  console.log("📤 SimpleDimensionCard sending dimensionsData...");
-}, [/* trigger when updating */]);
+    useEffect(() => {
+        console.log("📤 SimpleDimensionCard sending dimensionsData...");
+    }, [/* trigger when updating */]);
 
-const onChange = (newDimensions) => {
-  const dimensionsData = {
-    [item.work_item_id]: newDimensions  // should be something like {119: [...]}
-  };
+    const onChange = (newDimensions) => {
+        const dimensionsData = {
+            [item.work_item_id]: newDimensions  // should be something like {119: [...]}
+        };
 
-  console.log("📤 Sending from SimpleDimensionCard:", dimensionsData);
-  updateChildDimensions(item, dimensionsData);
-};
+        console.log("📤 Sending from SimpleDimensionCard:", dimensionsData);
+        updateChildDimensions(item, dimensionsData);
+    };
 
 
     return (
@@ -158,8 +158,8 @@ const onChange = (newDimensions) => {
                                 <thead className="bg-gray-100 dark:bg-gray-600">
                                     <tr>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Label</th>
-                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Length</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Width</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Length</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Depth</th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Count</th>
                                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase dark:text-gray-300">Volume (m³)</th>
@@ -177,7 +177,7 @@ const onChange = (newDimensions) => {
                                                     className="w-32 p-2 border border-gray-300 rounded-md text-sm dark:bg-gray-700 dark:text-white"
                                                 />
                                             </td>
-                                            {['length', 'width', 'depth', 'count'].map(field => (
+                                            {['width', 'length', 'depth', 'count'].map(field => (
                                                 <td key={field} className="px-4 py-4 whitespace-nowrap">
                                                     <input
                                                         type="number"
