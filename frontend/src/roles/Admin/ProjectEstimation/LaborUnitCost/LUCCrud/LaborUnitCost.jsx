@@ -140,7 +140,7 @@ const LaborUnitCost = () => {
 
     return (
         <div className="p-4 space-y-6 bg-white shadow-rounded">
-            <div className="bg-[#ce468f] text-white flex justify-between items-center p-4 rounded">
+            <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
                 <h1 className="text-lg font-semibold">Labor Unit Cost</h1>
                 <Button
                     onClick={() => setShowAddModal(true)}

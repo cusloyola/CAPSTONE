@@ -21,9 +21,9 @@ const DeleteQTOModal = ({ visible, data, onClose, onDelete }) => {
                 throw new Error('Failed to delete QTO entry');
             }
 
-            setSuccess(true);  // ✅ Shows success animation
+            setSuccess(true);  
             console.log('✅ setSuccess(true) called.');
-            onDelete?.();      // Notify parent to refresh data
+            onDelete?.();      
         } catch (err) {
             console.error('❌ Delete failed:', err);
             alert('Failed to delete. Please try again.');
@@ -33,16 +33,13 @@ const DeleteQTOModal = ({ visible, data, onClose, onDelete }) => {
 
 
     const handleClose = () => {
-        setSuccess(false);  // Reset success state for next time
-        onClose();          // Close modal
+        setSuccess(false);  
+        onClose();         
     };
 
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black opacity-40" onClick={handleClose}></div>
-
-            {/* Modal Content */}
             <div className="relative bg-white p-6 rounded-lg shadow-lg z-10 max-w-sm w-full">
                 {!success ? (
                     <>

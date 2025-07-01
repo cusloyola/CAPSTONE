@@ -213,10 +213,23 @@ JOIN clients c ON p.client_id = c.client_id
 };
 
 
+const getProjectFloors = (req, res) => {
+  const sql = `SELECT floor_id, floor_code, floor_label FROM project_floors`;
+
+  db.query(sql, (err, results) => {
+    if(err){
+      console.error("Failed to fetch project floors", err);
+      return res.status(500).json({message: "Server Error"});
+    }
+    return res.status(200).json({message: "Project floors fetched successfully", data: results});
+  })
+};
+
+
 module.exports = {
   getAllProjects,
   createProject,
   updateProject,
   deleteProject,
-  // getProjectProposals
+  getProjectFloors
 };

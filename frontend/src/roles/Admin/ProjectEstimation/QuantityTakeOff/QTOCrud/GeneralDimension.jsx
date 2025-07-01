@@ -8,6 +8,7 @@ import { FaPencilAlt, FaTrashAlt, FaCalculator, FaEllipsisH } from 'react-icons/
 import EditQTOModal from './EditQTOModal';
 import AddQtoModal from '../AddQtoModal';
 import DeleteQTOModal from './DeleteQTOModal';
+import AddAllowanceQTOModal from './AddAllowanceQTOModal';
 
 const QTO_DIMENSION_API = 'http://localhost:5000/api/qto';
 
@@ -19,6 +20,9 @@ const GeneralDimension = () => {
     const [showRowModal, setShowRowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRowData, setSelectedRowData] = useState(null);
+    const [showAllowanceModal, setShowAllowanceModal] = useState(false);
+    const [selectedNode, setSelectedNode] = useState(null);
+
 
     useEffect(() => {
         if (!proposal_id) return;
@@ -50,6 +54,8 @@ const GeneralDimension = () => {
                 floor_code,
                 parent_total_value,
                 child_total_volume,
+                sow_proposal_id,    // add this
+                parent_id
 
             } = entry;
 
@@ -60,7 +66,10 @@ const GeneralDimension = () => {
                     data: {
                         name: parent_title,
                         nodeType: 'parent',
-                        volume: parent_total_value ? parseFloat(parent_total_value).toFixed(2) : '—'
+                        volume: parent_total_value ? parseFloat(parent_total_value).toFixed(2) : '—',
+                        sow_proposal_id,
+                        allowance: entry.allowance_percentage ?? 0,
+                        adjustedVolume: entry.total_with_allowance ?? 0,
                     },
                     children: [],
                 };
@@ -74,7 +83,7 @@ const GeneralDimension = () => {
                     data: {
                         name: item_title,
                         nodeType: 'child',
-                        volume: child_total_volume ? parseFloat(child_total_volume).toFixed(2) : '—',
+                        volume: child_total_volume != null ? parseFloat(child_total_volume) : null,
                     },
                     children: [],
                 };
@@ -94,6 +103,7 @@ const GeneralDimension = () => {
                     units,
                     volume: calculated_value,
                     qto_id: entry.qto_id,
+                    sow_proposal_id,
                 },
             };
 
@@ -151,13 +161,15 @@ const GeneralDimension = () => {
                                 <button
                                     className="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={() => {
-                                        alert(`Edit allowance for: ${node.data.name}`);
-                                        setOpen(false);
+                                        setSelectedNode(node);         // store selected node data
+                                        setShowAllowanceModal(true);   // show the modal
+                                        setOpen(false);                // close dropdown or menu
                                     }}
                                 >
                                     <FaPencilAlt className="text-blue-600" />
                                     Add Allowance
                                 </button>
+
                                 <button
                                     className="block w-full text-left px-4 py-2 text-sm text-indigo-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={() => {
@@ -202,8 +214,8 @@ const GeneralDimension = () => {
     };
 
     return (
-        <div className="p-6 bg-white rounded-lg max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
+        <div className="p-4 space-y-6 bg-white shadow-rounded">
+            <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
                 <h2 className="text-xl font-semibold">Quantity Take-Off Table</h2>
                 <Button
                     label="+ Add Parent"
@@ -226,7 +238,38 @@ const GeneralDimension = () => {
                 <Column field="length" header="Length (m)" style={{ width: '10%', textAlign: 'center' }} />
                 <Column field="width" header="Width (m)" style={{ width: '10%', textAlign: 'center' }} />
                 <Column field="depth" header="Depth (m)" style={{ width: '10%', textAlign: 'center' }} />
-                <Column field="volume" header="Volume (m³)" style={{ width: '15%', textAlign: 'center' }} />
+                <Column
+                    header="Initial Quantity"
+                    body={(node) =>
+                        node.data?.volume != null && !isNaN(node.data.volume)
+                            ? parseFloat(node.data.volume).toFixed(2)
+                            : '—'
+                    }
+                    style={{ width: '15%', textAlign: 'center' }}
+                />
+
+
+                <Column
+                    header="%"
+                    body={(node) =>
+                        node.data?.nodeType === 'parent'
+                            ? parseFloat(node.data.allowance).toFixed(2)
+                            : null
+                    }
+                    style={{ width: '10%', textAlign: 'center' }}
+                />
+
+
+                <Column
+                    header="Adjusted Quantity"
+                    body={(node) =>
+                        node.data?.nodeType === 'parent'
+                            ? parseFloat(node.data.adjustedVolume).toFixed(2)
+                            : null
+                    }
+                    style={{ width: '15%', textAlign: 'center' }}
+                />
+
                 <Column header="Actions" body={actionTemplate} style={{ width: '15%', textAlign: 'center' }} />
             </TreeTable>
 
@@ -261,6 +304,24 @@ const GeneralDimension = () => {
                         .catch(error => console.error("Error refreshing table after delete:", error)); // Add error handling for fetch
                 }}
             />
+
+            {showAllowanceModal && (
+                <AddAllowanceQTOModal
+                    node={selectedNode}
+                    onClose={() => setShowAllowanceModal(false)}
+                    onSave={(updatedData) => {
+                        // ✅ Re-fetch QTO data instead of calling undefined fetchCostData
+                        fetch(`${QTO_DIMENSION_API}/${proposal_id}`)
+                            .then((res) => res.json())
+                            .then((data) => setNodes(buildTreeStructure(data)))
+                            .catch((err) => console.error("Error refreshing QTO after saving allowance:", err));
+
+                        setShowAllowanceModal(false);
+                    }}
+
+                />
+            )}
+
         </div>
     );
 };

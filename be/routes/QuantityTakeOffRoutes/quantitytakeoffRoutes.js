@@ -9,6 +9,7 @@ router.get('/:proposal_id',quantitytakeoffController.getQtoDimensions);
 
 router.put('/update', quantitytakeoffController.UpdateQtoDimension);
 router.delete('/delete/:qto_id', quantitytakeoffController.deleteQtoDimension);
+router.post('/add-allowance', quantitytakeoffController.addAllowanceToQtoParent);
 
 
 

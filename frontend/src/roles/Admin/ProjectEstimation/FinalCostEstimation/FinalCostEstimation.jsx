@@ -7,7 +7,6 @@ const FinalCostEstimation = () => {
     const { proposal_id } = useParams();
     const [costData, setCostData] = useState([]);
     const [showExport, setShowExport] = useState(false);
-    const [showAddModal, setShowAddModal] = useState(false);
 
     const fetchCostData = async () => {
         try {
@@ -34,10 +33,16 @@ const FinalCostEstimation = () => {
         setShowExport(false);
     };
 
+    const formatNumber = (value) => {
+        const num = parseFloat(value);
+        return isNaN(num) ? "-" : num.toLocaleString(undefined, { minimumFractionDigits: 2 });
+    };
+
+
     return (
         <div className="p-4 space-y-6 bg-white shadow rounded">
             {/* Header */}
-            <div className="bg-[#9559d1] text-white flex justify-between items-center p-4 rounded">
+            <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
                 <h1 className="text-lg font-semibold">Final Cost Estimation</h1>
                 <div className="relative">
                     <button
@@ -56,15 +61,7 @@ const FinalCostEstimation = () => {
                 </div>
             </div>
 
-            {/* Add Entry Button */}
-            <div className="flex justify-end">
-                <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                    onClick={() => setShowAddModal(true)}
-                >
-                    + Add Entry
-                </button>
-            </div>
+
 
             {/* Cost Estimation Table */}
             {costData.length > 0 ? (
@@ -87,34 +84,63 @@ const FinalCostEstimation = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {costData.map((row, index) => (
-                            <tr key={row.sow_proposal_id || index}>
-                                <td className="border px-4 py-2">{index + 1}</td>
-                                <td className="border px-4 py-2">{row.description}</td>
-                                <td className="border px-4 py-2">{row.quantity}</td>
-                                <td className="border px-4 py-2">{row.unit}</td>
-                                <td className="border px-4 py-2">₱{parseFloat(row.material_uc).toFixed(2)}</td>
-                                <td className="border px-4 py-2">₱{parseFloat(row.material_amount).toFixed(2)}</td>
-                                <td className="border px-4 py-2">₱{parseFloat(row.labor_uc).toFixed(2)}</td>
-                                <td className="border px-4 py-2">₱{parseFloat(row.labor_amount).toFixed(2)}</td>
-                                <td className="border px-4 py-2 font-bold">₱{parseFloat(row.total_amount).toFixed(2)}</td>
-                            </tr>
-                        ))}
+                        {Object.entries(
+                            costData.reduce((acc, row) => {
+                                const type = row.type_name || "Uncategorized";
+                                if (!acc[type]) acc[type] = [];
+                                acc[type].push(row);
+                                return acc;
+                            }, {})
+                        ).map(([typeName, rows], groupIndex) => {
+                            const subtotalTotalAmount = rows.reduce(
+                                (sum, row) => sum + (parseFloat(row.total_amount) || 0),
+                                0
+                            );
+
+                            return (
+                                <React.Fragment key={groupIndex}>
+                                    {/* Work Type Row WITH number */}
+                                    <tr className="bg-blue-100 font-semibold">
+                                        <td className="border px-4 py-2">{groupIndex + 1}.</td>
+                                        <td colSpan="8" className="border px-4 py-2">{typeName}</td>
+                                    </tr>
+
+                                    {rows.map((row, index) => (
+                                        <tr key={row.sow_proposal_id || `${groupIndex}-${index}`}>
+                                            <td className="border px-4 py-2"></td>
+                                            <td className="border px-4 py-2 pl-6">{row.description}</td>
+                                            <td className="border px-4 py-2">{formatNumber(row.quantity)}</td>
+                                            <td className="border px-4 py-2">{row.unit}</td>
+                                            <td className="border px-4 py-2">{formatNumber(row.material_uc)}</td>
+                                            <td className="border px-4 py-2">{formatNumber(row.material_amount)}</td>
+                                            <td className="border px-4 py-2">{formatNumber(row.labor_uc)}</td>
+                                            <td className="border px-4 py-2">{formatNumber(row.labor_amount)}</td>
+                                            <td className="border px-4 py-2 font-bold">
+                                                {formatNumber(row.total_with_allowance ?? row.total_amount)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    <tr className="bg-gray-100 font-semibold">
+                                        <td colSpan="8" className="border px-4 py-2 text-right">Subtotal:</td>
+                                        <td className="border px-4 py-2 font-bold">
+                                            {formatNumber(subtotalTotalAmount)}
+                                        </td>
+                                    </tr>
+
+                                </React.Fragment>
+                            );
+                        })}
                     </tbody>
+
+
+
+
                 </table>
             ) : (
                 <p className="text-center text-gray-500 mt-4">No cost data available for this proposal.</p>
             )}
 
-            {/* Modal */}
-            {showAddModal && (
-                <AddModalFinalEntry
-                    proposalId={proposal_id}
-                    onClose={() => setShowAddModal(false)}
-                    onSaveSuccess={fetchCostData}
-                />
 
-            )}
         </div>
     );
 };

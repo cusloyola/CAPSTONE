@@ -68,7 +68,8 @@ import BOMTable from "./roles/Admin/Estimation/BOMTable.jsx";
 
 // Projects CRUD
 import ProjectsCRUD from "./roles/Admin/Project Management/ProjectsCRUD.jsx";
-import ProjectProposalProfile from "./roles/Admin/Project Management/ProjectProposalProfile.jsx";
+import ProjectProfile from "./roles/Admin/Project Management/ProjectProfile.jsx";
+import ProjectLayout from "./roles/Admin/Project Management/ProjectLayout.jsx";
 
 //estimation (proposal)
 import ScopeOfWorks from "./roles/Admin/ProjectEstimation/ScopeOfWorkProposal/ScopeOfWorks.jsx";
@@ -88,6 +89,18 @@ import FinalCostEstimation from "./roles/Admin/ProjectEstimation/FinalCostEstima
 import AllPendingProjects from "./roles/Admin/Project Management/ProjectTable/AllPendingProjects.jsx";
 import ProposalTable from "./roles/Admin/Project Management/ProjectProposal/ProposalTable/ProposalTable.jsx";
 import ProposalDetails from "./roles/Admin/Project Management/ProjectProposal/ProposalDetails.jsx";
+import ProjectInfo from "./roles/Admin/Project Management/ProjectInfo.jsx";
+
+import InProgressProjectTable from "./roles/Admin/Project Management/InProgressProjects/InProgressProjectTable/InProgressProjectTable.jsx";
+
+
+import DailySiteReport from "./roles/Admin/Site Report/Daily Site Report/DailySiteReport.jsx";
+import SiteProgressBilling from "./roles/Admin/Site Report/Site Progress Billing/SiteProgressBilling.jsx";
+
+
+import WeeklySafetyReport from "./roles/Admin/Safety Report/Weekly Safety Report/WeeklySafetyReport.jsx";
+import MonthlySafetyReport from "./roles/Admin/Safety Report/Monthly Safety Report/MonthlySafetyReport.jsx";
+
 
 import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
@@ -129,20 +142,45 @@ export default function App() {
               <Route path="/SafetyReportsManagement" element={<ViewSafetyReportAdmin />} />
               <Route path="/AddProject" element={<ProjectsCRUD />} />
               <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
+              <Route path="/InProgressProjectTable" element={<InProgressProjectTable />} />
 
-              <Route path="/AllPendingProjects/:project_id/profile" element={<ProjectProposalProfile />}>
-                <Route path="proposals" element={<ProposalTable />} />
-                <Route path="proposals/:proposal_id" element={<ProposalDetails />}>
-                  <Route path="scope-of-work" element={<ScopeOfWorks />} />
-                  <Route path="quantity-take-off" element={<QuantityTakeOffTable />} />
-                  <Route path="material-unit-cost" element={<MaterialUnitCost />} />
-                  <Route path="labor-unit-cost" element={<LaborUnitCost />} />
 
-                  {/* <Route path="bill-of-quantities" element={<BillOfQuantities />} />
-                  <Route path="bill-of-materials" element={<BillOfMaterials />} /> */}
-                  <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
+              <Route path="/AllPendingProjects/:project_id/profile" element={<ProjectLayout />}>
+                <Route element={<ProjectProfile />}>
+                  <Route index element={<ProjectInfo />} />
+                  <Route path="info" element={<ProjectInfo />} />
+                  <Route path="proposals" element={<ProposalTable />} />
+                  <Route path="proposals/:proposal_id" element={<ProposalDetails />}>
+                    <Route path="scope-of-work" element={<ScopeOfWorks />} />
+                    <Route path="quantity-take-off" element={<QuantityTakeOffTable />} />
+                    <Route path="material-unit-cost" element={<MaterialUnitCost />} />
+                    <Route path="labor-unit-cost" element={<LaborUnitCost />} />
+                    <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
+                  </Route>
                 </Route>
               </Route>
+
+              <Route path="/InProgressProjectTable/:project_id/profile" element={<ProjectLayout />}>
+                <Route element={<ProjectProfile />}>
+                  <Route index element={<ProjectInfo />} />
+                  <Route path="info" element={<ProjectInfo />} />
+                  <Route path="proposals" element={<ProposalTable />} />
+                  <Route path="proposals/:proposal_id" element={<ProposalDetails />}>
+                    <Route path="scope-of-work" element={<ScopeOfWorks />} />
+                    <Route path="quantity-take-off" element={<QuantityTakeOffTable />} />
+                    <Route path="material-unit-cost" element={<MaterialUnitCost />} />
+                    <Route path="labor-unit-cost" element={<LaborUnitCost />} />
+                    <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
+                  </Route>
+                   <Route path="site-reports/daily" element={<DailySiteReport />} />
+                  <Route path="site-reports/progress" element={<SiteProgressBilling />} />
+                  <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
+                  <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
+                </Route>
+              </Route>
+
+
+
 
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work" element={<ScopeOfWorks />} />
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables" element={<SOWTables />} />
@@ -177,8 +215,8 @@ export default function App() {
             {/* Safety Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
-                <Route path="/SafetyReport" element={<SafetyReport />} />
-                <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
+              <Route path="/SafetyReport" element={<SafetyReport />} />
+              <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}

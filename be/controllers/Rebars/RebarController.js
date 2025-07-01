@@ -1,17 +1,16 @@
 const { parse } = require("dotenv");
 const db = require("../../config/db");
 
+
 const getRebarMasterlist = (req, res) => {
-  const sql = `SELECT * FROM rebar_masterlist ORDER BY diameter_mm, length_m, label`;
+  const sql = `SELECT rebar_masterlist_id, label, diameter_mm, length_m, weight_per_meter FROM rebar_masterlist`;
 
   db.query(sql, (err, results) => {
     if (err) {
-      console.error("❌ Error fetching rebar masterlist:", err);
-      return res.status(500).json({ message: "Database error" });
+      console.error("Error:", err);
+      return res.status(500).json({ message: "Server Error" });
     }
-
-    // ✅ Here 'results' is defined as the second argument of db.query
-    return res.status(200).json(results);
+    return res.status(200).json(results); // ✅ This is what you should return
   });
 };
 
@@ -30,7 +29,6 @@ const addRebarEntries = async (req, res) => {
       return res.status(400).json({ message: "No rebars to submit" });
     }
 
-    // 1. Insert each rebar entry
     const insertPromises = rebar_entries.map(item => {
       const {
         quantity,
@@ -45,7 +43,7 @@ const addRebarEntries = async (req, res) => {
       const weight = parseFloat(total_weight) || 0;
 
       if (!rebar_masterlist_id || qty <= 0) {
-        return Promise.resolve(); // Skip invalid rows
+        return Promise.resolve(); 
       }
 
       return db.query(
@@ -59,9 +57,7 @@ const addRebarEntries = async (req, res) => {
     await Promise.all(insertPromises);
     console.log("✅ All rebar entries inserted.");
 
-    // 2. Get the total weight properly
-    // The [rowsWeight] destructuring here will correctly make rowsWeight the RowDataPacket.
-    // This assumes db.query for a single row result (like SUM) returns [RowDataPacket, fields].
+   
     const [rowsWeight] = await db.query(
       `SELECT SUM(total_weight) AS rebar_total
        FROM rebar_details
@@ -71,11 +67,9 @@ const addRebarEntries = async (req, res) => {
 
     console.log("DEBUG: rowsWeight from SUM query:", rowsWeight); // This correctly shows RowDataPacket { rebar_total: ... }
 
-    // FIX IS HERE: Access rebar_total directly from rowsWeight (remove [0])
     const totalWeight = parseFloat(rowsWeight?.rebar_total ?? 0); // Corrected line
     console.log("📊 Total Rebar Weight:", totalWeight);
 
-    // 3. Ensure only one row per sow_proposal_id
     await db.query(
       `INSERT INTO rebar_totals (sow_proposal_id, rebar_overall_weight)
        VALUES (?, ?)
@@ -91,6 +85,8 @@ const addRebarEntries = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
 const getRebarByProposalId = (req, res) => {
   const { proposal_id } = req.params;
 
@@ -109,6 +105,7 @@ const getRebarByProposalId = (req, res) => {
   rd.total_weight,
   rd.location,
   rd.quantity,
+  rd.sow_proposal_id, 
   pf.floor_code,
   pf.floor_label
 FROM rebar_details rd
@@ -160,9 +157,154 @@ const getRebarTotalUsed = async (req, res) => {
   }
 };
 
+
+const updateRebarById = (req, res) => {
+  const { rebar_details_id } = req.params;
+  const {
+    rebar_masterlist_id,
+    work_item_id,
+    total_weight,
+    location,
+    quantity,
+    sow_proposal_id,
+    floor_id,
+  } = req.body;
+
+  const updateSql = `
+    UPDATE rebar_details SET 
+      rebar_masterlist_id = ?, 
+      work_item_id = ?, 
+      total_weight = ?, 
+      location = ?, 
+      quantity = ?, 
+      sow_proposal_id = ?, 
+      floor_id = ?
+    WHERE rebar_details_id = ?
+  `;
+
+  const updateValues = [
+    rebar_masterlist_id,
+    work_item_id,
+    total_weight,
+    location,
+    quantity,
+    sow_proposal_id,
+    floor_id,
+    rebar_details_id,
+  ];
+
+  db.query(updateSql, updateValues, (updateErr, updateResult) => {
+    if (updateErr) {
+      console.error("❌ Error updating rebar_details:", updateErr);
+      return res.status(500).json({ message: "Failed to update rebar entry" });
+    }
+
+    // ✅ Recalculate rebar total for this sow_proposal_id
+    const sumSql = `
+      SELECT SUM(total_weight) AS total 
+      FROM rebar_details 
+      WHERE sow_proposal_id = ?
+    `;
+
+    db.query(sumSql, [sow_proposal_id], (sumErr, sumResult) => {
+      if (sumErr) {
+        console.error("❌ Error calculating total_weight:", sumErr);
+        return res.status(500).json({ message: "Failed to calculate total rebar weight" });
+      }
+
+      const newTotal = parseFloat(sumResult[0]?.total || 0);
+
+      const upsertSql = `
+        INSERT INTO rebar_totals (sow_proposal_id, rebar_overall_weight)
+        VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE rebar_overall_weight = ?
+      `;
+
+      db.query(upsertSql, [sow_proposal_id, newTotal, newTotal], (upsertErr) => {
+        if (upsertErr) {
+          console.error("❌ Error updating rebar_totals:", upsertErr);
+          return res.status(500).json({ message: "Failed to update rebar_totals" });
+        }
+
+        console.log(`✅ Updated total weight for sow_proposal_id ${sow_proposal_id}: ${newTotal}`);
+        return res.status(200).json({
+          message: "✅ Rebar updated and total recalculated",
+          updatedRebarId: rebar_details_id,
+          new_total: newTotal,
+        });
+      });
+    });
+  });
+};
+
+
+
+const deleteRebarById = (req, res) => {
+  const { rebar_details_id } = req.params;
+
+  if (!rebar_details_id) {
+    return res.status(400).json({ message: "Missing rebar_details_id" });
+  }
+
+  const fetchSql = `SELECT sow_proposal_id FROM rebar_details WHERE rebar_details_id = ?`;
+
+  db.query(fetchSql, [rebar_details_id], (fetchErr, fetchResult) => {
+    if (fetchErr || fetchResult.length === 0) {
+      return res.status(500).json({ message: "Failed to find rebar entry to delete" });
+    }
+
+    const sow_proposal_id = fetchResult[0].sow_proposal_id;
+
+    const deleteSql = `DELETE FROM rebar_details WHERE rebar_details_id = ?`;
+
+    db.query(deleteSql, [rebar_details_id], (deleteErr, deleteResult) => {
+      if (deleteErr) {
+        return res.status(500).json({ message: "Failed to delete rebar entry" });
+      }
+
+      const sumSql = `
+        SELECT SUM(total_weight) AS total 
+        FROM rebar_details 
+        WHERE sow_proposal_id = ?
+      `;
+
+      db.query(sumSql, [sow_proposal_id], (sumErr, sumResult) => {
+        if (sumErr) {
+          return res.status(500).json({ message: "Failed to recalculate total" });
+        }
+
+        const newTotal = parseFloat(sumResult[0]?.total || 0);
+
+        const upsertSql = `
+          INSERT INTO rebar_totals (sow_proposal_id, rebar_overall_weight)
+          VALUES (?, ?)
+          ON DUPLICATE KEY UPDATE rebar_overall_weight = ?
+        `;
+
+        db.query(upsertSql, [sow_proposal_id, newTotal, newTotal], (upsertErr) => {
+          if (upsertErr) {
+            return res.status(500).json({ message: "Failed to update rebar_totals" });
+          }
+
+          res.status(200).json({
+            message: "✅ Rebar entry deleted and total updated",
+            deletedRebarId: rebar_details_id,
+            new_total: newTotal,
+          });
+        });
+      });
+    });
+  });
+};
+
+
+
+
 module.exports = {
     getRebarMasterlist,
     addRebarEntries,
     getRebarByProposalId,
-    getRebarTotalUsed
+    getRebarTotalUsed,
+    updateRebarById,
+    deleteRebarById
 };

@@ -160,29 +160,37 @@ const getQtoDimensions = (req, res) => {
 
   const sql = `
     SELECT 
-      qd.qto_id, 
-      pw.item_title AS parent_title, 
-      cw.item_title AS item_title,
-      qd.label,
-      qd.length,
-      qd.width,
-      qd.depth,
-      qd.units,
-      qd.calculated_value,
-      pf.floor_code,
-      pf.floor_label,
-      qct.total_volume AS child_total_volume,
-      qpt.total_value AS parent_total_value
-    FROM qto_dimensions qd
-    JOIN sow_proposal sp ON qd.sow_proposal_id = sp.sow_proposal_id
-    JOIN sow_work_items cw ON qd.work_item_id = cw.work_item_id
-    JOIN sow_work_items pw ON cw.parent_id = pw.work_item_id
-    LEFT JOIN project_floors pf ON qd.floor_id = pf.floor_id
-    LEFT JOIN qto_children_totals qct 
-      ON qct.sow_proposal_id = qd.sow_proposal_id AND qct.work_item_id = qd.work_item_id
-    LEFT JOIN qto_parent_totals qpt 
-      ON qpt.sow_proposal_id = qd.sow_proposal_id AND qpt.work_item_id = pw.work_item_id
-    WHERE sp.proposal_id = ?
+  qd.qto_id, 
+  qd.sow_proposal_id,                    -- add this
+  pw.parent_id       AS work_item_id,    -- add this
+  pw.item_title      AS parent_title, 
+  cw.item_title      AS item_title,
+  qd.label,
+  qd.length,
+  qd.width,
+  qd.depth,
+  qd.units,
+  qd.calculated_value,
+  pf.floor_code,
+  pf.floor_label,
+  qct.total_volume   AS child_total_volume,
+  qpt.total_value    AS parent_total_value,
+  qpt.allowance_percentage,
+  qpt.total_with_allowance
+FROM qto_dimensions qd
+  JOIN sow_proposal sp   ON qd.sow_proposal_id = sp.sow_proposal_id
+  JOIN sow_work_items cw ON qd.work_item_id    = cw.work_item_id
+  JOIN sow_work_items pw ON cw.parent_id       = pw.work_item_id
+  LEFT JOIN project_floors pf 
+        ON qd.floor_id   = pf.floor_id
+  LEFT JOIN qto_children_totals qct 
+        ON qct.sow_proposal_id = qd.sow_proposal_id 
+       AND qct.work_item_id    = qd.work_item_id
+  LEFT JOIN qto_parent_totals qpt 
+        ON qpt.sow_proposal_id = qd.sow_proposal_id 
+       AND qpt.work_item_id    = pw.work_item_id
+WHERE sp.proposal_id = ?
+
   `;
 
   db.query(sql, [proposal_id], (err, results) => {
@@ -309,6 +317,38 @@ const deleteQtoDimension = async (req, res) => {
   }
 };
 
+const addAllowanceToQtoParent = async (req, res) => {
+  const { sow_proposal_id, allowance_percentage } = req.body;
+  if (!sow_proposal_id || allowance_percentage == null) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    // Run the UPDATE — note: no destructuring
+    const result = await db.query(
+      `UPDATE qto_parent_totals
+         SET
+           allowance_percentage   = ?,
+             total_with_allowance   = ROUND(total_value * ?, 2)
+       WHERE sow_proposal_id = ?`,
+      [allowance_percentage, allowance_percentage, sow_proposal_id]
+    );
+
+    // result.affectedRows tells us how many rows were updated
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "No parent totals found for that proposal" });
+    }
+
+    return res.status(200).json({
+      message: "Allowance applied to all parent totals",
+      rowsUpdated: result.affectedRows
+    });
+  } catch (err) {
+    console.error("❌ Error applying allowance:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 
 module.exports = {
@@ -318,5 +358,6 @@ module.exports = {
   getQtoDimensions,
   UpdateQtoDimension,
   deleteQtoDimension,
+  addAllowanceToQtoParent
 
 };

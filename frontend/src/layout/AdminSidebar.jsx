@@ -36,12 +36,14 @@ const navItems = [
     name: "Projects",
     subItems:
       [
-        { name: "Task Scheduling", path: "/TaskManagement", pro: false, }, //path : /AdminDashboard - name ng file
+        // { name: "Task Scheduling", path: "/TaskManagement", pro: false, }, //path : /AdminDashboard - name ng file
         // { name: "Status Updates", path: "", pro: false }, 
         { name: "Calendar", path: "/AdminCalendar", pro: false },
         { name: "Add New Projects", path: "/AddProject", pro: false },
         { name: "View Project Proposals", path: "/AllPendingProjects", pro: false },
-        { name: "Daily Site Reports", path: "/AdminSiteReports", pro: false },
+        { name: "View In Progress Projects ", path: "/InProgressProjectTable", pro: false },
+
+        // { name: "Daily Site Reports", path: "/AdminSiteReports", pro: false },
         { name: "Clients", path: "/ClientManagement", pro: false },
 
       ],
@@ -53,20 +55,20 @@ const navItems = [
     name: "User Management",
     subItems: [{ name: "User Accounts", path: "/UserManagement", pro: false }],
   },
-  {
-    icon: <GroupIcon />,
-    name: "HR Management",
-    subItems: [{ name: "Workers", path: "/EmployeeManagement", pro: false }],
-  },
-  {
-    icon: <DollarLineIcon />,
-    name: "Cost Estimation",
-    subItems:
-    [
-      { name: "BOM", path: "/AdminBOM", pro: false, }, 
-      { name: "BOQ", path: "AdminBOQ", pro: false }, 
-    ],
-  },
+  // {
+  //   icon: <GroupIcon />,
+  //   name: "HR Management",
+  //   subItems: [{ name: "Workers", path: "/EmployeeManagement", pro: false }],
+  // },
+  // {
+  //   icon: <DollarLineIcon />,
+  //   name: "Cost Estimation",
+  //   subItems:
+  //   [
+  //     { name: "BOM", path: "/AdminBOM", pro: false, }, 
+  //     { name: "BOQ", path: "AdminBOQ", pro: false }, 
+  //   ],
+  // },
   {
     icon: <ListIcon />,
     name: "Inventory & Resources",
@@ -98,11 +100,11 @@ const navItems = [
   //   name: "HR Management ",
   //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   // },
-  {
-    icon: <FolderIcon />,
-    name: "Safety Report",
-    subItems: [{ name: "Manage Safety Reports", path: "/SafetyReportsManagement", pro: false }],
-  },
+  // {
+  //   icon: <FolderIcon />,
+  //   name: "Safety Report",
+  //   subItems: [{ name: "Manage Safety Reports", path: "/SafetyReportsManagement", pro: false }],
+  // },
 
   {
     icon: <PieChartIcon />,
