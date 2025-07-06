@@ -55,7 +55,9 @@ const navItems = [
     icon: <ListIcon />, // Assuming ListIcon is imported from a library like @mui/icons-material
     subItems: [
         { name: "Weekly Safety Report", path: "/SafetyReport", pro: false },
-        { name: "View History", path: "/ViewHistorySafetyReport", pro: false },
+        { name: "Incident Report", path: "/IncidentReport", pro: false },
+        { name: "Safety Report History", path: "/ViewHistorySafetyReport", pro: false },
+   
     ],
 },
   // {
