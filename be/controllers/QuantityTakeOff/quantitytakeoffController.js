@@ -10,23 +10,30 @@ const addQtoEntries = async (req, res) => {
 
     // Step 1: Insert entries sequentially
     for (const entry of qto_entries) {
-      const {
-        sow_proposal_id,
-        label = null,
-        length = null,
-        width = null,
-        depth = null,
-        floor_id = null,
-        units = 1,
-        work_item_id = null
-      } = entry;
+     const {
+  sow_proposal_id,
+  label = null,
+  length = null,
+  width = null,
+  depth = null,
+  floor_id = null,
+  units = 1,
+  work_item_id = null
+} = entry;
 
-      const l = parseFloat(length) || 0;
-      const w = parseFloat(width) || 0;
-      const d = parseFloat(depth) || 0;
-      const u = parseFloat(units) || 1;
+const l = length === null ? 0 : parseFloat(length);
+const w = width === null ? 0 : parseFloat(width);
+const d = depth === null ? null : parseFloat(depth);
+const u = units === null ? 1 : parseFloat(units);
 
-      const calculated_value = l * w * d * u;
+const calculated_value = d === null || d === 0
+  ? l * w * u
+  : l * w * d * u;
+  
+    console.log('📦 Inserting with values:', {
+  label, length, width, depth, floor_id, units, calculated_value
+});
+
 
       await db.query(
         `INSERT INTO qto_dimensions 
@@ -222,7 +229,10 @@ const UpdateQtoDimension = async (req, res) => {
   const w = parseFloat(width) || 0;
   const d = parseFloat(depth) || 0;
   const u = parseFloat(units) || 1;
-  const calculated_value = l * w * d * u;
+ const calculated_value = (!d || isNaN(d) || d === 0)
+  ? (parseFloat(l) || 0) * (parseFloat(w) || 0) * (parseFloat(u) || 1)
+  : (parseFloat(l) || 0) * (parseFloat(w) || 0) * (parseFloat(d) || 0) * (parseFloat(u) || 1);
+
 
   try {
     // 🔍 Fetch related sow_proposal_id and work_item_id

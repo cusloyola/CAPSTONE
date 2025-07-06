@@ -18,13 +18,21 @@ const CustomVolumeInput = ({
 
 
   // Helper function to calculate volume for a single row
-  const calculateVolume = (length, width, depth, count) => {
-    const l = parseFloat(length) || 0;
-    const w = parseFloat(width) || 0;
-    const d = parseFloat(depth) || 0;
-    const c = parseFloat(count) || 0;
-    return l * w * d * c;
-  };
+ const calculateVolume = (length, width, depth, count) => {
+  const l = parseFloat(length) || 0;
+  const w = parseFloat(width) || 0;
+  const d = parseFloat(depth);
+  const c = parseFloat(count) || 1;
+
+  if (d === null || isNaN(d) || d === 0) {
+    // If depth is missing or 0, calculate area × count
+    return l * w * c;
+  }
+
+  // If depth is provided and not zero, calculate volume
+  return l * w * d * c;
+};
+
 
   const calculateItemFloorTotalVolume = (itemId, floorId) => {
     const rows = customDimensionsData[itemId]?.[floorId] || [];
@@ -218,7 +226,7 @@ updateChildDimensions(updatedParent, customDimensionsData); // Now synced!
                           Count
                         </th>
                         <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">
-                          Volume (m³)
+                          Calculated Value
                         </th>
                         <th scope="col" className="relative px-4 py-3">
                           <span className="sr-only">Actions</span>

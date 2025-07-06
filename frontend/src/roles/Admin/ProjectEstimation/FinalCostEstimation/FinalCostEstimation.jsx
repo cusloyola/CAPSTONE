@@ -33,10 +33,59 @@ const FinalCostEstimation = () => {
         setShowExport(false);
     };
 
-    const formatNumber = (value) => {
-        const num = parseFloat(value);
-        return isNaN(num) ? "-" : num.toLocaleString(undefined, { minimumFractionDigits: 2 });
-    };
+const formatNumber = (value) => {
+    const num = parseFloat(value);
+    if (!num) return ""; // Show nothing for 0, null, NaN
+
+    return Number.isInteger(num)
+        ? num.toLocaleString(undefined, { useGrouping: true }) // e.g., 1,000
+        : num.toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 2,
+              useGrouping: true,
+          });
+};
+
+
+
+
+    const totalAmount = costData.reduce(
+        (sum, row) => sum + (parseFloat(row.total_with_allowance ?? row.total_amount) || 0),
+        0
+    );
+
+    const markupPercent = parseFloat(costData[0]?.markup_percent) || 0;
+    const markupAmount = totalAmount * (markupPercent / 100);
+    const grandTotal = totalAmount + markupAmount;
+
+    const handleSaveEstimation = async () => {
+    const details = costData.map(row => ({
+        sow_proposal_id: row.sow_proposal_id,
+        amount: parseFloat(row.total_with_allowance ?? row.total_amount) || 0
+    }));
+
+    try {
+        const res = await fetch(`http://localhost:5000/api/cost-estimation/${proposal_id}/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                details,
+                total: totalAmount,
+                markup_percent: markupPercent,
+                markup_amount: markupAmount,
+                grand_total: grandTotal
+            })
+        });
+
+        if (!res.ok) throw new Error("Failed to save final estimation");
+        alert("Final estimation saved successfully!");
+    } catch (err) {
+        console.error(err);
+        alert("Something went wrong while saving.");
+    }
+};
+
+
 
 
     return (
@@ -60,12 +109,8 @@ const FinalCostEstimation = () => {
                     )}
                 </div>
             </div>
-
-
-
-            {/* Cost Estimation Table */}
             {costData.length > 0 ? (
-                <table className="table-auto w-full border border-gray-300 text-sm">
+                <table className="table-auto w-full border border-gray-300 text-sm ">
                     <thead className="bg-gray-100">
                         <tr>
                             <th rowSpan="2" className="border px-4 py-2 text-left">No.</th>
@@ -74,7 +119,7 @@ const FinalCostEstimation = () => {
                             <th rowSpan="2" className="border px-4 py-2 text-left">Unit</th>
                             <th colSpan="2" className="border px-4 py-2 text-center">Material Cost</th>
                             <th colSpan="2" className="border px-4 py-2 text-center">Labor Cost</th>
-                            <th rowSpan="2" className="border px-4 py-2 text-left">Total Amount</th>
+                            <th rowSpan="2" className="border px-4 py-2 text-left"> Amount</th>
                         </tr>
                         <tr>
                             <th className="border px-4 py-2 text-left">U/C</th>
@@ -84,6 +129,7 @@ const FinalCostEstimation = () => {
                         </tr>
                     </thead>
                     <tbody>
+
                         {Object.entries(
                             costData.reduce((acc, row) => {
                                 const type = row.type_name || "Uncategorized";
@@ -99,7 +145,6 @@ const FinalCostEstimation = () => {
 
                             return (
                                 <React.Fragment key={groupIndex}>
-                                    {/* Work Type Row WITH number */}
                                     <tr className="bg-blue-100 font-semibold">
                                         <td className="border px-4 py-2">{groupIndex + 1}.</td>
                                         <td colSpan="8" className="border px-4 py-2">{typeName}</td>
@@ -109,36 +154,61 @@ const FinalCostEstimation = () => {
                                         <tr key={row.sow_proposal_id || `${groupIndex}-${index}`}>
                                             <td className="border px-4 py-2"></td>
                                             <td className="border px-4 py-2 pl-6">{row.description}</td>
-                                            <td className="border px-4 py-2">{formatNumber(row.quantity)}</td>
-                                            <td className="border px-4 py-2">{row.unit}</td>
-                                            <td className="border px-4 py-2">{formatNumber(row.material_uc)}</td>
-                                            <td className="border px-4 py-2">{formatNumber(row.material_amount)}</td>
-                                            <td className="border px-4 py-2">{formatNumber(row.labor_uc)}</td>
-                                            <td className="border px-4 py-2">{formatNumber(row.labor_amount)}</td>
-                                            <td className="border px-4 py-2 font-bold">
+                                            <td className="border px-4 py-2 text-right">{formatNumber(row.quantity)}</td>
+                                            <td className="border px-4 py-2 text-right">{row.unit}</td>
+                                            <td className="border px-4 py-2 text-right">{formatNumber(row.material_uc)}</td>
+                                            <td className="border px-4 py-2 text-right">{formatNumber(row.material_amount)}</td>
+                                            <td className="border px-4 py-2 text-right">{formatNumber(row.labor_uc)}</td>
+                                            <td className="border px-4 py-2 text-right">{formatNumber(row.labor_amount)}</td>
+                                            <td className="border px-4 py-2 text-right font-bold">
                                                 {formatNumber(row.total_with_allowance ?? row.total_amount)}
                                             </td>
                                         </tr>
                                     ))}
                                     <tr className="bg-gray-100 font-semibold">
                                         <td colSpan="8" className="border px-4 py-2 text-right">Subtotal:</td>
-                                        <td className="border px-4 py-2 font-bold">
+                                        <td className="border px-4 py-2 font-bold text-right">
                                             {formatNumber(subtotalTotalAmount)}
                                         </td>
                                     </tr>
+
 
                                 </React.Fragment>
                             );
                         })}
                     </tbody>
+                    <tfoot className="bg-white-200 text-sm font-semibold">
+                        <tr>
+                            <td colSpan="9" className="py-2 h-8"></td>
+                        </tr>
 
 
+                        <tr>
+                            <td colSpan="8" className="border px-4 py-2 text-right">Total:</td>
+                            <td className="border px-4 py-2">{formatNumber(totalAmount)}</td>
+                        </tr>
+                        <tr>
+                            <td colSpan="8" className="border px-4 py-2 text-right">Markup ({markupPercent}%):</td>
+                            <td className="border px-4 py-2">{formatNumber(markupAmount)}</td>
+                        </tr>
+                        <tr className="bg-yellow-200 font-bold">
+                            <td colSpan="8" className="border px-4 py-2 text-right">Grand Total:</td>
+                            <td className="border px-4 py-2">{formatNumber(grandTotal)}</td>
+                        </tr>
+                    </tfoot>
 
 
                 </table>
             ) : (
                 <p className="text-center text-gray-500 mt-4">No cost data available for this proposal.</p>
             )}
+
+<button
+    onClick={handleSaveEstimation}
+    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+>
+    Save Final Estimation
+</button>
 
 
         </div>

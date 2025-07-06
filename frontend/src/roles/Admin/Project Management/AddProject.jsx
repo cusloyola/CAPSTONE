@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
-import axios from 'axios';
 import 'react-datepicker/dist/react-datepicker.css';
 
 const PROJECTS_API_URL = "http://localhost:5000/api/projects";
@@ -10,9 +9,9 @@ const CLIENTS_API_URL = "http://localhost:5000/api/clients";
 
 const AddNewProjectForm = () => {
     const [clients, setClients] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [formData, setFormData] = useState({
         project_name: '',
-        projectCategory: '',
         location: '',
         locationArea: '',
         start_date: null,
@@ -20,6 +19,7 @@ const AddNewProjectForm = () => {
         priority: '',
         client_id: '',
         budget: '',
+        category_id: '',
         status: 'Proposed',
         projectManager: '',
         number_of_floors: '',
@@ -27,14 +27,39 @@ const AddNewProjectForm = () => {
     });
 
     useEffect(() => {
-        axios.get(CLIENTS_API_URL)
+        fetch(CLIENTS_API_URL)
             .then(response => {
-                setClients(response.data);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch clients');
+                }
+                return response.json();
+            })
+            .then(data => {
+                setClients(data);
             })
             .catch(error => {
                 console.error('Failed to fetch clients', error);
             });
     }, []);
+
+
+    useEffect(() => {
+        fetch(`${PROJECTS_API_URL}/project-categories`)
+            .then(res => res.json())
+            .then(response => {
+                if (Array.isArray(response.data)) {
+                    setCategories(response.data);
+                } else {
+                    console.error("Expected 'data' to be an array:", response);
+                    setCategories([]);
+                }
+            })
+            .catch(error => {
+                console.error("Failed to fetch categories:", error);
+                setCategories([]);
+            });
+    }, []);
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -69,15 +94,33 @@ const AddNewProjectForm = () => {
                 ...formData,
                 budget: parseFloat(formData.budget),
                 client_id: parseInt(formData.client_id, 10),
-                start_date: formData.start_date ? formData.start_date.toISOString().split('T')[0] : null,
-                end_date: formData.end_date ? formData.end_date.toISOString().split('T')[0] : null,
+                category_id: parseInt(formData.category_id, 10),
+                number_of_floors: parseInt(formData.number_of_floors, 10), 
+                start_date: formData.start_date
+                    ? formData.start_date.toISOString().split('T')[0]
+                    : null,
+                end_date: formData.end_date
+                    ? formData.end_date.toISOString().split('T')[0]
+                    : null,
             };
 
             console.log('Submitting project payload:', payload);
 
-            const response = await axios.post(PROJECTS_API_URL, payload);
-            console.log('Project created:', response.data);
+            const response = await fetch(PROJECTS_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('Project created:', data);
         } catch (error) {
             console.error('Error creating project: ', error);
         }
@@ -88,8 +131,6 @@ const AddNewProjectForm = () => {
         <div className="flex justify-center items-start py-10 min-h-screen">
             <form onSubmit={handleSubmit} className="bg-white p-10 rounded-lg shadow-md w-full max-w-5xl">
                 <h1 className="text-3xl font-bold mb-8">Add New Project</h1>
-
-                {/* Row 1 */}
                 <div className="grid gap-6 mb-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Project Name</label>
@@ -104,25 +145,26 @@ const AddNewProjectForm = () => {
                     </div>
                 </div>
 
-                {/*Row 2 */}
                 <div className="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Project Category</label>
                         <select
-                            name="projectCategory"
+                            name="category_id" 
                             className="w-full border rounded px-4 py-2"
-                            value={formData.projectCategory}
+                            value={formData.category_id}  
                             onChange={handleChange}
                             required
                         >
                             <option value="">Select Category</option>
-                            <option value="Residential">Residential</option>
-                            <option value="Commercial">Commercial</option>
-                            <option value="Industrial">Industrial</option>
+                            {categories.map((cat) => (
+                                <option key={cat.category_id} value={cat.category_id}>
+                                    {cat.project_type}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
-                     <div>
+                    <div>
                         <label className="block text-gray-700 font-medium mb-1">Number of Floors</label>
                         <input
                             type="text"
@@ -135,8 +177,6 @@ const AddNewProjectForm = () => {
                     </div>
                 </div>
 
-
-                {/* Row 2 */}
                 <div className="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Project Location</label>
@@ -166,7 +206,6 @@ const AddNewProjectForm = () => {
                     </div>
                 </div>
 
-                {/* Row 3 - Dates and Priority */}
                 <div className="grid grid-cols-6 gap-4 mb-6 items-start">
                     <div className="col-span-2">
                         <label className="block text-gray-700 font-medium mb-1">Starting Date</label>
@@ -210,7 +249,6 @@ const AddNewProjectForm = () => {
                     </div>
                 </div>
 
-                {/* Row 4 - Client & Project Manager */}
                 <div className="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Select Client</label>
@@ -241,8 +279,6 @@ const AddNewProjectForm = () => {
                         />
                     </div>
                 </div>
-
-                {/* Row 5 - Budget & Status */}
                 <div className="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Estimated Budget</label>
@@ -270,8 +306,6 @@ const AddNewProjectForm = () => {
                         />
                     </div>
                 </div>
-
-                {/* Submit */}
                 <div className="text-right">
                     <button
                         type="submit"

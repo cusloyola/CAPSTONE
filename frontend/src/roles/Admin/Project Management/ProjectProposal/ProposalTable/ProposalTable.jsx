@@ -34,6 +34,9 @@ const ProposalTable = () => {
             });
     }, [project_id]);
 
+
+    
+
     const filteredProposals = proposals.filter((proposal) => {
         const searchLower = search.toLowerCase();
         const matchesSearch =

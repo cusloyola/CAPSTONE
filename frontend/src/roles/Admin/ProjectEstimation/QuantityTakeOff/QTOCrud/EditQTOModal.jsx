@@ -153,11 +153,11 @@ const EditQTOModal = ({ visible, data, onClose, onSuccess }) => {
                                     <label className="block mb-1 text-sm">Calculated Volume (m³)</label>
                                     <div className="text-lg font-bold">
                                         {(
-                                            (parseFloat(row.length) || 0) *
-                                            (parseFloat(row.width) || 0) *
-                                            (parseFloat(row.depth) || 0) *
-                                            (parseFloat(row.units) || 1)
+                                            (parseFloat(row.depth) || 0) === 0
+                                                ? (parseFloat(row.length) || 0) * (parseFloat(row.width) || 0) * (parseFloat(row.units) || 1)
+                                                : (parseFloat(row.length) || 0) * (parseFloat(row.width) || 0) * (parseFloat(row.depth) || 0) * (parseFloat(row.units) || 1)
                                         ).toFixed(3)}
+
                                     </div>
                                 </div>
                             </div>

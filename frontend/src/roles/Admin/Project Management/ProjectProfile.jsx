@@ -33,15 +33,51 @@ const ProjectProfile = () => {
 
                     {isInProgress && (
                         <>
-                            <Link to="billing" className={linkClass("billing")}>
-                                <span>Progress Billing</span>
-                            </Link>
                             <Link to="calendar" className={linkClass("calendar")}>
                                 <span>Project Calendar</span>
                             </Link>
                             <Link to="materials" className={linkClass("materials")}>
                                 <span>Material Request</span>
                             </Link>
+
+                            <div
+                                className="relative"
+                                onMouseEnter={() => setHovered("billing")}
+                                onMouseLeave={() => setHovered("")}
+                            >
+                                <Link to="billing/table" className={linkClass("billing")}>
+                                    <span>Progress Billing</span>
+                                    <svg
+                                        className="w-3 h-3 ms-2 sm:ms-4 rtl:rotate-180"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 10 10"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M2 1l5 4-5 4" />
+                                    </svg>
+                                </Link>
+
+                                {hovered === "billing" && (
+                                    <div className="absolute top-0 left-full ml-1 bg-white border rounded shadow-lg z-50 w-60">
+                                        <Link
+                                            to="billing/table"
+                                            className="flex items-center justify-between px-4 py-4 border-l-4 w-full transition-all relative hover:bg-gray-100"
+                                        >
+                                            Progress Billing Table
+                                        </Link>
+                                        <Link
+                                            to="billing/chart"
+                                            className="flex items-center justify-between px-4 py-4 border-l-4 w-full transition-all relative hover:bg-gray-100"
+                                        >
+                                            Recent Progress Chart
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
                             <div
                                 className="relative"
                                 onMouseEnter={() => setHovered("site-reports")}

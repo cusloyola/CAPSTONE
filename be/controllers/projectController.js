@@ -20,9 +20,11 @@ const db = require('../config/db');
 //     res.json(results);
 //   });
 // };
+
 const createProject = (req, res) => {
   const {
     project_name,
+    category_id,
     projectCategory,
     location,
     locationArea,
@@ -33,13 +35,14 @@ const createProject = (req, res) => {
     status,
     budget,
     client_id,
-    number_of_floors 
+    number_of_floors
   } = req.body;
+
 
   // Check required fields
   if (
     project_name == null ||
-    projectCategory == null ||
+       category_id == null ||
     location == null ||
     locationArea == null ||
     priority == null ||
@@ -54,10 +57,9 @@ const createProject = (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Step 1: Insert the new project
-  const projectQuery = `
+    const projectQuery = `
     INSERT INTO projects 
-    (project_name, projectCategory, location, locationArea, priority, projectManager, start_date, end_date, status, budget, client_id)
+    (project_name, category_id, location, locationArea, priority, projectManager, start_date, end_date, status, budget, client_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
@@ -65,7 +67,7 @@ const createProject = (req, res) => {
     projectQuery,
     [
       project_name,
-      projectCategory,
+      category_id,
       location,
       locationArea,
       priority,
@@ -117,7 +119,7 @@ const updateProject = (req, res) => {
   const { project_id } = req.params; // The project ID from the URL (e.g., /projects/:id)
   const {
     project_name,
-    projectCategory,
+    category_id,
     location,
     locationArea,
     priority,
@@ -133,7 +135,7 @@ const updateProject = (req, res) => {
   UPDATE projects
   SET 
     project_name = ?, 
-    projectCategory = ?,
+    category_id = ?,
     location = ?, 
     locationArea = ?,
     priority = ?,
@@ -148,7 +150,7 @@ const updateProject = (req, res) => {
     query,
     [
       project_name,
-      projectCategory,
+      category_id,
       location,
       locationArea,
       priority,
@@ -156,7 +158,7 @@ const updateProject = (req, res) => {
       start_date,
       end_date,
       client_id,
-      project_id, // Project ID to update
+      project_id, 
     ],
     (err, result) => {
       if (err) {
@@ -192,7 +194,7 @@ const getAllProjects = (req, res, next) => {
    SELECT 
   p.project_id,
   p.project_name,
-  p.projectCategory,
+  pc.project_type AS projectCategory,
   p.projectManager,
   p.priority,
   p.status,
@@ -201,6 +203,7 @@ const getAllProjects = (req, res, next) => {
   c.phone_number AS client_contact
 FROM projects p
 JOIN clients c ON p.client_id = c.client_id
+JOIN project_categories pc ON p.category_id = pc.category_id
   `;
 
   db.query(query, (err, results) => {
@@ -217,19 +220,37 @@ const getProjectFloors = (req, res) => {
   const sql = `SELECT floor_id, floor_code, floor_label FROM project_floors`;
 
   db.query(sql, (err, results) => {
-    if(err){
+    if (err) {
       console.error("Failed to fetch project floors", err);
-      return res.status(500).json({message: "Server Error"});
+      return res.status(500).json({ message: "Server Error" });
     }
-    return res.status(200).json({message: "Project floors fetched successfully", data: results});
+    return res.status(200).json({ message: "Project floors fetched successfully", data: results });
   })
 };
 
+const getprojectCategories = (req,res) => {
+  const sql = 
+  `SELECT 
+  category_id,
+  project_type 
+  FROM project_categories
+  `;
+
+  db.query(sql, (err, results) => {
+    if(err){
+      console.error("Failed to fetch project categories", err);
+      return res.status(500).json({message: "Server Error"});
+
+    }
+    return res.status(200).json({message: "Project Categories fetch successfully", data: results});
+  })
+};
 
 module.exports = {
   getAllProjects,
   createProject,
   updateProject,
   deleteProject,
-  getProjectFloors
+  getProjectFloors,
+  getprojectCategories
 };
