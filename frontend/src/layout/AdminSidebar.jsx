@@ -100,11 +100,19 @@ const navItems = [
   //   name: "HR Management ",
   //   subItems: [{ name: "Ecommerce", path: "/", pro: false }],
   // },
-  // {
-  //   icon: <FolderIcon />,
-  //   name: "Safety Report",
-  //   subItems: [{ name: "Manage Safety Reports", path: "/SafetyReportsManagement", pro: false }],
-  // },
+  {
+    icon: <FolderIcon />,
+    name: "Reports",
+    subItems: 
+    [
+      { name: "Manage Safety Reports", path: "/SafetyReportsManagement", pro: false },
+      { name: "Manage Incident Reports", path: "/ViewIncidentReportAdmin", pro: false }, 
+    ],
+    
+  },
+
+
+
 
   {
     icon: <PieChartIcon />,

@@ -57,6 +57,7 @@ const navItems = [
         { name: "Weekly Safety Report", path: "/SafetyReport", pro: false },
         { name: "Incident Report", path: "/IncidentReport", pro: false },
         { name: "Safety Report History", path: "/ViewHistorySafetyReport", pro: false },
+          { name: "Incident Report History", path: "/ViewHistoryIncidentReport", pro: false },
    
     ],
 },
