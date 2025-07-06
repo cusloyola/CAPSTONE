@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data
 
 // ✅ Request logging middleware
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`); // Log the request method and URL
+    console.log(`${req.method} ${req.url}`); 
     next();
 });
 
@@ -38,7 +38,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const reportsRoutes = require("./routes/reportsRoutes");
 const projectRoutes = require('./routes/projectRoutes');
 const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
-const employeeManagementRoutes = require("./routes/employeeManagementRoutes"); // Import employee management routes
+const employeeManagementRoutes = require("./routes/employeeManagementRoutes");
 
 const taskRoutes = require('./routes/taskRoutes');
 
@@ -46,14 +46,14 @@ const bomRoutes = require("./routes/bomRoutes");
 const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
-const clientRoutes = require("./routes/clientRoutes"); // Import the client routes
+const clientRoutes = require("./routes/clientRoutes"); 
 
 const dashboardRoutes = require('./routes/dashboard');
 const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 
-const fileRoutes = require('./routes/fileRoutes'); // Import fileRoutes
+const fileRoutes = require('./routes/fileRoutes'); 
 
 const proposalRoutes = require('./routes/proposalRoutes');
 
@@ -68,6 +68,10 @@ const materialunitcostRoutes = require('./routes/MaterialUnitCostRoutes/material
 
 const finalcostestimationRoutes = require('./routes/FinalCostEstimationRoutes/finalcostestimationRoutes');
 
+
+const progressbillingRoutes = require('./routes/ProgressBillingRoutes/progressbillingRoutes');
+
+
 // Ensure the uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -75,11 +79,10 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 
-// ✅ Use Routes
 app.use('/api/work-types', sowWorkTypesRoutes);
 
 
-app.use("/api", employeeManagementRoutes); // Mount employee management routes under /api
+app.use("/api", employeeManagementRoutes); 
 app.use("/api/request-materials", requestMaterialRoutes); 
 app.use("/api/user-accounts", userManagementController);
 app.use("/api/inventory-information", inventoryInformationRoutes);
@@ -87,7 +90,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/reports", reportsRoutes); 
-// No changes needed here, assuming your inventoryRoutes is correctly setup
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
 app.use('/api/projects', projectRoutes);
@@ -108,15 +110,12 @@ app.use("/api/folders", folderRoutes);
 app.use('/api/tasks', taskRoutes); // now your endpoints will start with /api/tasks
 app.use("/api/documents", documentRoutes);
 
-// Use the fileRoutes for the POST request
-app.use("/api/files", fileRoutes); // This includes /api/files/upload
+app.use("/api/files", fileRoutes); 
 
 
 app.use("/api/proposals", proposalRoutes);
 
-
-
-app.use("/api/sowproposal", sowproposalRoutes); // Mount sow proposal routes under /api/sowproposal
+app.use("/api/sowproposal", sowproposalRoutes); 
 
 app.use("/api/qto", quantitytakeoffRoutes);
 
@@ -129,6 +128,7 @@ app.use('/api/materialunitcost', materialunitcostRoutes);
 
 app.use('/api/cost-estimation', finalcostestimationRoutes);
 
+app.use('/api/progress-billing',progressbillingRoutes );
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

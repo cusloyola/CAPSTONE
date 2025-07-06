@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-const calculateVolume = (length, width, depth, count = 1) => {
+const calculateVolume = (length, width, depth, count) => {
     const l = parseFloat(length) || 0;
     const w = parseFloat(width) || 0;
-    const d = parseFloat(depth) || 0;
+    const d = parseFloat(depth);
     const c = parseFloat(count) || 1;
-    return parseFloat((l * w * d * c).toFixed(3));
+
+    if (d === null || isNaN(d) || d === 0) {
+        return l * w * c;
+    }
+
+    return l * w * d * c;
 };
+
 
 const SimpleDimensionCard = ({
     selectedItems = [],
@@ -79,7 +85,7 @@ const SimpleDimensionCard = ({
     const handleFieldChange = useCallback((itemId, rowId, fieldName, value) => {
         setDimensionsData(prev => {
             const updatedRows = (prev[itemId] || []).map(row =>
-                row.id === rowId ? { ...row, [fieldName]: value } : row
+row.id === rowId ? { ...row, [fieldName]: value === '' ? null : value } : row
             );
 
             // store it for syncing in next render
@@ -117,7 +123,7 @@ const SimpleDimensionCard = ({
         );
     }, [dimensionsData, calculateItemTotalVolume]);
 
-    const isInvalid = (val) => val !== '' && (isNaN(parseFloat(val)) || parseFloat(val) < 0);
+const isInvalid = (val) => val !== '' && isNaN(parseFloat(val));
 
     useEffect(() => {
         console.log("🧮 SimpleDimensionCard - initial selectedItems:", selectedItems);

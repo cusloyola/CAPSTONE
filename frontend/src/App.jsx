@@ -94,6 +94,9 @@ import ProjectInfo from "./roles/Admin/Project Management/ProjectInfo.jsx";
 
 // import InProgressProjectTable from "./roles/Admin/Project Management/InProgressProjects/InProgressProjectTable/InProgressProjectTable.jsx";
 
+import ProgressCharts from "./roles/Admin/Progress Billing/Progress Billing Charts/ProgressCharts.jsx";
+import ProgressBilling from "./roles/Admin/Progress Billing/Progress Billing Table/ProgressBilling.jsx";
+
 
 import DailySiteReport from "./roles/Admin/Site Report/Daily Site Report/DailySiteReport.jsx";
 import SiteProgressBilling from "./roles/Admin/Site Report/Site Progress Billing/SiteProgressBilling.jsx";
@@ -173,10 +176,14 @@ export default function App() {
                     <Route path="labor-unit-cost" element={<LaborUnitCost />} />
                     <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
                   </Route>
-                   <Route path="site-reports/daily" element={<DailySiteReport />} />
+                  <Route path="site-reports/daily" element={<DailySiteReport />} />
                   <Route path="site-reports/progress" element={<SiteProgressBilling />} />
                   <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
                   <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
+                  <Route path="billing/table" element={<ProgressBilling />} />
+                  <Route path="billing/chart" element={<ProgressCharts />} />
+
+
                 </Route>
               </Route>
 
