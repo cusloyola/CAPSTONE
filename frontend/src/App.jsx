@@ -19,6 +19,7 @@ import AdminReports from "./roles/Admin/Reports.jsx";
 import MaterialRequestManagement from "./roles/Admin/MaterialRequestManagemet.jsx";
 import EmployeeManagement from "./roles/Admin/EmployeeManagement.jsx";
 import ViewSafetyReportAdmin from "./roles/Admin/Safety Report/SafetyReportsManagement.jsx";
+import ViewIncidentReportAdmin from "./roles/Admin/Incident Report/ViewIncidentReportAdmin.jsx";
 
 // site
 import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
@@ -31,6 +32,7 @@ import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx"
 import SafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx";
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 import IncidentReport from "./roles/SafetyEngineer/Incident Report/IncidentReport.jsx";
+import ViewHistoryIncidentReport from "./roles/SafetyEngineer/Incident Report/ViewHistoryIncidentReport.jsx";
 
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 import UserManagement from "./roles/Admin/UserManagement.jsx";
@@ -148,6 +150,7 @@ export default function App() {
               <Route path="/AdminCalendar" element={<Calendar />} />
               <Route path="/SafetyReportsManagement" element={<ViewSafetyReportAdmin />} />
               <Route path="/AddProject" element={<ProjectsCRUD />} />
+              <Route path="/ViewIncidentReportAdmin" element={<ViewIncidentReportAdmin />} />
               <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
               <Route path="/InProgressProjectTable" element={<InProgressProjectTable />} />
 
@@ -239,7 +242,11 @@ export default function App() {
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
               <Route path="/SafetyReport" element={<SafetyReport />} />
               <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
+
               <Route path="/IncidentReport" element={<IncidentReport />} />
+======
+               <Route path="/IncidentReport" element={<IncidentReport />} />
+              <Route path="/ViewHistoryIncidentReport" element={<ViewHistoryIncidentReport />} />
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}
