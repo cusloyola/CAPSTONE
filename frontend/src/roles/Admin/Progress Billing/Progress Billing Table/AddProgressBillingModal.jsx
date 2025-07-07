@@ -2,10 +2,18 @@ import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-const AddProgressBillingModal = ({ onClose, onSave, proposal_name, project_name, proposal_id, full_name, user_id, billing_no }) => {
+const AddProgressBillingModal = ({
+    onClose,
+    onSave,
+    proposal_name,
+    project_name,
+    proposal_id,
+    full_name,
+    user_id,
+}) => {
     const [billingDate, setBillingDate] = useState(new Date());
     const [billingNo, setBillingNo] = useState("");
-    const [evaluatedBy, setEvaluatedBy] = useState("");
+    const [notes, setNotes] = useState("");
 
     useEffect(() => {
         console.log("Modal opened with:");
@@ -19,7 +27,7 @@ const AddProgressBillingModal = ({ onClose, onSave, proposal_name, project_name,
         e.preventDefault();
 
         const billing = {
-            billing_no: billingNo, // 🟢 Include this
+            billing_no: billingNo,
             proposal_id,
             subject: "Progress Billing",
             billing_date: billingDate.toISOString().split("T")[0],
@@ -27,6 +35,7 @@ const AddProgressBillingModal = ({ onClose, onSave, proposal_name, project_name,
             revision: 0,
             evaluated_by: full_name || "",
             user_id: user_id,
+            notes: notes,
         };
 
         console.log("📤 Submitting billing data:", billing);
@@ -40,7 +49,6 @@ const AddProgressBillingModal = ({ onClose, onSave, proposal_name, project_name,
             <div className="bg-white rounded p-6 w-full max-w-md shadow space-y-4">
                 <h2 className="text-lg font-semibold">Add Progress Billing</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-
                     {/* Billing Date */}
                     <div className="w-full">
                         <label className="block font-medium mb-1">Billing Date</label>
@@ -49,7 +57,7 @@ const AddProgressBillingModal = ({ onClose, onSave, proposal_name, project_name,
                             onChange={(date) => setBillingDate(date)}
                             dateFormat="MM-dd-yyyy"
                             className="border p-2 rounded w-full"
-                            wrapperClassName={("w-full")}
+                            wrapperClassName="w-full"
                         />
                     </div>
 
@@ -64,6 +72,19 @@ const AddProgressBillingModal = ({ onClose, onSave, proposal_name, project_name,
                             required
                         />
                     </div>
+
+                    {/* Notes */}
+                    <div>
+                        <label className="block font-medium mb-1">Notes</label>
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            rows={3}
+                            placeholder="Optional description or remarks"
+                            className="border p-2 rounded w-full"
+                        />
+                    </div>
+
                     {/* Proposal Title */}
                     <div>
                         <label className="block font-medium mb-1">Proposal</label>
@@ -91,9 +112,9 @@ const AddProgressBillingModal = ({ onClose, onSave, proposal_name, project_name,
                         <label className="block font-medium mb-1">Evaluated By</label>
                         <input
                             type="text"
-                            className="border p-2 rounded w-full bg-gray-100"
                             value={full_name || ""}
                             disabled
+                            className="border p-2 rounded w-full bg-gray-100"
                         />
                     </div>
 

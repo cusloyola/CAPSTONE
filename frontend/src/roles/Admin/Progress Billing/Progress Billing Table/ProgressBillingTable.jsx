@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import AddProgressBillingModal from "./AddProgressBillingModal";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router-dom"; // ✅ Add Link here
+import ActionDropdown from "./ActionDropdown";
 
 const PROGRESSBILL_API_URL = "http://localhost:5000/api/progress-billing";
 
-const ProgressBilling = () => {
-    const { project_id } = useParams(); // 👈 From URL
+const ProgressBillingTable = () => {
+    const { project_id } = useParams(); 
     const [showModal, setShowModal] = useState(false);
     const [billingList, setBillingList] = useState([]);
     const [selectedProposal, setSelectedProposal] = useState(null);
@@ -13,8 +14,6 @@ const ProgressBilling = () => {
     const user_id = user?.id;
     const user_name = user?.name;
 
-
-    // 🔵 Fetch approved proposal under this project
     useEffect(() => {
         if (project_id) {
             fetch(`${PROGRESSBILL_API_URL}/approved-proposal/${project_id}`)
@@ -38,30 +37,52 @@ const ProgressBilling = () => {
         }
     }, [project_id]);
 
-  const handleAddProgressBilling = (billing) => {
-    const payload = {
-        ...billing,
-        user_id: user_id // ✅ Make sure it's called user_id
+    const handleAddProgressBilling = (billing) => {
+        const payload = {
+            ...billing,
+            user_id: user_id 
+        };
+
+        fetch(`${PROGRESSBILL_API_URL}/add/${selectedProposal?.proposal_id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error(`Server error: ${res.status}`);
+                return res.json();
+            })
+            .then(() => {
+                return fetch(`${PROGRESSBILL_API_URL}/fetch/${selectedProposal?.proposal_id}`);
+            })
+            .then((res) => res.json())
+            .then((data) => setBillingList(data.data))
+            .catch((err) => {
+                console.error("Error adding billing:", err);
+            });
     };
 
-    fetch(`${PROGRESSBILL_API_URL}/add/${selectedProposal?.proposal_id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-    })
-        .then((res) => {
-            if (!res.ok) throw new Error(`Server error: ${res.status}`);
-            return res.json();
+    const handleCopyBilling = (billingId) => {
+        fetch(`${PROGRESSBILL_API_URL}/copy/${billingId}`, {
+            method: "POST",
         })
-        .then(() => {
-            return fetch(`${PROGRESSBILL_API_URL}/fetch/${selectedProposal?.proposal_id}`);
-        })
-        .then((res) => res.json())
-        .then((data) => setBillingList(data.data))
-        .catch((err) => {
-            console.error("Error adding billing:", err);
-        });
-};
+            .then((res) => {
+                if (!res.ok) throw new Error("Failed to copy");
+                return res.json();
+            })
+            .then(() => {
+                return fetch(`${PROGRESSBILL_API_URL}/fetch/${selectedProposal?.proposal_id}`);
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                setBillingList(data.data);
+            })
+            .catch((err) => {
+                console.error("Copy failed:", err);
+            });
+    };
+
+
 
 
     return (
@@ -82,10 +103,11 @@ const ProgressBilling = () => {
                 <thead className="bg-gray-100">
                     <tr>
                         <th className="border px-4 py-2 text-left">Billing No.</th>
-                        <th className="border px-4 py-2 text-left">Subject</th>
                         <th className="border px-4 py-2 text-left">Billing Date</th>
                         <th className="border px-4 py-2 text-left">Evaluated By</th>
                         <th className="border px-4 py-2 text-left">Status</th>
+                        <th className="border px-4 py-2 text-left">Notes</th>
+
                         <th className="border px-4 py-2 text-left">Actions</th>
                     </tr>
                 </thead>
@@ -99,16 +121,30 @@ const ProgressBilling = () => {
                     ) : (
                         billingList.map((billing, index) => (
                             <tr key={index}>
-                                <td className="border px-4 py-2">#{billing.billing_id}</td>
-                                <td className="border px-4 py-2">{billing.subject}</td>
+                                <td className="border px-4 py-2 text-blue-600 underline">
+                                    <Link to={`${billing.billing_id}`}>
+                                        {billing.subject}&nbsp;{billing.billing_no}
+                                    </Link>
+
+                                </td>
+
                                 <td className="border px-4 py-2">
                                     {new Date(billing.billing_date).toLocaleDateString("en-CA")}
                                 </td>
                                 <td className="border px-4 py-2">{billing.evaluated_by || "N/A"}</td>
                                 <td className="border px-4 py-2">{billing.status}</td>
-                                <td className="border px-4 py-2">
-                                    <button className="text-blue-600 hover:underline">View</button>
+                                <td className="border px-4 py-2">{billing.notes}</td>
+
+                                <td className="border px-4 py-2 space-x-2">
+                                    <ActionDropdown
+                                        onEdit={() => console.log("✏️ Edit", billing.billing_id)}
+                                        onDelete={() => console.log("🗑️ Delete", billing.billing_id)}
+                                        onCopy={() => handleCopyBilling(billing.billing_id)}
+                                    />
+
                                 </td>
+
+
                             </tr>
                         ))
                     )}
@@ -116,15 +152,15 @@ const ProgressBilling = () => {
             </table>
 
             {showModal && (
-               <AddProgressBillingModal
-    onClose={() => setShowModal(false)}
-    onSave={handleAddProgressBilling}
-    proposal_name={selectedProposal?.proposal_title}
-    project_name={selectedProposal?.project_name}
-    proposal_id={selectedProposal?.proposal_id}
-    user_id={user_id}
-    full_name={user_name}
-/>
+                <AddProgressBillingModal
+                    onClose={() => setShowModal(false)}
+                    onSave={handleAddProgressBilling}
+                    proposal_name={selectedProposal?.proposal_title}
+                    project_name={selectedProposal?.project_name}
+                    proposal_id={selectedProposal?.proposal_id}
+                    user_id={user_id}
+                    full_name={user_name}
+                />
 
 
             )}
@@ -132,4 +168,4 @@ const ProgressBilling = () => {
     );
 };
 
-export default ProgressBilling;
+export default ProgressBillingTable;

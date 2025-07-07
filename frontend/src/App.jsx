@@ -92,11 +92,14 @@ import ProposalTable from "./roles/Admin/Project Management/ProjectProposal/Prop
 import ProposalDetails from "./roles/Admin/Project Management/ProjectProposal/ProposalDetails.jsx";
 import ProjectInfo from "./roles/Admin/Project Management/ProjectInfo.jsx";
 
-// import InProgressProjectTable from "./roles/Admin/Project Management/InProgressProjects/InProgressProjectTable/InProgressProjectTable.jsx";
+import InProgressProjectTable from "./roles/Admin/Project Management/InProgressProjects/InProgressProjectTable/InProgressProjectTable.jsx";
 
 import ProgressCharts from "./roles/Admin/Progress Billing/Progress Billing Charts/ProgressCharts.jsx";
-import ProgressBilling from "./roles/Admin/Progress Billing/Progress Billing Table/ProgressBilling.jsx";
+import ProgressBillingTable from "./roles/Admin/Progress Billing/Progress Billing Table/ProgressBillingTable.jsx";
+import ProgressBillingActual from "./roles/Admin/Progress Billing/Progress Billing Actual/ProgressBillingActual.jsx";
 
+
+import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
 import DailySiteReport from "./roles/Admin/Site Report/Daily Site Report/DailySiteReport.jsx";
 import SiteProgressBilling from "./roles/Admin/Site Report/Site Progress Billing/SiteProgressBilling.jsx";
@@ -146,7 +149,7 @@ export default function App() {
               <Route path="/SafetyReportsManagement" element={<ViewSafetyReportAdmin />} />
               <Route path="/AddProject" element={<ProjectsCRUD />} />
               <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
-              {/* <Route path="/InProgressProjectTable" element={<InProgressProjectTable />} /> */}
+              <Route path="/InProgressProjectTable" element={<InProgressProjectTable />} />
 
 
               <Route path="/AllPendingProjects/:project_id/profile" element={<ProjectLayout />}>
@@ -164,10 +167,14 @@ export default function App() {
                 </Route>
               </Route>
 
+
               <Route path="/InProgressProjectTable/:project_id/profile" element={<ProjectLayout />}>
                 <Route element={<ProjectProfile />}>
+
                   <Route index element={<ProjectInfo />} />
                   <Route path="info" element={<ProjectInfo />} />
+
+                  {/* Proposals */}
                   <Route path="proposals" element={<ProposalTable />} />
                   <Route path="proposals/:proposal_id" element={<ProposalDetails />}>
                     <Route path="scope-of-work" element={<ScopeOfWorks />} />
@@ -176,13 +183,20 @@ export default function App() {
                     <Route path="labor-unit-cost" element={<LaborUnitCost />} />
                     <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
                   </Route>
+
+                 <Route path="billing" element={<ProgressBillingTable />} />
+
+<Route path="billing/:billing_id" element={<BillingDetails />}>
+  <Route index element={<Navigate to="table" replace />} />  {/* 👈 Default tab */}
+  <Route path="table" element={<ProgressBillingActual />} /> {/* ← Replace with your actual component */}
+  <Route path="chart" element={<ProgressCharts />} />
+</Route>
+
+                  {/* Reports */}
                   <Route path="site-reports/daily" element={<DailySiteReport />} />
                   <Route path="site-reports/progress" element={<SiteProgressBilling />} />
                   <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
                   <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
-                  <Route path="billing/table" element={<ProgressBilling />} />
-                  <Route path="billing/chart" element={<ProgressCharts />} />
-
 
                 </Route>
               </Route>
@@ -225,7 +239,7 @@ export default function App() {
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
               <Route path="/SafetyReport" element={<SafetyReport />} />
               <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
-               <Route path="/IncidentReport" element={<IncidentReport />} />
+              <Route path="/IncidentReport" element={<IncidentReport />} />
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}

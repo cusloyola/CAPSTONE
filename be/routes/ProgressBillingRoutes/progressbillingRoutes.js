@@ -8,5 +8,7 @@ router.post(`/add/:proposal_id`, progressBillingController.addProgressBillList);
 router.get('/fetch/:proposal_id', progressBillingController.getProgressBillList);
 // routes/progressBillingRoutes.js
 router.get("/approved-proposal/:project_id", progressBillingController.getApprovedProposalByProject);
+router.post('/copy/:billing_id', progressBillingController.copyProgressBilling);
+router.get('/summary/:billing_id', progressBillingController.getFinalEstimationSummary);
 
 module.exports = router;
