@@ -195,8 +195,8 @@ const getFinalEstimationSummary = async (req, res) => {
           return res.status(500).json({ message: "Server error" });
         }
 
-        console.log("✅ Final Estimation Summary Rows:", rows.length);
-        console.table(rows);
+        // console.log("✅ Final Estimation Summary Rows:", rows.length);
+        // console.table(rows);
         res.json(rows);
       }
     );
@@ -207,10 +207,139 @@ const getFinalEstimationSummary = async (req, res) => {
 };
 
 
+
+
+
+
+
+
+const addProgressAccomp = (req, res) => {
+  const { billing_id, sow_proposal_id, percent_present, percent_previous } = req.body;
+
+  if (
+  billing_id == null ||
+  sow_proposal_id == null ||
+  percent_present == null ||
+  percent_previous == null
+) {
+  return res.status(400).json({ message: "Missing required fields" });
+}
+
+
+  const query = `
+    INSERT INTO progress_accomplishments
+    (billing_id, sow_proposal_id, percent_present, percent_previous)
+    VALUES (?, ?, ?,?)
+  `;
+
+  db.query(query, [billing_id, sow_proposal_id, percent_present, percent_previous], (err, results) => {
+    if (err) {
+      console.error("DB Error:", err);
+      return res.status(500).json({ message: "Failed to insert progress" });
+    }
+
+    return res.status(200).json({
+      message: "Accomplishment successfully inserted",
+      data: results,
+    });
+  });
+};
+
+
+const getProgressAccomp = (req, res) => {
+  const {billing_id} = req.params;
+
+  const sql =
+  `SELECT
+  sow_proposal_id,
+  percent_previous,
+  percent_present
+  FROM
+  progress_accomplishments
+  WHERE billing_id = ?
+
+  `;
+
+  db.query(sql, [billing_id], (err, results) => {
+    if(err) {
+      console.error("DB Error:", err);
+      return res.status(500).json({message:"Progress Accomp failed to fetched"});
+    }
+    return res.status(200).json({message:"Progress Accomp fetched successfully",
+      data: results,
+    });
+  });
+};
+
+
+const updateProgressAccomp = (req, res) => {
+  const { accomplishment_id, percent_present, percent_previous } = req.body;
+
+  if (
+    !accomplishment_id ||
+    percent_present == null || 
+    percent_previous == null 
+  ) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const query = `
+    UPDATE progress_accomplishments
+    SET percent_present = ?, percent_previous = ?
+    WHERE accomplishment_id = ?
+  `;
+
+  db.query(query, [percent_present, percent_previous, accomplishment_id], (err, results) => {
+    if (err) {
+      console.error("DB error:", err);
+      return res.status(500).json({ message: "Failed to update accomplishment" });
+    }
+
+    return res.status(200).json({ message: "Update accomplishment successful", data: results });
+  });
+};
+
+
+
+//logs
+
+const addAccompLogs = (req, res) => {
+  console.log("📥 Incoming request body:", req.body);
+
+  const { billing_id, sow_proposal_id, percent_present, user_id, note, week_no } = req.body;
+
+  
+  if (!billing_id || !sow_proposal_id || !percent_present || user_id == null) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const query = `
+  INSERT INTO progress_accomplishment_logs
+  (billing_id, sow_proposal_id, percent_present, user_id, note, week_no)
+  VALUES(?,?,?,?,?,?)
+  `;
+
+  db.query(query, [ billing_id, sow_proposal_id, percent_present, user_id, note, week_no], (err, results) => {
+    if(err){
+      console.error("DB Error: ", err);
+      return res.status(500).json({message: "Failed to insert accomp logs"});
+    }
+    return res.status(200).json({message: "Accomplishment Logs Inserted Successfully", data: results});
+  });
+};
+
+
+
+
+
 module.exports = {
     addProgressBillList,
     getProgressBillList,
     getApprovedProposalByProject,
     copyProgressBilling,
-    getFinalEstimationSummary
+    getFinalEstimationSummary,
+    addProgressAccomp,
+    getProgressAccomp,
+    updateProgressAccomp,
+    addAccompLogs
 }

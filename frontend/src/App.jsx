@@ -187,13 +187,13 @@ export default function App() {
                     <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
                   </Route>
 
-                 <Route path="billing" element={<ProgressBillingTable />} />
+                  <Route path="billing" element={<ProgressBillingTable />} />
 
-<Route path="billing/:billing_id" element={<BillingDetails />}>
-  <Route index element={<Navigate to="table" replace />} />  {/* 👈 Default tab */}
-  <Route path="table" element={<ProgressBillingActual />} /> {/* ← Replace with your actual component */}
-  <Route path="chart" element={<ProgressCharts />} />
-</Route>
+                  <Route path="billing/:billing_id" element={<BillingDetails />}>
+                    <Route index element={<Navigate to="table" replace />} />  {/* 👈 Default tab */}
+                    <Route path="table" element={<ProgressBillingActual />} /> {/* ← Replace with your actual component */}
+                    <Route path="chart" element={<ProgressCharts />} />
+                  </Route>
 
                   {/* Reports */}
                   <Route path="site-reports/daily" element={<DailySiteReport />} />
@@ -244,8 +244,7 @@ export default function App() {
               <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
 
               <Route path="/IncidentReport" element={<IncidentReport />} />
-======
-               <Route path="/IncidentReport" element={<IncidentReport />} />
+              <Route path="/IncidentReport" element={<IncidentReport />} />
               <Route path="/ViewHistoryIncidentReport" element={<ViewHistoryIncidentReport />} />
             </Route>
 

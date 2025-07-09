@@ -11,4 +11,11 @@ router.get("/approved-proposal/:project_id", progressBillingController.getApprov
 router.post('/copy/:billing_id', progressBillingController.copyProgressBilling);
 router.get('/summary/:billing_id', progressBillingController.getFinalEstimationSummary);
 
+
+router.post('/accomp', progressBillingController.addProgressAccomp);
+router.get('/accomp/:billing_id', progressBillingController.getProgressAccomp);
+router.put('/accomp/update/:billing_id', progressBillingController.updateProgressAccomp);
+
+router.post('/accomp/log', progressBillingController.addAccompLogs);
+
 module.exports = router;
