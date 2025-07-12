@@ -100,7 +100,7 @@ import ProgressCharts from "./roles/Admin/Progress Billing/Progress Billing Char
 import ProgressBillingTable from "./roles/Admin/Progress Billing/Progress Billing Table/ProgressBillingTable.jsx";
 import ProgressBillingActual from "./roles/Admin/Progress Billing/Progress Billing Actual/ProgressBillingActual.jsx";
 
-
+import ProgressBillingPage from "./roles/Admin/Progress Billing/ProgressBillingPage.jsx";
 import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
 import DailySiteReport from "./roles/Admin/Site Report/Daily Site Report/DailySiteReport.jsx";
@@ -187,7 +187,7 @@ export default function App() {
                     <Route path="final-cost-estimation" element={<FinalCostEstimation />} />
                   </Route>
 
-                  <Route path="billing" element={<ProgressBillingTable />} />
+                  <Route path="billing" element={<ProgressBillingPage />} />
 
                   <Route path="billing/:billing_id" element={<BillingDetails />}>
                     <Route index element={<Navigate to="table" replace />} />  {/* 👈 Default tab */}

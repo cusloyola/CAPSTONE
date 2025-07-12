@@ -10,10 +10,14 @@ const AddProgressBillingModal = ({
     proposal_id,
     full_name,
     user_id,
+    billingList = [], // ✅ New prop
+
 }) => {
     const [billingDate, setBillingDate] = useState(new Date());
     const [billingNo, setBillingNo] = useState("");
     const [notes, setNotes] = useState("");
+    const [previousBillingId, setPreviousBillingId] = useState("");
+
 
     useEffect(() => {
         console.log("Modal opened with:");
@@ -36,6 +40,8 @@ const AddProgressBillingModal = ({
             evaluated_by: full_name || "",
             user_id: user_id,
             notes: notes,
+            previous_billing_id: previousBillingId || null, // ✅ Include this
+
         };
 
         console.log("📤 Submitting billing data:", billing);
@@ -72,6 +78,23 @@ const AddProgressBillingModal = ({
                             required
                         />
                     </div>
+                    {/* Based on Previous Billing */}
+                    <div>
+                        <label className="block font-medium mb-1">Based on Previous Billing</label>
+                        <select
+                            className="border p-2 rounded w-full"
+                            value={previousBillingId}
+                            onChange={(e) => setPreviousBillingId(e.target.value)}
+                        >
+                            <option value="">-- None (Start Fresh) --</option>
+                            {billingList.map((bill) => (
+                                <option key={bill.billing_id} value={bill.billing_id}>
+                                    {bill.subject} {bill.billing_no} - {new Date(bill.billing_date).toLocaleDateString("en-CA")}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
 
                     {/* Notes */}
                     <div>

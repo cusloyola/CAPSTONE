@@ -15,10 +15,17 @@ const AddPresentModal = ({ isOpen, onClose, items, billing_id, accomplishments }
     const user = JSON.parse(localStorage.getItem("user"));
     const user_id = user?.id;
 
-
     useEffect(() => {
-        setFilteredItems(items); // default to all
-    }, [items]);
+        if (!isOpen) return;
+
+        // Reset all form states when modal opens
+        setSearchTerm("");
+        setFilteredItems(items);
+        setSelectedItem(null);
+        setPercentValue("");
+        setWeekNo("");
+        setNote("");
+    }, [isOpen]);
 
     const handleInputChange = (e) => {
         const value = e.target.value;
@@ -35,7 +42,9 @@ const AddPresentModal = ({ isOpen, onClose, items, billing_id, accomplishments }
         setSelectedItem(item);
         setSearchTerm(item.item_title);
         setDropdownOpen(false);
+        setPercentValue(""); // ✅ always blank
     };
+
 
     const handleClickOutside = (e) => {
         if (
@@ -117,10 +126,15 @@ const AddPresentModal = ({ isOpen, onClose, items, billing_id, accomplishments }
 
     if (!isOpen) return null;
 
-    // Get % previous (from accomp_to_date) and compute new total
-    const percentPrevious = parseFloat(selectedItem?.accomp_to_date || 0);
-    const percentPresent = parseFloat(percentValue || 0);
-    const percentToDate = (percentPrevious + percentPresent).toFixed(2);
+    const percentPrevious = parseFloat(
+        accomplishments?.[selectedItem?.sow_proposal_id]?.percent_previous ?? 0
+    );
+    const savedPercentPresent = parseFloat(
+        accomplishments?.[selectedItem?.sow_proposal_id]?.percent_present ?? 0
+    );
+    const currentInput = parseFloat(percentValue || savedPercentPresent || 0);
+    const percentToDate = (percentPrevious + currentInput).toFixed(2);
+
 
     return (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
@@ -179,16 +193,27 @@ const AddPresentModal = ({ isOpen, onClose, items, billing_id, accomplishments }
                         className="w-full border rounded px-3 py-2 mb-4 text-sm"
                         required
                     />
+{selectedItem && (
+    <div className="text-sm text-gray-700 mb-4 space-y-1">
+        <p><strong>% Previous:</strong> {percentPrevious}%</p>
+        <p><strong>% Present (Saved):</strong> {savedPercentPresent}%</p>
+        <p><strong>% To Date:</strong> {percentToDate}%</p>
 
-                    {selectedItem && (
-                        <div className="text-sm text-gray-700 mb-4">
-                            <p><strong>% Previous:</strong> {percentPrevious}%</p>
-                            <p><strong>% To Date:</strong> {percentToDate}%</p>
-                            {percentToDate > 100 && (
-                                <p className="text-red-600">⚠️ Over 100%</p>
-                            )}
-                        </div>
-                    )}
+        {parseFloat(percentToDate) > 100 && (
+            <p className="text-red-600">⚠️ Over 100%</p>
+        )}
+
+        {percentValue !== "" && parseFloat(percentValue) < savedPercentPresent && (
+            <p className="text-yellow-600 font-medium">
+                ⚠️ Warning: New % Present is lower than saved.
+            </p>
+        )}
+    </div>
+)}
+
+
+
+
 
                     <button
                         type="submit"
