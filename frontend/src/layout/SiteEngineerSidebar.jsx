@@ -18,11 +18,16 @@ import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
 // Define admin-specific nav items
 const navItems = [
+{
+    icon: <GridIcon />,
+    name: "Dashboard",
+    path: "/SiteEngineerDashboard",
+  },
  
   {
     icon: <PageIcon />,
     name: "Site Progress",
-    subItems: [{ name: "Site Progress", path: "/SiteProgressTracking", pro: false }],
+    subItems: [{ name: "Daily Site Report", path: "/DailySiteReport", pro: false }],
   },
   // {
   //   icon: <GridIcon />,

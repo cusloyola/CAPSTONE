@@ -22,10 +22,15 @@ import ViewSafetyReportAdmin from "./roles/Admin/Safety Report/SafetyReportsMana
 import ViewIncidentReportAdmin from "./roles/Admin/Incident Report/ViewIncidentReportAdmin.jsx";
 
 // site
-import SiteEngineerDashboard from "./roles/SiteEngineer/SiteEngineerDashboard.jsx";
-import SiteProgressTracking from "./roles/SiteEngineer/SiteProgressTacking.jsx"
+
+import SiteEngineerDashboard from "./roles/SiteEngineer/Site Engineer Dashboard/SiteEngineerDashboard.jsx";
+import DailySiteReport from "./roles/SiteEngineer/Site Progress Tracking/DailySiteReport.jsx";
+
 import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
+
+
+
 
 // safety
 // import WeeklySafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx";
@@ -104,8 +109,7 @@ import ProgressBillingActual from "./roles/Admin/Progress Billing/Progress Billi
 import ProgressBillingPage from "./roles/Admin/Progress Billing/ProgressBillingPage.jsx";
 import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
-import DailySiteReport from "./roles/Admin/Site Report/Daily Site Report/DailySiteReport.jsx";
-import SiteProgressBilling from "./roles/Admin/Site Report/Site Progress Billing/SiteProgressBilling.jsx";
+
 
 
 import WeeklySafetyReport from "./roles/Admin/Safety Report/Weekly Safety Report/WeeklySafetyReport.jsx";
@@ -197,8 +201,6 @@ export default function App() {
                   </Route>
 
                   {/* Reports */}
-                  <Route path="site-reports/daily" element={<DailySiteReport />} />
-                  <Route path="site-reports/progress" element={<SiteProgressBilling />} />
                   <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
                   <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
 
@@ -232,8 +234,8 @@ export default function App() {
 
             {/* Site Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
-              <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
-              <Route path="/SiteProgressTracking" element={<SiteProgressTracking />} />
+             <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
+              <Route path= "/DailySiteReport" element={<DailySiteReport/>} />
               <Route path="/RequestMaterial" element={<RequestMaterial />} />
               <Route path="/ViewRequestHistory" element={<MaterialRequestHistory />} />
             </Route>

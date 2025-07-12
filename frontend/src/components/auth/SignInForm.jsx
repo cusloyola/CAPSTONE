@@ -24,7 +24,7 @@ export default function SignInForm() {
       const userRole = user.role.trim().toLowerCase();
       const roleRoutes = {
         admin: "/AdminDashboard",
-        "site engineer": "/SiteProgressTracking",
+        "site engineer": "/SiteEngineerDashboard",
         "safety engineer": "/SafetyEngineerDashboard",
       };
       navigate(roleRoutes[userRole] || "/unauthorized", { replace: true });
