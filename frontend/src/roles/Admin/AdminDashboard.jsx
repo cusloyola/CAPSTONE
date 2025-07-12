@@ -1,48 +1,45 @@
-import React from "react";
-import EcommerceMetrics from '../../components/ecommerce/EcommerceMetrics';
-import AdminOverviewMetrics from "./AdminOverviewMetrics";
-import BarChartOne from "../../components/charts/bar/BarChartOne";
+import EcommerceMetrics from "../../components/ecommerce/EcommerceMetrics";
+import MonthlySalesChart from "../../components/ecommerce/MonthlySalesChart";
+import StatisticsChart from "../../components/ecommerce/StatisticsChart";
+import MonthlyTarget from "../../components/ecommerce/MonthlyTarget";
+import RecentOrders from "../../components/ecommerce/RecentOrders";
+import DemographicCard from "../../components/ecommerce/DemographicCard";
+import PageMeta from "../../components/common/PageMeta";
 
-const Dashboard = () => {
-  // If you need this again, you can uncomment and use it later
-  // const { user } = useUser(); 
-  // const [data, setData] = useState(null);
+import ProgressLineGraph from "./Charts/ProgressLineGraph";
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await fetch("http://localhost:5000/api/DashboardData", {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${user?.token}`,
-  //         },
-  //       });
-
-  //       if (!response.ok) {
-  //         throw new Error(`HTTP error! status: ${response.status}`);
-  //       }
-
-  //       const result = await response.json();
-  //       setData(result);
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //       alert("An error occurred while fetching data.");
-  //     }
-  //   };
-
-  //   if (user?.token) {
-  //     fetchData();
-  //   }
-  // }, [user?.token]);
-
+const AdminDashboard = () => {
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Admin Dashboard</h2>
-      <AdminOverviewMetrics />
-      <BarChartOne />
-    </div>
-  );
-};
+    <>
+      <PageMeta
+        title="React.js Ecommerce Dashboard | TailAdmin - React.js Admin Dashboard Template"
+        description="This is React.js Ecommerce Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
+      />
+      <div className="grid grid-cols-12 gap-4 md:gap-6">
+        <div className="col-span-12 space-y-6 xl:col-span-7">
+          <EcommerceMetrics />
 
-export default Dashboard;
+          <MonthlySalesChart />
+        </div>
+
+        <div className="col-span-12 xl:col-span-5">
+          <MonthlyTarget />
+        </div>
+
+        <div className="col-span-12">
+          <ProgressLineGraph />
+        </div>
+
+        <div className="col-span-12 xl:col-span-5">
+          <DemographicCard />
+        </div>
+
+        <div className="col-span-12 xl:col-span-7">
+          <RecentOrders />
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default AdminDashboard;

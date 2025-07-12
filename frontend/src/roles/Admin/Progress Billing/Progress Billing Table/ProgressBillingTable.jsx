@@ -14,33 +14,44 @@ const ProgressBillingTable = () => {
     const user_id = user?.id;
     const user_name = user?.name;
 
-    useEffect(() => {
-        if (project_id) {
-            fetch(`${PROGRESSBILL_API_URL}/approved-proposal/${project_id}`)
-                .then((res) => {
-                    if (!res.ok) throw new Error("No approved proposal found");
-                    return res.json();
-                })
-                .then((data) => {
-                    setSelectedProposal(data.data);
+ useEffect(() => {
+    if (project_id) {
+        // ✅ Immediately reset state before fetch to avoid showing old data
+        setSelectedProposal(null);
+        setBillingList([]);
 
-                    // ✅ Fetch billings for that proposal
-                    return fetch(`${PROGRESSBILL_API_URL}/fetch/${data.data.proposal_id}`);
-                })
-                .then((res) => res.json())
-                .then((billingData) => setBillingList(billingData.data))
-                .catch((err) => {
-                    console.error("Proposal or Billing fetch failed:", err);
-                    setSelectedProposal(null);
-                    setBillingList([]);
-                });
-        }
-    }, [project_id]);
+        fetch(`${PROGRESSBILL_API_URL}/approved-proposal/${project_id}`)
+            .then((res) => {
+                if (!res.ok) throw new Error("No approved proposal found");
+                return res.json();
+            })
+            .then((data) => {
+                setSelectedProposal(data.data);
+
+                // ✅ Fetch billings for that proposal
+                return fetch(`${PROGRESSBILL_API_URL}/fetch/${data.data.proposal_id}`);
+            })
+            .then((res) => res.json())
+            .then((billingData) => setBillingList(billingData.data))
+            .catch((err) => {
+                console.error("Proposal or Billing fetch failed:", err);
+                setSelectedProposal(null);
+                setBillingList([]);
+            });
+    } else {
+        // ✅ Reset if project_id is undefined
+        setSelectedProposal(null);
+        setBillingList([]);
+    }
+}, [project_id]);
+
 
     const handleAddProgressBilling = (billing) => {
         const payload = {
             ...billing,
-            user_id: user_id 
+            user_id: user_id,
+            previous_billing_id: billingList?.at(-1)?.billing_id || null, 
+
         };
 
         fetch(`${PROGRESSBILL_API_URL}/add/${selectedProposal?.proposal_id}`, {
@@ -160,6 +171,8 @@ const ProgressBillingTable = () => {
                     proposal_id={selectedProposal?.proposal_id}
                     user_id={user_id}
                     full_name={user_name}
+                    billingList={billingList}
+
                 />
 
 

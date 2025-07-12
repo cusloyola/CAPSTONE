@@ -48,7 +48,6 @@ const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
 const clientRoutes = require("./routes/clientRoutes"); 
 
-const dashboardRoutes = require('./routes/dashboard');
 const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const documentRoutes = require("./routes/documentRoutes");
@@ -70,6 +69,10 @@ const finalcostestimationRoutes = require('./routes/FinalCostEstimationRoutes/fi
 
 
 const progressbillingRoutes = require('./routes/ProgressBillingRoutes/progressbillingRoutes');
+
+
+const dashboardRoutes = require('./routes/DashboardRoutes/dashboardRoutes');
+
 
 
 // Ensure the uploads directory exists
@@ -105,7 +108,6 @@ app.use("/api/admin-site-reports", adminSiteReport);
 app.use("/api/clients", clientRoutes);
 
 app.use("/api/subclients", subclientRoutes);
-app.use('/api/dashboard', dashboardRoutes);
 app.use("/api/folders", folderRoutes);
 app.use('/api/tasks', taskRoutes); // now your endpoints will start with /api/tasks
 app.use("/api/documents", documentRoutes);
@@ -129,6 +131,8 @@ app.use('/api/materialunitcost', materialunitcostRoutes);
 app.use('/api/cost-estimation', finalcostestimationRoutes);
 
 app.use('/api/progress-billing',progressbillingRoutes );
+
+app.use('/api/dashboard', dashboardRoutes);
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {
