@@ -33,6 +33,7 @@ import SafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 import IncidentReport from "./roles/SafetyEngineer/Incident Report/IncidentReport.jsx";
 import ViewHistoryIncidentReport from "./roles/SafetyEngineer/Incident Report/ViewHistoryIncidentReport.jsx";
+import InspectionChecklistReport from "./roles/SafetyEngineer/Inspection Checklist Report/InspectionChecklistReport.jsx";
 
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 import UserManagement from "./roles/Admin/UserManagement.jsx";
@@ -246,6 +247,7 @@ export default function App() {
               <Route path="/IncidentReport" element={<IncidentReport />} />
               <Route path="/IncidentReport" element={<IncidentReport />} />
               <Route path="/ViewHistoryIncidentReport" element={<ViewHistoryIncidentReport />} />
+              <Route path="/InspectionChecklistReport" element={<InspectionChecklistReport />} />
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}
