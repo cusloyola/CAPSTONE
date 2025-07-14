@@ -107,7 +107,7 @@ const formattedSeries = Object.keys(grouped).map((project) => {
         options={options}
         series={series}
         type="line"
-        height={350}
+        height={550}
       />
     </div>
   );

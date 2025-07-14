@@ -43,7 +43,7 @@ const employeeManagementRoutes = require("./routes/employeeManagementRoutes");
 const taskRoutes = require('./routes/taskRoutes');
 
 const bomRoutes = require("./routes/bomRoutes");
-const dailySiteReportRoutes = require("./routes/dailySiteReportRoutes");
+const dailySiteReportRoutes = require("./routes/DailySiTeReportsRoutes/dailySiteReportRoutes");
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
 const clientRoutes = require("./routes/clientRoutes"); 

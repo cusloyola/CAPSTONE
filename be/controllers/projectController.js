@@ -196,6 +196,7 @@ const getAllProjects = (req, res, next) => {
   p.project_name,
   pc.project_type AS projectCategory,
   p.projectManager,
+  p.location,
   p.priority,
   p.status,
   c.client_id,
@@ -214,6 +215,8 @@ JOIN project_categories pc ON p.category_id = pc.category_id
     res.json(results);
   });
 };
+
+
 
 
 const getProjectFloors = (req, res) => {

@@ -15,7 +15,6 @@ JOIN projects prj ON p.project_id = prj.project_id
 JOIN sow_proposal sp ON sp.proposal_id = pb.proposal_id
 JOIN final_estimation_details fed ON fed.sow_proposal_id = sp.sow_proposal_id
 
--- ✅ Join with subquery to get total fed.amount per proposal
 JOIN (
     SELECT proposal_id, SUM(amount) AS total_amount
     FROM sow_proposal

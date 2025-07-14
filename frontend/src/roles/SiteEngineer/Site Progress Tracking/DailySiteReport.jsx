@@ -1,74 +1,43 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
+import ReportTable from "../../../components/tables/ReportTables/ReportTable";
+import AddSiteReportModal from "./AddSiteReportModal";
 
-const SiteEngineerDashboard = () => {
+const DailySiteReport = () => {
+    const [reports, setReports] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filterStatus, setFilterStatus] = useState("all");
+    const [showModal, setShowModal] = useState(false);
+    const reportRefs = useRef({});
+
+    // useEffect(() => {
+    //     fetch("http://localhost:5000/api/safety-reports/mine") // Fetch only their reports
+    //         .then((res) => res.json())
+    //         .then(setReports);
+    // }, []);
+
     return (
-        <div className="p-8 bg-white shadow rounded max-w-7xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Site Engineer Daily Report</h1>
-            <form className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-                        <input
-                            type="text"
-                            className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
+        <div>
+            <ReportTable
+                title="Daily Site Report"
+                reports={reports}
+                userRole="site_engineer"
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                reportRefs={reportRefs}
+                onViewSummary={(r) => console.log("View summary", r)}
+                onDownloadPDF={(id) => console.log("Download PDF", id)}
+                onAdd={() => setShowModal(true)} 
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Report Date</label>
-                        <input
-                            type="date"
-                            className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
+            />
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Weather Condition</label>
-                        <input
-                            type="text"
-                            placeholder="e.g., Sunny, Rainy"
-                            className="w-full border border-gray-300 rounded px-4 py-2"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Number of Workers</label>
-                        <input
-                            type="number"
-                            className="w-full border border-gray-300 rounded px-4 py-2"
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Work Activities</label>
-                    <textarea
-                        rows="5"
-                        className="w-full border border-gray-300 rounded px-4 py-2 resize-none"
-                        placeholder="Describe site activities for the day..."
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Issues / Concerns</label>
-                    <textarea
-                        rows="4"
-                        className="w-full border border-gray-300 rounded px-4 py-2 resize-none"
-                        placeholder="Mention any safety or work-related concerns..."
-                    />
-                </div>
-
-                <div className="pt-4">
-                    <button
-                        type="submit"
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded"
-                    >
-                        Submit Report
-                    </button>
-                </div>
-            </form>
+            {showModal && (
+                <AddSiteReportModal onClose={() => setShowModal(false)} />
+            )}
         </div>
+
     );
 };
 
-export default SiteEngineerDashboard;
+export default DailySiteReport;
