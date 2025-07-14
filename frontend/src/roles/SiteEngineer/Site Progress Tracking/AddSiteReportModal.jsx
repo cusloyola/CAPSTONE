@@ -3,8 +3,6 @@ import useSiteReportHandlers from "./useSiteReportHandlers";
 import AddSiteReportModalUI from "./AddSiteReportModalUI";
 
 const AddSiteReportModal = ({ onClose }) => {
-
-
     const {
         formData,
         handleChange,

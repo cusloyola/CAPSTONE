@@ -91,8 +91,6 @@ import MaterialUnitCost from "./roles/Admin/ProjectEstimation/MaterialUnitCost/M
 import LaborUnitCost from "./roles/Admin/ProjectEstimation/LaborUnitCost/LUCCrud/LaborUnitCost.jsx";
 
 
-import BillOfQuantities from "./roles/Admin/ProjectEstimation/BillOfQuantities/BillOfQuantities.jsx";
-import BillOfMaterials from "./roles/Admin/ProjectEstimation/BillOfMaterials/BillOfMaterials.jsx";
 import FinalCostEstimation from "./roles/Admin/ProjectEstimation/FinalCostEstimation/FinalCostEstimation.jsx";
 
 import AllPendingProjects from "./roles/Admin/Project Management/ProjectTable/AllPendingProjects.jsx";

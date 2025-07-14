@@ -1,43 +1,57 @@
 const db = require("./../../config/db");
 
-
 const getSiteDailyReportforSite = (req, res) => {
- const query = `
- SELECT
- dsr.dailysite_report_id,
- dsr.report_date,
- dsr.activities,
- dsr.weather_am,
- dsr.weather_pm,
- dsr.manpower,
- dsr.selected_equipment,
- dsr.visitors,
- dsr.notes,
- p.project_id,
- p.project_name,
- p.location,
- c.client_name
-
- FROM 
- daily_site_reports dsr
- JOIN
- projects p ON p.project_id = dsr.project_id
- JOIN
- clients c ON c.client_id = p.client_id
- JOIN
- users u ON u.user_id = dsr.prepared_by_user_id
- WHERE 
- dsr.dailysite_report_id = ?
- 
- `;
+  const query = `
+    SELECT
+      dsr.dailysite_report_id AS report_id,
+      dsr.report_date,
+      dsr.activities,
+      dsr.weather_am,
+      dsr.weather_pm,
+      dsr.manpower,
+      dsr.selected_equipment,
+      dsr.visitors,
+      dsr.notes,
+      dsr.status,
+      p.project_id,
+      p.project_name,
+      p.location,
+      c.client_name,
+      u.full_name
+    FROM 
+      daily_site_reports dsr
+    JOIN projects p ON p.project_id = dsr.project_id
+    JOIN clients c ON c.client_id = p.client_id
+    JOIN users u ON u.user_id = dsr.prepared_by_user_id
+  `;
 
  db.query(query, (err, results) => {
-  if(err){
-    console.error("Failed to fetch daily site reports: ", err);
-    return res.status(500).json({message: "DB Error"});
+    if (err) {
+      console.error("Failed to fetch daily site reports: ", err);
+      return res.status(500).json({ message: "DB Error" });
+    }
+
+    const parsedResults = results.map((r) => ({
+      ...r,
+      activities: safeJsonParse(r.activities),
+      manpower: safeJsonParse(r.manpower),
+      selected_equipment: safeJsonParse(r.selected_equipment),
+    }));
+
+    return res.status(200).json({
+      message: "Successfully fetched daily site reports",
+      data: parsedResults,
+    });
+  });
+};
+
+// Utility to handle invalid JSON gracefully
+function safeJsonParse(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return []; // default to empty array
   }
-  return res.status(200).json({message: "Succcessfully fetched daily site reports", data: results[0]});
- });
 };
 
 
