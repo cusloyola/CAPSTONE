@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import ReportTable from "../../../components/tables/ReportTables/ReportTable";
+import DailySiteReportTable from "./DailySiteReportTable";
 import AddSiteReportModal from "./AddSiteReportModal";
 import ViewSiteReportModal from "./ViewSiteReportModal"; // You’ll create this
 import EditSiteReportModal from "./EditSiteReportModal"; // You’ll create this
@@ -17,31 +17,47 @@ const DailySiteReport = () => {
 
   const reportRefs = useRef({});
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/daily-site-report/getSiteReport")
-      .then((res) => res.json())
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setReports(res.data);
-        } else if (res.data) {
-          setReports([res.data]);
-        } else {
-          setReports([]);
-        }
-      })
-      .catch((err) => console.error("Failed to load reports", err));
-  }, []);
+const loadReports = () => {
+  fetch("http://localhost:5000/api/daily-site-report/getSiteReport")
+    .then((res) => res.json())
+    .then((res) => {
+      if (Array.isArray(res.data)) {
+        setReports(res.data);
+      } else if (res.data) {
+        setReports([res.data]);
+      } else {
+        setReports([]);
+      }
+    })
+    .catch((err) => console.error("Failed to load reports", err));
+};
+
+useEffect(() => {
+  loadReports();
+}, []);
+
 
   const handleAction = (report, actionType) => {
+
     setSelectedReport(report);
-    setModalType(actionType); // "view" or "edit"
+    setModalType(actionType);
   };
 
-  const closeModals = () => {
-    setShowAddModal(false);
-    setSelectedReport(null);
-    setModalType(null);
-  };
+
+  useEffect(() => {
+    console.log("🟡 Modal Type:", modalType);
+    console.log("🟡 Selected Report:", selectedReport);
+  }, [modalType, selectedReport]);
+
+ const closeModals = (shouldRefresh = false) => {
+  if (shouldRefresh) {
+    loadReports(); 
+  }
+  setShowAddModal(false);
+  setSelectedReport(null);
+  setModalType(null);
+};
+
 
   const dailySiteColumns = [
     {
@@ -70,29 +86,31 @@ const DailySiteReport = () => {
 
   return (
     <div>
-      <ReportTable
-        title="Daily Site Report"
-        reports={reports}
-        columns={dailySiteColumns}
-        userRole="site_engineer"
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-        reportRefs={reportRefs}
-        onAction={handleAction}
-        onDownloadPDF={(id) => console.log("Download PDF", id)}
-        onAdd={() => setShowAddModal(true)}
-      />
+     <DailySiteReportTable
+  title="Daily Site Report"
+  reports={reports}
+  columns={dailySiteColumns}
+  userRole="site_engineer"
+  searchQuery={searchQuery}
+  setSearchQuery={setSearchQuery}
+  filterStatus={filterStatus}
+  setFilterStatus={setFilterStatus}
+  reportRefs={reportRefs}
+  onAction={handleAction} 
+  onAdd={() => setShowAddModal(true)}
+/>
 
-      {showAddModal && 
-      <AddSiteReportModal onClose={closeModals} />}
+
+      {showAddModal &&
+        <AddSiteReportModal onClose={closeModals} />}
       {modalType === "view" && selectedReport && (
         <ViewSiteReportModal report={selectedReport} onClose={closeModals} />
       )}
+
       {modalType === "edit" && selectedReport && (
         <EditSiteReportModal report={selectedReport} onClose={closeModals} />
       )}
+
     </div>
   );
 };

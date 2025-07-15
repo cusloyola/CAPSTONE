@@ -43,7 +43,7 @@ const employeeManagementRoutes = require("./routes/employeeManagementRoutes");
 const taskRoutes = require('./routes/taskRoutes');
 
 const bomRoutes = require("./routes/bomRoutes");
-const dailySiteReportRoutes = require("./routes/DailySiTeReportsRoutes/dailySiteReportRoutes");
+const dailySiteReportRoutes = require("./routes/DailySiteReportRoutes/dailySiteReportRoutes");
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
 const clientRoutes = require("./routes/clientRoutes"); 
@@ -73,6 +73,7 @@ const progressbillingRoutes = require('./routes/ProgressBillingRoutes/progressbi
 
 const dashboardRoutes = require('./routes/DashboardRoutes/dashboardRoutes');
 
+const incidentreportRoutes = require('./routes/IncidentReportsRoutes/incidentreportRoutes');
 
 
 // Ensure the uploads directory exists
@@ -133,6 +134,10 @@ app.use('/api/cost-estimation', finalcostestimationRoutes);
 app.use('/api/progress-billing',progressbillingRoutes );
 
 app.use('/api/dashboard', dashboardRoutes);
+
+
+app.use('api/incident-report', incidentreportRoutes);
+
 
 // ✅ Health Check Route
 app.get("/", (req, res) => {

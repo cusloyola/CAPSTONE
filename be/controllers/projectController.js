@@ -189,6 +189,7 @@ const deleteProject = async (req, res) => {
   }
 };
 
+
 const getAllProjects = (req, res, next) => {
   const query = `
    SELECT 

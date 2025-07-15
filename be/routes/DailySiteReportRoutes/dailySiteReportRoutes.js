@@ -5,7 +5,7 @@ const dailySiteReportController = require("../../controllers/DailySiteReports/da
 
 
 router.get('/getSiteReport',dailySiteReportController.getSiteDailyReportforSite);
-
+router.put('/updateSiteReport', dailySiteReportController.updateDailySiteReport);
 
 
 router.post('/submit', dailySiteReportController.submitDailySiteReport);

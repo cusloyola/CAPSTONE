@@ -1,8 +1,12 @@
 import React from "react";
+import ViewSiteReportModalUI from "./ViewSiteReportModalUI";
 
-const ViewSiteReportModal = () => {
-    return(
-        <h1>21</h1>
+const ViewSiteReportModal = ({ report, onClose }) => {
+    return (
+        <ViewSiteReportModalUI
+            report={report}
+            onClose={onClose}
+        />
     );
 };
 

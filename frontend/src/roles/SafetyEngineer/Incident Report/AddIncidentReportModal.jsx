@@ -1,115 +1,69 @@
-// AddIncidentReportModal.jsx
-import React, { useState, useRef, useEffect } from 'react';
-import dayjs from 'dayjs';
+import { selectRenderer } from 'handsontable/renderers';
+import React, { useState, useEffect, use } from 'react';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
-// Sample data for projects, including owner, project manager, and safety engineer
-// In a real application, this data would likely come from an API or a centralized source.
-const projectsData = [
-  {
-    name: 'Project Alpha',
-    owner: 'Alice Johnson',
-    projectManager: 'Bob Williams',
-    safetyEngineer: 'Charlie Davis',
-  },
-  {
-    name: 'Project Beta',
-    owner: 'David Brown',
-    projectManager: 'Eve Miller',
-    safetyEngineer: 'Frank White',
-  },
-  {
-    name: 'Project Gamma',
-    owner: 'Grace Lee',
-    projectManager: 'Henry Kim',
-    safetyEngineer: 'Ivy Green',
-  },
-];
-
-const AddIncidentReportModal = ({ onClose, onSaveNewReport }) => {
+const AddIncidentReportModal = () => {
+  const [projectList, setProjectList] = useState([]);
   const [selectedProjectName, setSelectedProjectName] = useState('');
-  const [reportDate, setReportDate] = useState(dayjs().format('YYYY-MM-DD'));
-  const [incidentSummary, setIncidentSummary] = useState(''); // Renamed from 'agenda'
   const [owner, setOwner] = useState('');
   const [projectManager, setProjectManager] = useState('');
   const [safetyEngineer, setSafetyEngineer] = useState('');
+  const user = JSON.parse(localStorage.getItem("user"));
+  const user_id = user?.id;
+  const user_name = user?.name;
 
-  const modalRef = useRef(null);
-
-  // Effect to automatically populate fields when a project is selected
   useEffect(() => {
-    const project = projectsData.find(p => p.name === selectedProjectName);
-    if (project) {
-      setOwner(project.owner);
-      setProjectManager(project.projectManager);
-      setSafetyEngineer(project.safetyEngineer);
-    } else {
-      // Clear fields if no project or "Select a project" is chosen
+    const fetchProject = async () => {
+      try {
+
+        const response = await fetch("http://localhost:5000/api/projects");
+        const data = await response.json();
+        setProjectList(data);
+      } catch (err) {
+        console.error("Failed to fetch projects", err);
+      };
+    };
+    fetchProject();
+  }, []);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user?.role === "Safety Engineer") {
+      setSafetyEngineer(user.name);
+    }
+  }, []);
+
+
+  useEffect(() => {
+    const selected = projectList.find(
+      (project) => project.project_name === selectedProjectName
+    );
+
+    if (selected) {
+      setOwner(selected.client_name || '');
+      setProjectManager(selected.projectManager || '');
+    }
+    else {
       setOwner('');
       setProjectManager('');
-      setSafetyEngineer('');
     }
-  }, [selectedProjectName]);
+  }, [selectedProjectName, projectList]);
 
-  const handleProjectSelectChange = (e) => {
-    setSelectedProjectName(e.target.value);
-  };
-
-  const handleAddReport = (e) => {
-    e.preventDefault();
-
-    if (!selectedProjectName || !reportDate || !incidentSummary.trim()) { // Updated validation
-      // Using a basic message box for user feedback instead of alert()
-      const messageBox = document.createElement('div');
-      messageBox.className = 'fixed inset-x-0 bottom-6 mx-auto bg-red-600 text-white px-6 py-3 rounded-lg shadow-xl z-50 flex items-center justify-center w-fit';
-      messageBox.textContent = 'Please fill out all required fields (Project Name, Report Date, Incident Summary).'; // Updated text
-      document.body.appendChild(messageBox);
-      setTimeout(() => document.body.removeChild(messageBox), 3000);
-      return;
-    }
-
-    // Construct the new report object
-    const newReport = {
-      report_id: Date.now(), // Simple unique ID
-      project_name: selectedProjectName,
-      report_date: reportDate,
-      owner: owner,
-      projectManager: projectManager,
-      safetyEngineer: safetyEngineer,
-      status: 'pending', // New reports are typically pending
-      reviewed_at: null,
-      // Changed 'description' to 'text' to match the IncidentReport component's expectation
-      activities: [{ text: incidentSummary, images: [] }], // Initial incident summary as first activity
-    };
-
-    console.log('Attempting to close modal and save report:', newReport); // Debug log
-    onSaveNewReport(newReport); // Pass the new report data to the parent
-    onClose(); // Close the modal
-  };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center overflow-y-auto modal z-[99999]">
-      <div
-        className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
-        onClick={onClose}
-      ></div>
+    <div className="fixed inset-0 flex items-center justify-center overflow-y-auto z-[99999]">
+      {/* Overlay */}
+      <div className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]" />
 
-      <div
-        ref={modalRef}
-        className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full shadow-xl z-10"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {/* Modal Box */}
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full shadow-xl z-10">
+        {/* Close Button */}
         <button
-          onClick={onClose}
           className="absolute right-3 top-3 z-20 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white sm:right-6 sm:top-6 sm:h-11 sm:w-11"
           aria-label="Close modal"
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
               fillRule="evenodd"
               clipRule="evenodd"
@@ -119,97 +73,109 @@ const AddIncidentReportModal = ({ onClose, onSaveNewReport }) => {
           </svg>
         </button>
 
-        <h2 className="text-xl font-semibold mb-4">Add New Incident Report</h2> {/* Updated text */}
+        {/* Title */}
+        <h2 className="text-xl font-semibold mb-4">Add New Incident Report</h2>
 
-        <form onSubmit={handleAddReport} className="space-y-4">
+        {/* Form (No functionality) */}
+        <form className="space-y-4">
           <div>
             <label className="block font-medium text-gray-700">Project Name</label>
             <select
               className="w-full border p-2 rounded-md focus:ring-blue-500 focus:border-blue-500"
               value={selectedProjectName}
-              onChange={handleProjectSelectChange}
-              required
+              onChange={(e) => setSelectedProjectName(e.target.value)}
             >
-              <option value="">-- Select a Project --</option>
-              {projectsData.map((project) => (
-                <option key={project.name} value={project.name}>
-                  {project.name}
-                </option>
-              ))}
+              <option value="">Select a Project</option>
+              {projectList
+                .filter((project) => project.status?.toLowerCase() === "in progress")
+                .map((project) => (
+                  <option key={project.project_id} value={project.project_name}>
+                    {project.project_name}
+                  </option>
+                ))}
             </select>
+
           </div>
 
+          {/* Report Date */}
           <div>
             <label className="block font-medium text-gray-700">Report Date</label>
-            <input
-              type="date"
-              className="w-full border p-2 rounded-md bg-gray-100 text-gray-800"
-              value={reportDate}
-              onChange={(e) => setReportDate(e.target.value)}
-              readOnly // Report date is automatically set for today's report
-              required
+            <DatePicker
+              minDate={new Date()}
+              dateFormat="yyyy-MM-dd"
+              className="w-full border border-gray-300 p-2 rounded"
+              placeholderText="Select report date"
+              wrapperClassName="w-full"
+
             />
           </div>
 
+          <div>
+            <label className="block font-medium text-gray-700">Subject</label>
+            <input
+              value={"Incident Report"}
+              className="w-full border p-2 rounded-md bg-gray-100 text-gray-800"
+              readOnly
+            />
+          </div>
+
+          {/* Owner */}
           <div>
             <label className="block font-medium text-gray-700">Owner</label>
             <input
               type="text"
-              className="w-full border p-2 rounded-md bg-gray-100 text-gray-800"
               value={owner}
+              className="w-full border p-2 rounded-md bg-gray-100 text-gray-800"
               readOnly
             />
           </div>
 
+          {/* Project Manager */}
           <div>
             <label className="block font-medium text-gray-700">Project Manager</label>
             <input
               type="text"
-              className="w-full border p-2 rounded-md bg-gray-100 text-gray-800"
               value={projectManager}
+
+              className="w-full border p-2 rounded-md bg-gray-100 text-gray-800"
               readOnly
             />
           </div>
 
+          {/* Safety Engineer */}
           <div>
             <label className="block font-medium text-gray-700">Safety Engineer</label>
             <input
               type="text"
+              value={user_name}
               className="w-full border p-2 rounded-md bg-gray-100 text-gray-800"
-              value={safetyEngineer}
               readOnly
             />
           </div>
 
+          {/* Incident Summary */}
           <div>
-            <label className="block font-medium text-gray-700">Incident Summary (Initial Detail)</label> {/* Updated label */}
+            <label className="block font-medium text-gray-700">
+              Incident Summary (Initial Detail)
+            </label>
             <textarea
               className="w-full border p-2 rounded-md focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
               rows={3}
-              placeholder="Describe the initial incident detail for this report" // Updated placeholder
-              value={incidentSummary} // Renamed state variable
-              onChange={(e) => setIncidentSummary(e.target.value)} // Renamed setter
-              required
+              placeholder="Describe the initial incident detail for this report"
             ></textarea>
-            {/* Displaying the incidentSummary value */}
-            {incidentSummary && (
-              <p className="mt-2 text-sm text-gray-600">
-                <strong>Current Incident Summary:</strong> {incidentSummary} {/* Updated text */}
-              </p>
-            )}
           </div>
 
+          {/* Buttons */}
           <div className="flex justify-end gap-2 pt-4">
             <button
               type="button"
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition duration-150 ease-in-out"
-              onClick={onClose}
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition"
             >
               Cancel
             </button>
             <button
-              type="submit"
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+              type="button"
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
             >
               Create Report
             </button>

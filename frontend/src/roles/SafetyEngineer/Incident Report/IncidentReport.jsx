@@ -140,39 +140,40 @@ const IncidentReport = () => {
   const formattedWeekRange = `${currentWeekStart.format('MMMM DD')} - ${currentWeekEnd.format('DD,YYYY')}`;
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-xl relative w-full max-w-[1200px] mx-auto font-sans">
+    <div className="p-6 bg-white rounded-lg shadow-xl relative w-full max-w-[1000px] mx-auto font-sans">
       {showAddReportForm && <AddIncidentReportModal onClose={() => setShowAddReportForm(false)} onSaveNewReport={handleSaveNewReport} />}
       {!showAddReportForm && (
         <>
           <div className="flex justify-between items-center mb-6 border-b-2 border-blue-500 pb-2">
-            <h2 className="text-3xl font-extrabold text-gray-900 text-left">INCIDENT REPORT</h2>
-            <button onClick={() => setShowAddReportForm(true)} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition duration-150 ease-in-out">+ ADD NEW INCIDENT REPORT</button>
+            <h2 className="text-3xl font-extrabold text-gray-900 text-left">Incident Report</h2>
+            <button onClick={() => setShowAddReportForm(true)} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition duration-150 ease-in-out">+ Add New Report</button>
           </div>
           <div className="flex flex-col items-center justify-center text-center mb-4">
             <div className="flex items-center space-x-4">
  <img
                 src="/images/assets/drl_construction.png"
                 alt="DRL Construction Logo"
-                className="h-20 w-auto" // Adjust size as needed
+                className="h-30 w-auto mt-6" // Adjust size as needed
               />            
             </div>
           </div>
-          <div className="text-center mb-6">
-            <p className="text-2xl font-bold text-gray-800">INCIDENT REPORT</p>
-            <p className="text-lg text-gray-600 font-semibold">{formattedWeekRange}</p>
-          </div>
+        
 
           {currentActiveReport ? (
             <>
-              <div className="space-y-2 text-gray-800 text-lg mb-6">
-                <p><strong>PROJECT NAME:</strong> <span className="font-semibold">{currentActiveReport.project_name}</span></p>
-                <p><strong>INCIDENT SUMMARY:</strong> <span className="font-semibold">{currentActiveReport.activities && currentActiveReport.activities.length > 0 ? currentActiveReport.activities[0].text : 'N/A'}</span></p>
-                <p><strong>OWNER:</strong> <span className="font-semibold">{currentActiveReport.owner}</span></p>
-                <p><strong>PROJECT MANAGER:</strong> <span className="font-semibold">{currentActiveReport.projectManager}</span></p>
-                <p><strong>SAFETY ENGINEER:</strong> <span className="font-semibold">{currentActiveReport.safetyEngineer}</span></p>
+              <div className="space-y-2 text-gray-800 text-lg mb-6 mt-12">
+                <p><strong>Project Name:</strong> <span className="font-semibold">{currentActiveReport.project_name}</span></p>
+                <p><strong>Location:</strong> <span className="font-semibold">{currentActiveReport.activities && currentActiveReport.activities.length > 0 ? currentActiveReport.activities[0].text : 'N/A'}</span></p>
+      <p><strong>Subject:</strong> <span className="font-semibold">{currentActiveReport.project_name}</span></p>
+                <p><strong>Report Date:</strong> <span className="font-semibold">{currentActiveReport.activities && currentActiveReport.activities.length > 0 ? currentActiveReport.activities[0].text : 'N/A'}</span></p>
+
+                {/* <p><strong>Incident Summary:</strong> <span className="font-semibold">{currentActiveReport.activities && currentActiveReport.activities.length > 0 ? currentActiveReport.activities[0].text : 'N/A'}</span></p> */}
+                <p><strong>Owner:</strong> <span className="font-semibold">{currentActiveReport.owner}</span></p>
+                <p><strong>Project Manager:</strong> <span className="font-semibold">{currentActiveReport.projectManager}</span></p>
+                <p><strong>Safety Engineer:</strong> <span className="font-semibold">{currentActiveReport.safetyEngineer}</span></p>
               </div>
 
-              <ol className="flex justify-center items-center w-full p-4 space-x-4 text-lg sm:text-m font-semibold text-center text-gray-700 bg-white border border-gray-200 rounded-lg shadow mb-6 overflow-x-auto">
+              {/* <ol className="flex justify-center items-center w-full p-4 space-x-4 text-lg sm:text-m font-semibold text-center text-gray-700 bg-white border border-gray-200 rounded-lg shadow mb-6 overflow-x-auto">
                 {daysOfWeek.map((day, index) => {
                   const isToday = index === currentDayIndex;
                   const isActiveDay = day === activeDay;
@@ -184,7 +185,7 @@ const IncidentReport = () => {
                     </li>
                   );
                 })}
-              </ol>
+              </ol> */}
 
               <button className="w-full mt-6 mb-6 py-3 bg-blue-700 text-white rounded-lg shadow-lg font-bold text-lg hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900 transition duration-150 ease-in-out">REPORT FOR {dayjs(currentActiveReport.report_date).format('MMMM D,YYYY - dddd').toUpperCase()}</button>
 

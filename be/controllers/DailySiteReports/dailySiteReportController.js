@@ -33,7 +33,6 @@ const getSiteDailyReportforSite = (req, res) => {
 
     const parsedResults = results.map((r) => ({
       ...r,
-      activities: safeJsonParse(r.activities),
       manpower: safeJsonParse(r.manpower),
       selected_equipment: safeJsonParse(r.selected_equipment),
     }));
@@ -71,20 +70,6 @@ const submitDailySiteReport = (req, res) => {
     notes, 
     prepared_by_user_id  
   } = req.body;
-
-  console.log("Data to be inserted into database:", {
-    dailysite_report_id, 
-    report_date, 
-    project_id, 
-    activities, 
-    weather_am, 
-    weather_pm, 
-    manpower, 
-    selected_equipment, 
-    visitors, 
-    notes, 
-    prepared_by_user_id  
-  });
 
   const query = `
     INSERT INTO daily_site_reports (
@@ -136,10 +121,69 @@ const submitDailySiteReport = (req, res) => {
   });
 };
 
+const updateDailySiteReport = (req, res) => {  
+  const { 
+    dailysite_report_id, 
+    report_date, 
+    activities, 
+    weather_am, 
+    weather_pm, 
+    manpower, 
+    selected_equipment, 
+    visitors, 
+    notes, 
+    prepared_by_user_id,
+    project_id,
+  } = req.body;
 
+  const query = `
+    UPDATE daily_site_reports
+    SET
+      report_date = ?, 
+      activities = ?, 
+      weather_am = ?, 
+      weather_pm = ?, 
+      manpower = ?, 
+      selected_equipment = ?, 
+      visitors = ?, 
+      notes = ?, 
+      prepared_by_user_id = ?, 
+      project_id = ?
+    WHERE
+      dailysite_report_id = ? AND status = 'pending'
+  `;
+
+  const values = [
+    report_date, 
+    activities, 
+    weather_am, 
+    weather_pm, 
+    JSON.stringify(manpower), 
+    JSON.stringify(selected_equipment), 
+    visitors, 
+    notes, 
+    prepared_by_user_id,
+    project_id,
+    dailysite_report_id
+  ];
+
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error("❌ Failed to update daily site report:", err);
+      return res.status(500).json({ message: "Database error", error: err });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(400).json({ message: "Update failed. Report may not exist or is not in 'pending' status." });
+    }
+
+    return res.json({ message: "✅ Update successful" });
+  });
+};
 
 
 module.exports = {
     getSiteDailyReportforSite,
-     submitDailySiteReport
+     submitDailySiteReport,
+     updateDailySiteReport 
 };
