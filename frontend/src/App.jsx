@@ -22,18 +22,12 @@ import ViewSafetyReportAdmin from "./roles/Admin/Safety Report/SafetyReportsMana
 import ViewIncidentReportAdmin from "./roles/Admin/Incident Report/ViewIncidentReportAdmin.jsx";
 
 // site
-
 import SiteEngineerDashboard from "./roles/SiteEngineer/Site Engineer Dashboard/SiteEngineerDashboard.jsx";
 import DailySiteReport from "./roles/SiteEngineer/Site Progress Tracking/DailySiteReport.jsx";
-
 import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
 
-
-
-
 // safety
-// import WeeklySafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx";
 import SafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx";
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 import IncidentReport from "./roles/SafetyEngineer/Incident Report/IncidentReport.jsx";
@@ -90,7 +84,6 @@ import QuantityTakeOffTable from "./roles/Admin/ProjectEstimation/QuantityTakeOf
 import MaterialUnitCost from "./roles/Admin/ProjectEstimation/MaterialUnitCost/MUCCrud/MaterialUnitCost.jsx";
 import LaborUnitCost from "./roles/Admin/ProjectEstimation/LaborUnitCost/LUCCrud/LaborUnitCost.jsx";
 
-
 import FinalCostEstimation from "./roles/Admin/ProjectEstimation/FinalCostEstimation/FinalCostEstimation.jsx";
 
 import AllPendingProjects from "./roles/Admin/Project Management/ProjectTable/AllPendingProjects.jsx";
@@ -107,12 +100,8 @@ import ProgressBillingActual from "./roles/Admin/Progress Billing/Progress Billi
 import ProgressBillingPage from "./roles/Admin/Progress Billing/ProgressBillingPage.jsx";
 import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
-
-
-
 import WeeklySafetyReport from "./roles/Admin/Safety Report/Weekly Safety Report/WeeklySafetyReport.jsx";
 import MonthlySafetyReport from "./roles/Admin/Safety Report/Monthly Safety Report/MonthlySafetyReport.jsx";
-
 
 import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
@@ -123,7 +112,6 @@ import UploadDocument from "./roles/Admin/File Management/UploadDocument.jsx";
 import SubFolderPage from "./roles/Admin/File Management/SubFolderPage.jsx";
 import Task from "./roles/Admin/Task Management/TaskSchedule.jsx";
 
-// import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 
 export default function App() {
   return (
@@ -206,8 +194,6 @@ export default function App() {
               </Route>
 
 
-
-
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work" element={<ScopeOfWorks />} />
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables" element={<SOWTables />} />
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowItems" element={<SowItems />} />
@@ -244,7 +230,6 @@ export default function App() {
               <Route path="/SafetyReport" element={<SafetyReport />} />
               <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
 
-              <Route path="/IncidentReport" element={<IncidentReport />} />
               <Route path="/IncidentReport" element={<IncidentReport />} />
               <Route path="/ViewHistoryIncidentReport" element={<ViewHistoryIncidentReport />} />
               <Route path="/InspectionChecklistReport" element={<InspectionChecklistReport />} />

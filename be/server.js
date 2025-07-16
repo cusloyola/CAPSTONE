@@ -2,7 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require('path');
-const fs = require('fs');  // Add this line at the top of your file
+const fs = require('fs'); // Add this line at the top of your file
 const {verifyToken} = require('./middleware/authMiddleware'); // Correct way for default export
 
 const db = require("./config/db"); // Ensure DB connection is initialized
@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data
 
 // ✅ Request logging middleware
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`); 
+    console.log(`${req.method} ${req.url}`);
     next();
 });
 
@@ -46,13 +46,13 @@ const bomRoutes = require("./routes/bomRoutes");
 const dailySiteReportRoutes = require("./routes/DailySiteReportRoutes/dailySiteReportRoutes");
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
-const clientRoutes = require("./routes/clientRoutes"); 
+const clientRoutes = require("./routes/clientRoutes");
 
 const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 
-const fileRoutes = require('./routes/fileRoutes'); 
+const fileRoutes = require('./routes/fileRoutes');
 
 const proposalRoutes = require('./routes/proposalRoutes');
 
@@ -76,24 +76,27 @@ const dashboardRoutes = require('./routes/DashboardRoutes/dashboardRoutes');
 const incidentreportRoutes = require('./routes/IncidentReportsRoutes/incidentreportRoutes');
 
 
+const projectInfoRoutes = require('./routes/ProjectInfoRoutes/projectInfoRoutes');
+
+
 // Ensure the uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir); // Create uploads folder if it doesn't exist
+    fs.mkdirSync(uploadDir); // Create uploads folder if it doesn't exist
 }
 
 
 app.use('/api/work-types', sowWorkTypesRoutes);
 
 
-app.use("/api", employeeManagementRoutes); 
-app.use("/api/request-materials", requestMaterialRoutes); 
+app.use("/api", employeeManagementRoutes);
+app.use("/api/request-materials", requestMaterialRoutes);
 app.use("/api/user-accounts", userManagementController);
 app.use("/api/inventory-information", inventoryInformationRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/inventory", inventoryRoutes);
-app.use("/api/reports", reportsRoutes); 
+app.use("/api/reports", reportsRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
 app.use('/api/projects', projectRoutes);
@@ -110,15 +113,15 @@ app.use("/api/clients", clientRoutes);
 
 app.use("/api/subclients", subclientRoutes);
 app.use("/api/folders", folderRoutes);
-app.use('/api/tasks', taskRoutes); // now your endpoints will start with /api/tasks
+app.use('/api/tasks', taskRoutes); 
 app.use("/api/documents", documentRoutes);
 
-app.use("/api/files", fileRoutes); 
+app.use("/api/files", fileRoutes);
 
 
 app.use("/api/proposals", proposalRoutes);
 
-app.use("/api/sowproposal", sowproposalRoutes); 
+app.use("/api/sowproposal", sowproposalRoutes);
 
 app.use("/api/qto", quantitytakeoffRoutes);
 
@@ -137,6 +140,9 @@ app.use('/api/dashboard', dashboardRoutes);
 
 
 app.use('api/incident-report', incidentreportRoutes);
+
+
+app.use('/api/project-info', projectInfoRoutes);
 
 
 // ✅ Health Check Route
