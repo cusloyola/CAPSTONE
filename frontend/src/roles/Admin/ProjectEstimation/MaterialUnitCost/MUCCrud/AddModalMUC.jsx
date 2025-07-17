@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import QtoParentList from "../../QuantityTakeOff/QtoParentList";
-import MUCInputForm from "../MUCInputForm";
+import QtoChildSelector from "../../QuantityTakeOff/QtoChildSelector";
+import MtoInput from "../MaterialTakeOff/MtoInput"; // Ensure correct import path
 
 const QTO_API_VOLUME = "http://localhost:5000/api/sowproposal/sow-work-items/sow-table/";
 
@@ -9,30 +10,41 @@ const AddModalMUC = ({ proposal_id, onClose, onBack, onDone }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedParent, setSelectedParent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1); // 1 = list, 2 = MUC input
-
   const [categoryFilter, setCategoryFilter] = useState("");
 
-  useEffect(() => {
-    console.log("🚀 Fetching SOW for proposal_id:", proposal_id);
+  function buildTree(items) {
+    const map = {};
+    const roots = [];
 
+    items.forEach(item => {
+      map[item.work_item_id] = { ...item, children: [] };
+    });
+
+    items.forEach(item => {
+      if (item.parent_id && map[item.parent_id]) {
+        map[item.parent_id].children.push(map[item.work_item_id]);
+      } else {
+        roots.push(map[item.work_item_id]);
+      }
+    });
+    return roots;
+  }
+
+  useEffect(() => {
     fetch(`${QTO_API_VOLUME}?proposal_id=${proposal_id}`)
       .then(res => res.json())
       .then(data => {
-        console.log("📦 API Response:", data);
         const { workItems } = data;
-
         if (Array.isArray(workItems)) {
-          // Only show items that are top-level (no parent_id)
-          const parentsOnly = workItems.filter(item => !item.parent_id);
-          setWorkItems(parentsOnly);
+          const tree = buildTree(workItems);
+          setWorkItems(tree);
         } else {
-          console.error("❌ Expected an array for workItems, got:", workItems);
           setWorkItems([]);
         }
       })
       .catch(err => {
-        console.error("❌ Fetch error:", err);
-        setWorkItems([]);
+        console.error("Error fetching work items:", err);
+        setWorkItems([]); 
       });
   }, [proposal_id]);
 
@@ -42,7 +54,6 @@ const AddModalMUC = ({ proposal_id, onClose, onBack, onDone }) => {
         className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
         onClick={onClose}
       ></div>
-
       <div
         className="relative bg-white dark:bg-gray-800 rounded-2xl p-8 w-[1300px] h-[700px] shadow-xl z-10 flex flex-col"
         onClick={e => e.stopPropagation()}
@@ -62,25 +73,41 @@ const AddModalMUC = ({ proposal_id, onClose, onBack, onDone }) => {
             setSearchTerm={setSearchTerm}
             categoryFilter={categoryFilter}
             setCategoryFilter={setCategoryFilter}
-            onSelectParent={(parent) => {
-              setSelectedParent(parent);
+            onSelectParent={(parentItemFromList) => {
+              const fullParent = {
+                ...workItems.find(item => item.work_item_id === parentItemFromList.work_item_id),
+                proposal_id: proposal_id 
+              };
+              setSelectedParent(fullParent);
               setCurrentPage(2);
-              console.log("📌 Selected parent for MUC input:", parent);
             }}
           />
         )}
 
         {currentPage === 2 && selectedParent && (
-          <MUCInputForm
+          <QtoChildSelector
+            mode="muc"
             parent={selectedParent}
+            setParent={setSelectedParent} // QtoChildSelector can modify selectedParent (e.g., set 'checked')
             onBack={() => setCurrentPage(1)}
-            onDone={onClose}
+            onDone={() => {
+              setCurrentPage(3);
+            }}
+            floors={[]}
+            proposal_id={proposal_id} // QtoChildSelector might also need this, good to pass
           />
         )}
 
-
-
-
+        {currentPage === 3 && selectedParent && (
+          <>
+            {console.log("Passing to MtoInput, selectedParent with proposal_id:", selectedParent)}
+            <MtoInput
+              parent={selectedParent}
+              onBack={() => setCurrentPage(2)} // Go back to child selection, not parent list
+              onDone={onClose}
+            />
+          </>
+        )}
       </div>
     </div>
   );

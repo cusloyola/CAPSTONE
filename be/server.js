@@ -37,7 +37,13 @@ const userManagementController = require("./routes/userManagementRoutes")
 const eventRoutes = require('./routes/eventRoutes');
 const reportsRoutes = require("./routes/reportsRoutes");
 const projectRoutes = require('./routes/projectRoutes');
+
 const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
+const materialtakeoffRoutes = require('./routes/MaterialTakeOffRoutes/materialtakeoffRoutes');
+
+
+
+
 const employeeManagementRoutes = require("./routes/employeeManagementRoutes");
 
 const taskRoutes = require('./routes/taskRoutes');
@@ -69,7 +75,6 @@ const finalcostestimationRoutes = require('./routes/FinalCostEstimationRoutes/fi
 
 
 const progressbillingRoutes = require('./routes/ProgressBillingRoutes/progressbillingRoutes');
-const checklistRoutes = require('./routes/checkListRoutes');
 
 
 const dashboardRoutes = require('./routes/DashboardRoutes/dashboardRoutes');
@@ -108,7 +113,6 @@ app.use("/api/bom", bomRoutes);
 
 app.use("/api/daily-site-report", dailySiteReportRoutes);
 
-app.use('/api/checklist', checklistRoutes);
 
 app.use("/api/admin-site-reports", adminSiteReport);
 app.use("/api/clients", clientRoutes);
@@ -133,6 +137,8 @@ app.use('/api/rebar', rebarRoutes);
 app.use('/api/laborunitcost', laborunitcostRoutes);
 
 app.use('/api/materialunitcost', materialunitcostRoutes);
+
+app.use('/api/mto', materialtakeoffRoutes);
 
 app.use('/api/cost-estimation', finalcostestimationRoutes);
 

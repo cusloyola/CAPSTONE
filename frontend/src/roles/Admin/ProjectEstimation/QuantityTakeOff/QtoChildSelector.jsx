@@ -1,9 +1,17 @@
 import React, { useState } from "react";
 import QtoChildList from "./QtoChildList";
 import QtoDimensionInput from "./QTO Dimensions/QtoInputDimensions";
-import RebarInputDimensions from "./Rebar Dimensions/RebarInputDimensions"; // ✅ New import
+import RebarInputDimensions from "./Rebar Dimensions/RebarInputDimensions";
 
-const QtoChildSelector = ({ parent, setParent, onBack, onDone, floors, proposal_id }) => {
+const QtoChildSelector = ({
+  mode = "qto", // 👈 default is QTO
+  parent,
+  setParent,
+  onBack,
+  onDone,
+  floors,
+  proposal_id
+}) => {
   const [currentPage, setCurrentPage] = useState("childList");
 
   const toggleChildSelection = (childId) => {
@@ -15,12 +23,10 @@ const QtoChildSelector = ({ parent, setParent, onBack, onDone, floors, proposal_
           : child
       )
     };
-    console.log("🔄 Child selection toggled:", childId);
     setParent(updated);
   };
 
   const updateDimension = (childId, field, value) => {
-    console.log("🛠 Updating dimension:", { childId, field, value });
     setParent(prev => ({
       ...prev,
       children: prev.children.map(child =>
@@ -31,42 +37,37 @@ const QtoChildSelector = ({ parent, setParent, onBack, onDone, floors, proposal_
     }));
   };
 
-  const goToDimensions = () => {
-    console.log("📌 goToDimensions called with parent:", parent);
+  const goToNext = () => {
     const selectedItems = parent.children?.filter(child => child.checked) || [];
     if (selectedItems.length === 0) {
       alert("Please select at least one sub-scope item.");
       return;
     }
 
-    console.log("✅ Selected children:", selectedItems);
-    setCurrentPage("dimensionList");
+    if (mode === "muc") {
+      // ✅ Skip dimension inputs for MUC
+      onDone();
+    } else {
+      setCurrentPage("dimensionList");
+    }
   };
 
   const selectedItems = parent.children?.filter(child => child.checked) || [];
   const hasRebar = selectedItems.some(child => child.quantity_type === "rebar");
   const hasQTO = selectedItems.some(child => child.quantity_type === "qto");
 
-  console.log("🧪 Render State:", {
-    currentPage,
-    selectedItems,
-    hasRebar,
-    hasQTO,
-    parent
-  });
-
   return (
     <>
       {currentPage === "childList" && (
         <QtoChildList
           childItems={parent.children}
-          onAddChildren={goToDimensions}
+          onAddChildren={goToNext}
           onBack={onBack}
           toggleChildSelection={toggleChildSelection}
         />
       )}
 
-      {currentPage === "dimensionList" && (
+      {currentPage === "dimensionList" && mode === "qto" && (
         <>
           {hasQTO && (
             <QtoDimensionInput
@@ -85,8 +86,7 @@ const QtoChildSelector = ({ parent, setParent, onBack, onDone, floors, proposal_
               updateChildDimensions={updateDimension}
               onBack={() => setCurrentPage("childList")}
               onDone={onDone}
-                            floors={floors || []}
-
+              floors={floors || []}
             />
           )}
 
