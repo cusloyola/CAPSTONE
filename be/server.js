@@ -69,6 +69,7 @@ const finalcostestimationRoutes = require('./routes/FinalCostEstimationRoutes/fi
 
 
 const progressbillingRoutes = require('./routes/ProgressBillingRoutes/progressbillingRoutes');
+const checklistRoutes = require('./routes/checkListRoutes');
 
 
 const dashboardRoutes = require('./routes/DashboardRoutes/dashboardRoutes');
@@ -107,6 +108,7 @@ app.use("/api/bom", bomRoutes);
 
 app.use("/api/daily-site-report", dailySiteReportRoutes);
 
+app.use('/api/checklist', checklistRoutes);
 
 app.use("/api/admin-site-reports", adminSiteReport);
 app.use("/api/clients", clientRoutes);

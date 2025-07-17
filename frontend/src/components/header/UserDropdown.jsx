@@ -13,7 +13,6 @@ export default function UserDropdown() {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      console.log("User object:", parsedUser); // <-- This will show the user object in the console
       setUser(parsedUser);
     }
   }, []);
