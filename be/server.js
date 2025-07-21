@@ -52,7 +52,7 @@ const bomRoutes = require("./routes/bomRoutes");
 const dailySiteReportRoutes = require("./routes/DailySiteReportRoutes/dailySiteReportRoutes");
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
-const clientRoutes = require("./routes/clientRoutes");
+const clientRoutes = require("./routes/clientRoutes"); // Existing client routes
 
 const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
@@ -83,6 +83,12 @@ const incidentreportRoutes = require('./routes/IncidentReportsRoutes/incidentrep
 
 
 const projectInfoRoutes = require('./routes/ProjectInfoRoutes/projectInfoRoutes');
+
+// Import the clientInfoRoutes for the /api/client-info endpoint
+const clientInfoRoutes = require('./routes/ProjectInfoRoutes/clientInfoRoutes');
+
+// NEW: Import the floorInfoRoutes for the /api/floor-info endpoint
+const floorInfoRoutes = require('./routes/ProjectInfoRoutes/floorsInfoRoutes');
 
 
 // Ensure the uploads directory exists
@@ -115,11 +121,11 @@ app.use("/api/daily-site-report", dailySiteReportRoutes);
 
 
 app.use("/api/admin-site-reports", adminSiteReport);
-app.use("/api/clients", clientRoutes);
+app.use("/api/clients", clientRoutes); // Existing client routes mapping
 
 app.use("/api/subclients", subclientRoutes);
 app.use("/api/folders", folderRoutes);
-app.use('/api/tasks', taskRoutes); 
+app.use('/api/tasks', taskRoutes);
 app.use("/api/documents", documentRoutes);
 
 app.use("/api/files", fileRoutes);
@@ -147,10 +153,16 @@ app.use('/api/progress-billing',progressbillingRoutes );
 app.use('/api/dashboard', dashboardRoutes);
 
 
-app.use('api/incident-report', incidentreportRoutes);
+app.use('/api/incident-report', incidentreportRoutes);
 
 
 app.use('/api/project-info', projectInfoRoutes);
+
+// Use the clientInfoRoutes for the /api/client-info endpoint
+app.use('/api/client-info', clientInfoRoutes);
+
+// NEW: Use the floorInfoRoutes for the /api/floor-info endpoint
+app.use('/api/floor-info', floorInfoRoutes);
 
 
 // ✅ Health Check Route
