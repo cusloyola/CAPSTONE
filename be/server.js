@@ -65,7 +65,7 @@ const proposalRoutes = require('./routes/proposalRoutes');
 const quantitytakeoffRoutes = require('./routes/QuantityTakeOffRoutes/quantitytakeoffRoutes');
 
 const rebarRoutes = require('./routes/Rebar/rebarRoutes');
-
+const rebarMaterialsRoutes = require('./routes/Rebar/rebarMaterialsRoutes');
 
 const laborunitcostRoutes = require('./routes/LaborUnitCostRoutes/laborunitcostRoutes');
 
@@ -100,7 +100,7 @@ if (!fs.existsSync(uploadDir)) {
 
 app.use('/api/work-types', sowWorkTypesRoutes);
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+
 app.use("/api", employeeManagementRoutes);
 app.use("/api/request-materials", requestMaterialRoutes);
 app.use("/api/user-accounts", userManagementController);
@@ -139,6 +139,8 @@ app.use("/api/qto", quantitytakeoffRoutes);
 
 
 app.use('/api/rebar', rebarRoutes);
+app.use('/api/rebar-details', rebarMaterialsRoutes);
+
 
 app.use('/api/laborunitcost', laborunitcostRoutes);
 

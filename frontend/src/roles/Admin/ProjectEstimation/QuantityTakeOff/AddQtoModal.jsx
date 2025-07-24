@@ -6,7 +6,7 @@ import RebarInputDimensions from "./Rebar Dimensions/RebarInputDimensions";
 
 const QTO_API_VOLUME = "http://localhost:5000/api/sowproposal/sow-work-items/sow-table/";
 
-const AddQtoModal = ({ proposal_id, onClose }) => {
+const AddQtoModal = ({ proposal_id, project_id, onClose }) => {
   const [workItems, setWorkItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -15,31 +15,43 @@ const AddQtoModal = ({ proposal_id, onClose }) => {
   const [floors, setFloors] = useState([]);
 
   useEffect(() => {
-    fetch(`${QTO_API_VOLUME}?proposal_id=${proposal_id}`)
-      .then(res => res.json())
-      .then(data => {
-        const { workItems, floors } = data;
+  // 1. Fetch SOW work items
+  fetch(`${QTO_API_VOLUME}?proposal_id=${proposal_id}`)
+    .then(res => res.json())
+    .then(data => {
+      const { workItems } = data;
 
-        if (Array.isArray(workItems)) {
-          const tree = buildTree(workItems);
-          setWorkItems(tree);
-        } else {
-          console.error("Expected workItems to be array but got:", workItems);
-          setWorkItems([]);
-        }
-
-        if (Array.isArray(floors) && floors.length > 0) {
-          setFloors(floors);
-        } else {
-          setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching SOW table:", err);
+      if (Array.isArray(workItems)) {
+        const tree = buildTree(workItems);
+        setWorkItems(tree);
+      } else {
+        console.error("Expected workItems to be array but got:", workItems);
         setWorkItems([]);
+      }
+    })
+    .catch(err => {
+      console.error("❌ Error fetching SOW work items:", err);
+      setWorkItems([]);
+    });
+
+  // 2. Fetch floors from /api/projects/floors
+fetch(`http://localhost:5000/api/projects/floors?project_id=${project_id}`)
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data.data) && data.data.length > 0) {
+        console.log("✅ Fetched project floors:", data.data);
+        setFloors(data.data);
+      } else {
+        console.warn("⚠️ No floors returned, using default.");
         setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
-      });
-  }, [proposal_id]);
+      }
+    })
+    .catch(err => {
+      console.error("❌ Error fetching floors:", err);
+      setFloors([{ floor_id: "default", floor_code: "Ground Floor" }]);
+    });
+}, [proposal_id]);
+
 
   function buildTree(items) {
     const map = {};
@@ -167,7 +179,6 @@ const AddQtoModal = ({ proposal_id, onClose }) => {
     setParent={setSelectedParent}
     onBack={() => setCurrentPage(1)}
     onDone={() => {
-      // ✅ Jump to page 3 directly after children selected
       setCurrentPage(3);
     }}
     floors={floors}

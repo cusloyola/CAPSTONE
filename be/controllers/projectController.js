@@ -219,18 +219,31 @@ JOIN project_categories pc ON p.category_id = pc.category_id
 
 
 
-
 const getProjectFloors = (req, res) => {
-  const sql = `SELECT floor_id, floor_code, floor_label FROM project_floors`;
+  const { project_id } = req.query;
 
-  db.query(sql, (err, results) => {
+  if (!project_id) {
+    return res.status(400).json({ message: "Missing project_id in query" });
+  }
+
+  const sql = `
+    SELECT floor_id, floor_code, floor_label 
+    FROM project_floors 
+    WHERE project_id = ?`;
+
+  db.query(sql, [project_id], (err, results) => {
     if (err) {
-      console.error("Failed to fetch project floors", err);
+      console.error("❌ Failed to fetch project floors:", err);
       return res.status(500).json({ message: "Server Error" });
     }
-    return res.status(200).json({ message: "Project floors fetched successfully", data: results });
-  })
+
+    return res.status(200).json({
+      message: "✅ Project floors fetched successfully",
+      data: results,
+    });
+  });
 };
+
 
 const getprojectCategories = (req,res) => {
   const sql = 

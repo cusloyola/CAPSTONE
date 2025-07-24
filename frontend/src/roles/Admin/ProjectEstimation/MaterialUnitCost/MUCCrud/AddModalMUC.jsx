@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import QtoParentList from "../../QuantityTakeOff/QtoParentList";
 import QtoChildSelector from "../../QuantityTakeOff/QtoChildSelector";
-import MtoInput from "../MaterialTakeOff/MtoInput"; // Ensure correct import path
+import MtoInput from "../MaterialTakeOff/MtoInput";
+import MtoRebarInput from "../MaterialTakeOff/MtoRebarInput";
+
 
 const QTO_API_VOLUME = "http://localhost:5000/api/sowproposal/sow-work-items/sow-table/";
 
@@ -11,6 +13,7 @@ const AddModalMUC = ({ proposal_id, onClose, onBack, onDone }) => {
   const [selectedParent, setSelectedParent] = useState(null);
   const [currentPage, setCurrentPage] = useState(1); // 1 = list, 2 = MUC input
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [previousPage, setPreviousPage] = useState(null);
 
   function buildTree(items) {
     const map = {};
@@ -44,7 +47,7 @@ const AddModalMUC = ({ proposal_id, onClose, onBack, onDone }) => {
       })
       .catch(err => {
         console.error("Error fetching work items:", err);
-        setWorkItems([]); 
+        setWorkItems([]);
       });
   }, [proposal_id]);
 
@@ -76,12 +79,23 @@ const AddModalMUC = ({ proposal_id, onClose, onBack, onDone }) => {
             onSelectParent={(parentItemFromList) => {
               const fullParent = {
                 ...workItems.find(item => item.work_item_id === parentItemFromList.work_item_id),
-                proposal_id: proposal_id 
+                proposal_id: proposal_id
               };
+
               setSelectedParent(fullParent);
-              setCurrentPage(2);
+
+              if (fullParent.compute_type === "rebar") {
+                setPreviousPage(1);  // or whatever page you want to go back to
+                setCurrentPage(4);
+
+              } else {
+                setCurrentPage(2);
+              }
             }}
+
           />
+
+
         )}
 
         {currentPage === 2 && selectedParent && (
@@ -98,16 +112,28 @@ const AddModalMUC = ({ proposal_id, onClose, onBack, onDone }) => {
           />
         )}
 
+
         {currentPage === 3 && selectedParent && (
-          <>
-            {console.log("Passing to MtoInput, selectedParent with proposal_id:", selectedParent)}
-            <MtoInput
-              parent={selectedParent}
-              onBack={() => setCurrentPage(2)} // Go back to child selection, not parent list
-              onDone={onClose}
-            />
-          </>
+          <MtoInput
+            parent={selectedParent}
+            onBack={() => setCurrentPage(2)}
+            onDone={onClose}
+          />
         )}
+
+        {currentPage === 4 && selectedParent && (
+          <MtoRebarInput
+            parent={selectedParent}
+            onBack={() => setCurrentPage(previousPage)} // ✅ Pass correct onBack
+            onDone={onClose}
+          />
+        )}
+
+
+
+
+
+
       </div>
     </div>
   );

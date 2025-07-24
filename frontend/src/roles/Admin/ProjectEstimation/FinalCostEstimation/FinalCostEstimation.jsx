@@ -8,16 +8,47 @@ const FinalCostEstimation = () => {
     const [costData, setCostData] = useState([]);
     const [showExport, setShowExport] = useState(false);
 
-    const fetchCostData = async () => {
-        try {
-            const res = await fetch(`http://localhost:5000/api/cost-estimation/proposal/${proposal_id}/final-cost`);
-            if (!res.ok) throw new Error("Failed to fetch cost data.");
-            const data = await res.json();
-            setCostData(data);
-        } catch (err) {
-            console.error("Error fetching cost data:", err);
-        }
-    };
+  const fetchCostData = async () => {
+  try {
+    const res = await fetch(`http://localhost:5000/api/cost-estimation/proposal/${proposal_id}/final-cost`);
+    if (!res.ok) throw new Error("Failed to fetch cost data.");
+    const data = await res.json();
+
+    const adjusted = data.map((row) => {
+      const quantity = parseFloat(row.quantity) || 0;
+      const laborUC = parseFloat(row.labor_uc) || 0;
+      const laborAmount = laborUC * quantity;
+
+      // If MTO total exists, override material only
+      if (row.mto_total_cost !== null && !isNaN(row.mto_total_cost)) {
+        const materialAmount = parseFloat(row.mto_total_cost);
+        const materialUC = quantity ? materialAmount / quantity : 0;
+
+        return {
+          ...row,
+          material_amount: materialAmount,
+          material_uc: materialUC,
+          labor_amount: laborAmount,
+          labor_uc: laborUC,
+          total_amount: materialAmount + laborAmount,
+        };
+      }
+
+      // Default fallback
+      return {
+        ...row,
+        labor_amount: laborAmount,
+        labor_uc: laborUC,
+        total_amount: (parseFloat(row.material_amount) || 0) + laborAmount,
+      };
+    });
+
+    setCostData(adjusted);
+  } catch (err) {
+    console.error("Error fetching cost data:", err);
+  }
+};
+
 
     useEffect(() => {
         fetchCostData();

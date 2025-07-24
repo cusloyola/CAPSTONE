@@ -13,7 +13,7 @@ import AddAllowanceQTOModal from './AddAllowanceQTOModal';
 const QTO_DIMENSION_API = 'http://localhost:5000/api/qto';
 
 const GeneralDimension = () => {
-    const { proposal_id } = useParams();
+    const { proposal_id, project_id } = useParams();
     const [nodes, setNodes] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
@@ -276,9 +276,11 @@ const GeneralDimension = () => {
             {showAddModal && (
                 <AddQtoModal
                     proposal_id={proposal_id}
+                    project_id={project_id}
                     onClose={() => setShowAddModal(false)}
                     onSelectItem={(items) => setSelectedItems((prev) => [...prev, ...items])}
                 />
+
             )}
 
             <EditQTOModal

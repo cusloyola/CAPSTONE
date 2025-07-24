@@ -155,6 +155,7 @@ const RebarInputDimensions = ({
       </div>
     );
   }
+console.log("Floors passed into RebarInputDimensions:", floors);
 
   
 
