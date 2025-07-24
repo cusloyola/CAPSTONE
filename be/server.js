@@ -100,7 +100,7 @@ if (!fs.existsSync(uploadDir)) {
 
 app.use('/api/work-types', sowWorkTypesRoutes);
 
-
+app.use(cors({ origin: 'http://localhost:5173' }));
 app.use("/api", employeeManagementRoutes);
 app.use("/api/request-materials", requestMaterialRoutes);
 app.use("/api/user-accounts", userManagementController);

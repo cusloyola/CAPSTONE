@@ -26,13 +26,14 @@ import Label from "../../../../components/form/Label"; // Adjust path as needed
  * @property {string} updated_at
  * @property {string | null} completed_at
  * @property {number} category_id
- * @property {string} [client_name]
- * @property {string} [client_contact]
- * @property {string} [projectCategory]
+ * @property {string} [client_name] // Added client_name
+ * @property {string} [floor_labels] // Added floor_labels (as a comma-separated string)
+ * @property {string} [projectCategory] // Existing optional field
  */
 
 // API endpoint for projects (used for fetching and updating a single project)
 const PROJECT_INFO_API_URL = "http://localhost:5000/api/project-info/"; // Specific endpoint for single project info
+const CLIENT_API_URL = "http://localhost/clientInfoController.php"; // PHP endpoint for client updates
 
 // Inline Toast Message Component for React-friendly notifications
 /**
@@ -62,9 +63,9 @@ const ToastMessage = ({ message, type, onClose }) => {
     }, [onClose]);
 
     return (
-        <div className={`fixed inset-x-0 bottom-6 mx-auto ${bgColor} text-white px-6 py-3 rounded-lg shadow-xl z-50 flex items-center justify-center w-fit animate-fade-in-up`}>
+        <div className={`fixed inset-x-0 bottom-8 mx-auto ${bgColor} text-white px-8 py-4 text-xl rounded-lg shadow-xl z-50 flex items-center justify-center w-fit animate-fade-in-up`}>
             {message}
-            <button onClick={onClose} className="ml-4 text-white font-bold text-lg" aria-label="Close notification">&times;</button>
+            <button onClick={onClose} className="ml-5 text-white font-bold text-2xl" aria-label="Close notification">&times;</button>
         </div>
     );
 };
@@ -97,6 +98,8 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
     const [editEndDate, setEditEndDate] = useState('');
     const [editBudget, setEditBudget] = useState('');
     const [editStatus, setEditStatus] = useState('');
+    const [editClientName, setEditClientName] = useState(''); // New editable field for client name
+    const [editFloorLabels, setEditFloorLabels] = useState(''); // New editable field for floor labels
 
     // Ref to track if the component is mounted to prevent state updates on unmounted component
     const isMounted = useRef(true);
@@ -127,11 +130,12 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
                     setEditLocationArea(data.locationArea || '');
                     setEditPriority(data.priority || '');
                     setEditProjectManager(data.projectManager || '');
-                    // Format dates for input type="date"
                     setEditStartDate(data.start_date && !isNaN(new Date(data.start_date).getTime()) ? new Date(data.start_date).toISOString().split('T')[0] : '');
                     setEditEndDate(data.end_date && !isNaN(new Date(data.end_date).getTime()) ? new Date(data.end_date).toISOString().split('T')[0] : '');
                     setEditBudget(data.budget?.toString() || '');
                     setEditStatus(data.status || '');
+                    setEditClientName(data.client_name || ''); // Initialize client name
+                    setEditFloorLabels(data.floor_labels || ''); // Initialize floor labels
                 }
             } catch (err) {
                 if (isMounted.current && err.name !== 'AbortError') {
@@ -187,7 +191,7 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
         }
 
         // Check for changes before attempting to save
-        const hasChanged =
+        const hasProjectDataChanged =
             editProjectName !== projectData.project_name ||
             editLocation !== projectData.location ||
             editLocationArea !== projectData.locationArea ||
@@ -198,49 +202,112 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
             parsedBudget !== projectData.budget ||
             editStatus !== projectData.status;
 
-        if (!hasChanged) {
+        const hasClientNameChanged = editClientName !== projectData.client_name;
+        const hasFloorLabelsChanged = editFloorLabels !== projectData.floor_labels;
+
+        if (!hasProjectDataChanged && !hasClientNameChanged && !hasFloorLabelsChanged) {
             setToast({ message: "No changes to save.", type: 'info' });
             closeModal();
             return;
         }
 
         setIsSaving(true);
-        const updatedData = {
-            // Only send fields that are editable as per new requirements
-            project_name: editProjectName,
-            location: editLocation,
-            locationArea: editLocationArea,
-            priority: editPriority,
-            projectManager: editProjectManager,
-            start_date: editStartDate,
-            end_date: editEndDate,
-            status: editStatus,
-            budget: parsedBudget,
-        };
+        let projectUpdateSuccess = false;
+        let clientUpdateSuccess = false;
+        let floorLabelsUpdateSuccess = true; // Assume success if not explicitly handled by backend
 
         try {
-            // Send PUT request to your backend API
-            const response = await fetch(`${PROJECT_INFO_API_URL}${project_id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updatedData),
-            });
+            // 1. Update Project table fields
+            if (hasProjectDataChanged) {
+                const updatedProjectData = {
+                    project_name: editProjectName,
+                    location: editLocation,
+                    locationArea: editLocationArea,
+                    priority: editPriority,
+                    projectManager: editProjectManager,
+                    start_date: editStartDate,
+                    end_date: editEndDate,
+                    status: editStatus,
+                    budget: parsedBudget,
+                };
 
-            if (!response.ok) {
-                const errorBody = await response.json().catch(() => ({ message: response.statusText }));
-                throw new Error(`Failed to update project: ${response.status}. ${errorBody.message || ''}`);
+                const projectResponse = await fetch(`${PROJECT_INFO_API_URL}${project_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedProjectData),
+                });
+
+                if (!projectResponse.ok) {
+                    const errorBody = await projectResponse.json().catch(() => ({ message: projectResponse.statusText }));
+                    throw new Error(`Failed to update project data: ${projectResponse.status}. ${errorBody.message || ''}`);
+                }
+                projectUpdateSuccess = true;
+            } else {
+                projectUpdateSuccess = true; // No changes, so consider it successful
             }
 
-            // Assuming the backend returns the updated project data
-            /** @type {Project} */
-            const result = await response.json();
-            // Merge the updated fields back into the full projectData state
+            // 2. Update Client Name (if changed)
+            if (hasClientNameChanged && projectData.client_id) {
+                const updatedClientData = { client_name: editClientName };
+                const clientResponse = await fetch(`${CLIENT_API_URL}?id=${projectData.client_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedClientData),
+                });
+
+                if (!clientResponse.ok) {
+                    const errorBody = await clientResponse.json().catch(() => ({ message: clientResponse.statusText }));
+                    throw new Error(`Failed to update client name: ${clientResponse.status}. ${errorBody.message || ''}`);
+                }
+                clientUpdateSuccess = true;
+            } else {
+                clientUpdateSuccess = true; // No changes or no client_id, so consider it successful
+            }
+
+            // 3. Handle Floor Labels (if changed)
+            if (hasFloorLabelsChanged) {
+                // IMPORTANT: This part assumes you will have a backend endpoint
+                // capable of updating floor_labels in the project_floors table.
+                // The current projectInfoController.js does NOT handle this directly.
+                // You would need a separate endpoint (e.g., /api/project-floors/:projectId)
+                // that accepts an array or comma-separated string of floor labels
+                // and updates/replaces entries in the project_floors table accordingly.
+                // For now, this will just log a message.
+                console.warn("Floor labels changed, but no backend endpoint is implemented to save them to the 'project_floors' table.");
+                console.log("New floor labels to save:", editFloorLabels);
+                // If you had an endpoint, it would look something like:
+                /*
+                const floorResponse = await fetch(`/api/project-floors/${project_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ floor_labels: editFloorLabels.split(',').map(s => s.trim()) }),
+                });
+                if (!floorResponse.ok) {
+                    const errorBody = await floorResponse.json().catch(() => ({ message: floorResponse.statusText }));
+                    throw new Error(`Failed to update floor labels: ${floorResponse.status}. ${errorBody.message || ''}`);
+                }
+                floorLabelsUpdateSuccess = true;
+                */
+            }
+
             if (isMounted.current) {
-                setProjectData(prevData => ({ ...prevData, ...updatedData })); // Update local state with edited fields
+                // Update local state with all edited fields after successful API calls
+                setProjectData(prevData => ({
+                    ...prevData,
+                    project_name: editProjectName,
+                    location: editLocation,
+                    locationArea: editLocationArea,
+                    priority: editPriority,
+                    projectManager: editProjectManager,
+                    start_date: editStartDate,
+                    end_date: editEndDate,
+                    status: editStatus,
+                    budget: parsedBudget,
+                    client_name: editClientName, // Update client name in local state
+                    floor_labels: editFloorLabels, // Update floor labels in local state
+                }));
                 if (onProjectUpdate) {
-                    onProjectUpdate(result); // Notify parent if needed
+                    onProjectUpdate(); // Notify parent of update
                 }
                 setToast({ message: "Project updated successfully!", type: 'success' });
                 closeModal();
@@ -258,85 +325,96 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
     };
 
     if (loading) {
-        return <div className="text-center py-8 text-gray-600 dark:text-gray-400">Loading detailed project information...</div>;
+        return <div className="text-center py-8 text-xl text-gray-600 dark:text-gray-400">Loading detailed project information...</div>;
     }
 
     if (error) {
-        return <div className="text-center py-8 text-red-600 dark:text-red-400">Error: {error}</div>;
+        return <div className="text-center py-8 text-xl text-red-600 dark:text-red-400">Error: {error}</div>;
     }
 
     if (!projectData) {
-        return <div className="text-center py-8 text-gray-600 dark:text-gray-400">No detailed project data available.</div>;
+        return <div className="text-center py-8 text-xl text-gray-600 dark:text-gray-400">No detailed project data available.</div>;
     }
 
     return (
         <>
-            <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-8">
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">
-                            Detailed Information for Project: {projectData.project_name}
+                        <h4 className="text-3xl font-semibold text-gray-800 dark:text-white/90 lg:mb-8">
+                            Detailed Information for the Project
+                            {/* {projectData.project_name} */}
                         </h4>
 
-                        {/* This grid remains 3 columns as per previous update and user's implicit approval of its layout */}
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-7 2xl:gap-x-32">
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 2xl:gap-x-36">
                             {/* Display only requested fields */}
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Project Name</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{projectData.project_name}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Project Name</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.project_name}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Location</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{projectData.location}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Client Name</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.client_name || 'N/A'}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Location Area</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{projectData.locationArea || 'N/A'}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Location</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.location}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Priority</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{projectData.priority}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Location Area</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.locationArea || 'N/A'}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Project Manager</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{projectData.projectManager || 'N/A'}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Priority</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.priority}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Status</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{projectData.status}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Project Manager</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.projectManager || 'N/A'}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Start Date</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{new Date(projectData.start_date).toLocaleDateString()}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Status</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.status}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">End Date</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{new Date(projectData.end_date).toLocaleDateString()}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Start Date</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{new Date(projectData.start_date).toLocaleDateString()}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Budget</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">${projectData.budget?.toLocaleString()}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">End Date</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{new Date(projectData.end_date).toLocaleDateString()}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Actual Cost</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">${projectData.actual_cost?.toLocaleString()}</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Budget</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">${projectData.budget?.toLocaleString()}</p>
                             </div>
                             <div>
-                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Progress Percent</p>
-                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{projectData.progress_percent}%</p>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Actual Cost</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">${projectData.actual_cost?.toLocaleString()}</p>
+                            </div>
+                            <div>
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Progress Percent</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">{projectData.progress_percent}%</p>
+                            </div>
+                            {/* Floor labels should still span across to handle potentially long lists */}
+                            <div className="lg:col-span-3">
+                                <p className="mb-2 text-l leading-normal text-gray-500 dark:text-gray-400">Floor Labels</p>
+                                <p className="text-l font-medium text-gray-800 dark:text-white/90">
+                                    {projectData.floor_labels ? projectData.floor_labels.split(',').map(label => label.trim()).join(', ') : 'N/A'}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <button
                         onClick={openModal}
-                        className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+                        className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-3 text-xl font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
                         aria-label="Edit Detailed Project Information"
                     >
                         <svg
                             className="fill-current"
-                            width="18"
-                            height="18"
+                            width="24"
+                            height="24"
                             viewBox="0 0 18 18"
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg"
@@ -352,28 +430,27 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
                     </button>
                 </div>
             </div>
-            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4" aria-modal="true" role="dialog" onKeyDown={handleKeyDown}>
-                <div className="no-scrollbar relative w-full max-w-[700px] overflow-y-auto rounded-3xl bg-white p-4 dark:bg-gray-900 lg:p-11">
-                    <div className="px-2 pr-14">
-                        <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[750px] m-4" aria-modal="true" role="dialog" onKeyDown={handleKeyDown}>
+                <div className="no-scrollbar relative w-full max-w-[750px] overflow-y-auto rounded-3xl bg-white p-6 dark:bg-gray-900 lg:p-12">
+                    <div className="px-2 pr-16">
+                        <h4 className="mb-3 text-3xl font-semibold text-gray-800 dark:text-white/90">
                             Edit Project Information
                         </h4>
-                        <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
+                        <p className="mb-7 text-base text-gray-500 dark:text-gray-400 lg:mb-8">
                             Update project details.
                         </p>
                     </div>
                     <form className="flex flex-col" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                        <div className="custom-scrollbar h-[450px] overflow-y-auto px-2 pb-3">
+                        <div className="custom-scrollbar h-[480px] overflow-y-auto px-2 pb-4">
                             <div>
-                                <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
+                                <h5 className="mb-6 text-2xl font-medium text-gray-800 dark:text-white/90 lg:mb-8">
                                     General Information
                                 </h5>
 
-                                {/* Reverted to lg:grid-cols-2 for the edit modal */}
-                                <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+                                <div className="grid grid-cols-1 gap-x-8 gap-y-6 lg:grid-cols-3"> {/* Changed to lg:grid-cols-3 here */}
                                     {/* Editable fields */}
                                     <div>
-                                        <Label htmlFor="editProjectName">Project Name</Label>
+                                        <Label htmlFor="editProjectName" className="text-base">Project Name</Label>
                                         <Input
                                             id="editProjectName"
                                             type="text"
@@ -382,99 +459,148 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
                                             aria-label="Edit Project Name"
                                             required
                                             ref={firstInputRef}
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editLocation">Location</Label>
+                                        <Label htmlFor="editClientName" className="text-base">Client Name</Label>
+                                        <Input
+                                            id="editClientName"
+                                            type="text"
+                                            value={editClientName}
+                                            onChange={(e) => setEditClientName(e.target.value)}
+                                            aria-label="Edit Client Name"
+                                            className="text-lg px-4 py-2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="editLocation" className="text-base">Location</Label>
                                         <Input
                                             id="editLocation"
                                             type="text"
                                             value={editLocation}
                                             onChange={(e) => setEditLocation(e.target.value)}
                                             aria-label="Edit Location"
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editLocationArea">Location Area</Label>
+                                        <Label htmlFor="editLocationArea" className="text-base">Location Area</Label>
                                         <Input
                                             id="editLocationArea"
                                             type="text"
                                             value={editLocationArea}
                                             onChange={(e) => setEditLocationArea(e.target.value)}
                                             aria-label="Edit Location Area"
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editPriority">Priority</Label>
+                                        <Label htmlFor="editPriority" className="text-base">Priority</Label>
                                         <Input
                                             id="editPriority"
                                             type="text"
                                             value={editPriority}
                                             onChange={(e) => setEditPriority(e.target.value)}
                                             aria-label="Edit Priority"
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editProjectManager">Project Manager</Label>
+                                        <Label htmlFor="editProjectManager" className="text-base">Project Manager</Label>
                                         <Input
                                             id="editProjectManager"
                                             type="text"
                                             value={editProjectManager}
                                             onChange={(e) => setEditProjectManager(e.target.value)}
                                             aria-label="Edit Project Manager"
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editStatus">Status</Label>
+                                        <Label htmlFor="editStatus" className="text-base">Status</Label>
                                         <Input
                                             id="editStatus"
                                             type="text"
                                             value={editStatus}
                                             onChange={(e) => setEditStatus(e.target.value)}
                                             aria-label="Edit Status"
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editStartDate">Start Date</Label>
+                                        <Label htmlFor="editStartDate" className="text-base">Start Date</Label>
                                         <Input
                                             id="editStartDate"
-                                            type="date" // Ensures native date picker is available
+                                            type="date"
                                             value={editStartDate}
                                             onChange={(e) => setEditStartDate(e.target.value)}
                                             aria-label="Edit Start Date"
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editEndDate">End Date</Label>
+                                        <Label htmlFor="editEndDate" className="text-base">End Date</Label>
                                         <Input
                                             id="editEndDate"
-                                            type="date" // Ensures native date picker is available
+                                            type="date"
                                             value={editEndDate}
                                             onChange={(e) => setEditEndDate(e.target.value)}
                                             aria-label="Edit End Date"
+                                            className="text-lg px-4 py-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="editBudget">Budget</Label>
+                                        <Label htmlFor="editBudget" className="text-base">Budget</Label>
                                         <Input
                                             id="editBudget"
                                             type="number"
                                             value={editBudget}
                                             onChange={(e) => setEditBudget(e.target.value)}
                                             aria-label="Edit Budget"
+                                            className="text-lg px-4 py-2"
                                         />
+                                    </div>
+                                    {/* Actual Cost and Progress Percent are not in the editable modal, but if they were, they'd follow the same pattern */}
+                                    <div className="lg:col-span-3"> {/* Floor labels should span all three columns in the modal */}
+                                        <Label htmlFor="editFloorLabels" className="text-base">Floor Labels 
+                                            {/* (Comma-separated) */}
+                                            </Label>
+                                        <textarea
+                                            id="editFloorLabels"
+                                            rows="4"
+                                            value={editFloorLabels}
+                                            onChange={(e) => setEditFloorLabels(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md shadow-sm p-3 text-l focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                            aria-label="Edit Floor Labels"
+                                            placeholder="e.g., Ground Floor, First Floor, Mezzanine"
+                                        ></textarea>
+                                        {/* <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                            Enter multiple floor labels separated by commas.
+                                        </p> */}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-                            <Button size="sm" variant="outline" onClick={closeModal} type="button">
-                                Close
-                            </Button>
-                            <Button size="sm" onClick={handleSave} disabled={isSaving} type="submit">
-                                {isSaving ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </div>
+                      <div className="flex items-center gap-4 px-2 mt-8 lg:justify-end">
+  <Button
+    type="button"
+    onClick={closeModal}
+    variant="outline"
+    className="px-6 py-3 text-lg"
+  >
+    Close
+  </Button>
+  <Button
+    type="submit"
+    onClick={handleSave}
+    disabled={isSaving}
+    className="px-6 py-3 text-lg"
+  >
+    {isSaving ? 'Saving...' : 'Save Changes'}
+  </Button>
+</div>
+
                     </form>
                 </div>
             </Modal>

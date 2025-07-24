@@ -20,7 +20,18 @@ const getAllProjects = (req, res) => {
 // @access  Public (or add verifyToken middleware if authentication is needed)
 const getProjectById = (req, res) => {
   const { id } = req.params;
-  const query = `SELECT * FROM projects WHERE project_id = ?`;
+  // Modified query to include client_name from 'clients' table and floor_labels from 'project_floors' table
+  const query = `
+    SELECT
+        p.*,
+        c.client_name,
+        (SELECT GROUP_CONCAT(pf.floor_label ORDER BY pf.floor_code ASC) FROM project_floors pf WHERE pf.project_id = p.project_id) AS floor_labels
+    FROM
+        projects p
+    LEFT JOIN
+        clients c ON p.client_id = c.client_id
+    WHERE
+        p.project_id = ?`;
   db.query(query, [id], (err, results) => {
     if (err) {
       console.error(`Error fetching project with ID ${id}:`, err);
@@ -39,13 +50,13 @@ const getProjectById = (req, res) => {
 const updateProject = (req, res) => {
   const { id } = req.params;
   const {
-    client_id,
+    client_id, // client_id might be sent but not directly updated here if client_name is updated separately
     user_id,
     project_name,
     location,
     locationArea,
     priority,
-    projectManager, // This variable holds the value from the request body
+    projectManager,
     start_date,
     end_date,
     status,
@@ -54,19 +65,24 @@ const updateProject = (req, res) => {
     progress_percent,
     completed_at,
     category_id,
+    // floor_labels is NOT handled here directly as it belongs to project_floors table
+    // client_name is NOT handled here directly as it belongs to clients table
   } = req.body;
 
   // Constructing the UPDATE query dynamically for provided fields
   const fields = [];
   const values = [];
 
+  // Note: client_id and user_id are typically not updated via this endpoint
+  // as they represent relationships or creation attribution.
+  // If they need to be updated, ensure proper validation and authorization.
   if (client_id !== undefined) { fields.push("client_id = ?"); values.push(client_id); }
   if (user_id !== undefined) { fields.push("user_id = ?"); values.push(user_id); }
+
   if (project_name !== undefined) { fields.push("project_name = ?"); values.push(project_name); }
   if (location !== undefined) { fields.push("location = ?"); values.push(location); }
   if (locationArea !== undefined) { fields.push("locationArea = ?"); values.push(locationArea); }
   if (priority !== undefined) { fields.push("priority = ?"); values.push(priority); }
-  // Reverted to 'projectManager' (lowercase) as requested
   if (projectManager !== undefined) { fields.push("projectManager = ?"); values.push(projectManager); }
   if (start_date !== undefined) { fields.push("start_date = ?"); values.push(start_date); }
   if (end_date !== undefined) { fields.push("end_date = ?"); values.push(end_date); }
