@@ -14,34 +14,50 @@ const FinalCostEstimation = () => {
     if (!res.ok) throw new Error("Failed to fetch cost data.");
     const data = await res.json();
 
-    const adjusted = data.map((row) => {
-      const quantity = parseFloat(row.quantity) || 0;
-      const laborUC = parseFloat(row.labor_uc) || 0;
-      const laborAmount = laborUC * quantity;
+    console.log("Original fetched data:", data);
 
-      // If MTO total exists, override material only
-      if (row.mto_total_cost !== null && !isNaN(row.mto_total_cost)) {
-        const materialAmount = parseFloat(row.mto_total_cost);
-        const materialUC = quantity ? materialAmount / quantity : 0;
+  const adjusted = data.map((row) => {
+  const quantity = parseFloat(row.quantity) || 0;
+  const laborUC = parseFloat(row.labor_uc) || 0;
+  const laborAmount = laborUC * quantity;
 
-        return {
-          ...row,
-          material_amount: materialAmount,
-          material_uc: materialUC,
-          labor_amount: laborAmount,
-          labor_uc: laborUC,
-          total_amount: materialAmount + laborAmount,
-        };
-      }
+if (row.type_name === "Reinforcement" && row.mto_rebar_total_cost !== null && !isNaN(row.mto_rebar_total_cost)) {
+    const materialAmount = parseFloat(row.mto_rebar_total_cost);
+    const materialUC = quantity ? materialAmount / quantity : 0;
 
-      // Default fallback
-      return {
-        ...row,
-        labor_amount: laborAmount,
-        labor_uc: laborUC,
-        total_amount: (parseFloat(row.material_amount) || 0) + laborAmount,
-      };
-    });
+    return {
+      ...row,
+      material_amount: materialAmount,
+      material_uc: materialUC,
+      labor_amount: laborAmount,
+      labor_uc: laborUC,
+      total_amount: materialAmount + laborAmount,
+    };
+  }
+
+  // Existing MTO override logic
+  if (row.mto_total_cost !== null && !isNaN(row.mto_total_cost)) {
+    const materialAmount = parseFloat(row.mto_total_cost);
+    const materialUC = quantity ? materialAmount / quantity : 0;
+
+    return {
+      ...row,
+      material_amount: materialAmount,
+      material_uc: materialUC,
+      labor_amount: laborAmount,
+      labor_uc: laborUC,
+      total_amount: materialAmount + laborAmount,
+    };
+  }
+
+  // Default fallback
+  return {
+    ...row,
+    labor_amount: laborAmount,
+    labor_uc: laborUC,
+    total_amount: (parseFloat(row.material_amount) || 0) + laborAmount,
+  };
+});
 
     setCostData(adjusted);
   } catch (err) {
@@ -66,10 +82,10 @@ const FinalCostEstimation = () => {
 
 const formatNumber = (value) => {
     const num = parseFloat(value);
-    if (!num) return ""; // Show nothing for 0, null, NaN
+    if (!num) return ""; 
 
     return Number.isInteger(num)
-        ? num.toLocaleString(undefined, { useGrouping: true }) // e.g., 1,000
+        ? num.toLocaleString(undefined, { useGrouping: true })
         : num.toLocaleString(undefined, {
               minimumFractionDigits: 0,
               maximumFractionDigits: 2,

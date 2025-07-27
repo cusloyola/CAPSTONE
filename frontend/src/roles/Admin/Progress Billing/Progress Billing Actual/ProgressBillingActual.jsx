@@ -31,26 +31,30 @@ const ProgressBillingTableDesign = () => {
     const [accomplishments, setAccomplishments] = useState({});
 
     const fetchProgressBilling = async () => {
-    try {
-        const res = await fetch(`${PROGRESSBILL_API_URL}/summary/${billing_id}`);
-        if (!res.ok) throw new Error(`Server error ${res.status}: ${await res.text()}`);
+        try {
+            const res = await fetch(`${PROGRESSBILL_API_URL}/summary/${billing_id}`);
+            if (!res.ok) throw new Error(`Server error ${res.status}: ${await res.text()}`);
 
-        const contentType = res.headers.get("content-type");
-        if (!contentType?.includes("application/json")) {
-            throw new Error("Invalid JSON response from server");
+            const contentType = res.headers.get("content-type");
+            if (!contentType?.includes("application/json")) {
+                throw new Error("Invalid JSON response from server");
+            }
+
+            const data = await res.json();
+            const safeArray = Array.isArray(data) ? data : [data];
+
+            const unique = Array.from(
+                new Map(safeArray.map((item) => [item.sow_proposal_id, item])).values()
+            );
+            setProgressData(unique);
+
+        } catch (error) {
+            console.error("❌ Error fetching progress billing summary:", error);
+            setProgressData([]);
+        } finally {
+            setLoading(false);
         }
-
-        const data = await res.json();
-        const safeArray = Array.isArray(data) ? data : [data];
-
-        setProgressData(safeArray); // ✅ Use backend-calculated wt_percent directly
-    } catch (error) {
-        console.error("❌ Error fetching progress billing summary:", error);
-        setProgressData([]);
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
 
     const fetchAccomplishments = async () => {
@@ -149,7 +153,7 @@ const ProgressBillingTableDesign = () => {
                                         const acc = accomplishments[item.sow_proposal_id] || {};
                                         const prev = acc.percent_previous || 0;
                                         const pres = acc.percent_present || 0;
-                                        const toDate = (prev + pres) / 100;
+                                        const toDate = acc.percent_to_date != null ? acc.percent_to_date / 100 : (prev + pres) / 100;
                                         const wtAccomp = item.wt_percent * toDate;
 
                                         return (
@@ -161,8 +165,8 @@ const ProgressBillingTableDesign = () => {
                                                         item.type_name === "Reinforcement"
                                                             ? item.rebar_overall_weight
                                                             : item.total_with_allowance !== 0
-                                                            ? item.total_with_allowance
-                                                            : item.total_value
+                                                                ? item.total_with_allowance
+                                                                : item.total_value
                                                     )}
                                                 </td>
                                                 <td className="border px-4 py-2">{item.unit}</td>
@@ -170,7 +174,10 @@ const ProgressBillingTableDesign = () => {
                                                 <td className="border px-4 py-2">{formatNumber(item.wt_percent)}%</td>
                                                 <td className="border px-4 py-2">{formatNumber(prev)}%</td>
                                                 <td className="border px-4 py-2">{formatNumber(pres)}%</td>
-                                                <td className="border px-4 py-2">{formatNumber(prev + pres)}%</td>
+
+                                                <td className="border px-4 py-2">
+                                                    {formatNumber(acc.percent_to_date ?? (prev + pres))}%
+                                                </td>
                                                 <td className="border px-4 py-2">{formatNumber(roundTwo(wtAccomp))}%</td>
                                             </tr>
                                         );
@@ -218,7 +225,7 @@ const ProgressBillingTableDesign = () => {
                 accomplishments={accomplishments}
             />
 
-            
+
         </div>
     );
 };

@@ -18,36 +18,34 @@ const ProgressLineGraph = () => {
           const label = new Date(item.billing_month + "-01").toLocaleDateString("en-US", {
             month: "short",
             year: "2-digit",
-          }); // ➜ "Jul 24"
+          }); // e.g. "Jul 24"
           labelSet.add(label);
 
-          if (!grouped[item.project_name]) grouped[item.project_name] = [];
-          grouped[item.project_name].push({
-            x: label,
-            y: item.wt_accomp_to_date ?? 0,
-          });
+          if (!grouped[item.project_name]) grouped[item.project_name] = {};
+
+          // Override if same project & month already exists
+          grouped[item.project_name][label] = item.wt_accomp_to_date ?? 0;
         });
 
         const sortedLabels = [...labelSet].sort(
           (a, b) => new Date("1 " + a) - new Date("1 " + b)
         );
-const formattedSeries = Object.keys(grouped).map((project) => {
-  const map = Object.fromEntries(grouped[project].map((d) => [d.x, d.y]));
-  let lastY = 0;
 
-  return {
-    name: project,
-    data: sortedLabels.map((label) => {
-      if (map[label] != null) {
-        lastY = map[label];
-      }
-      return {
-        x: label,
-        y: lastY,
-      };
-    }),
-  };
-});
+        const formattedSeries = Object.entries(grouped).map(([project, monthlyMap]) => {
+          let lastY = 0;
+          return {
+            name: project,
+            data: sortedLabels.map((label) => {
+              if (monthlyMap[label] != null) {
+                lastY = monthlyMap[label];
+              }
+              return {
+                x: label,
+                y: lastY,
+              };
+            }),
+          };
+        });
 
         setSeries(formattedSeries);
         setCategories(sortedLabels);

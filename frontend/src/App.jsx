@@ -100,6 +100,16 @@ import ProgressBillingActual from "./roles/Admin/Progress Billing/Progress Billi
 import ProgressBillingPage from "./roles/Admin/Progress Billing/ProgressBillingPage.jsx";
 import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
+
+
+//Admin Site Report
+import AdminDailySiteReport from "./roles/Admin/Site Report/Admin Daily Site Report/AdminDailySiteReport.jsx";
+
+
+
+
+
+
 import WeeklySafetyReport from "./roles/Admin/Safety Report/Weekly Safety Report/WeeklySafetyReport.jsx";
 import MonthlySafetyReport from "./roles/Admin/Safety Report/Monthly Safety Report/MonthlySafetyReport.jsx";
 
@@ -186,10 +196,12 @@ export default function App() {
                     <Route path="chart" element={<ProgressCharts />} />
                   </Route>
 
-                  {/* Reports */}
-                  <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
+
+                  <Route path="site-reports/daily" element={<AdminDailySiteReport />} />
                   <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
 
+                  <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
+                  <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
                 </Route>
               </Route>
 

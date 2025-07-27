@@ -34,6 +34,15 @@ const ProgressCharts = () => {
           };
         });
 
+        // 🔧 Deduplicate based on trimmed lowercase item_title
+        const seen = new Set();
+        const dedupedData = withPercent.filter(item => {
+          const normalized = item.item_title.trim().toLowerCase();
+          if (seen.has(normalized)) return false;
+          seen.add(normalized);
+          return true;
+        });
+
         const accFormatted = {};
         (accomp?.data || accomp).forEach(row => {
           accFormatted[row.sow_proposal_id] = {
@@ -42,7 +51,7 @@ const ProgressCharts = () => {
           };
         });
 
-        setProgressData(withPercent);
+        setProgressData(dedupedData);
         setAccomplishments(accFormatted);
       } catch (err) {
         console.error("❌ Error loading chart data:", err);
@@ -102,7 +111,7 @@ const ProgressCharts = () => {
     plotOptions: {
       bar: {
         horizontal: true,
-        barHeight: "50%", 
+        barHeight: "50%",
         dataLabels: {
           total: {
             enabled: true,
@@ -147,7 +156,7 @@ const ProgressCharts = () => {
     legend: {
       position: "top",
       fontSize: "13px",
-        offsetY: 40, 
+      offsetY: 40,
     },
     fill: {
       opacity: 1,

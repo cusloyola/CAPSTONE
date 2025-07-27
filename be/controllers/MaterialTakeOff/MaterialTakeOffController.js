@@ -60,20 +60,20 @@ const getResources = (req, res) => {
   });
 };
 
-
 const saveFullMaterialTakeOff = (req, res) => {
-  const { proposal_id } = req.params;
   const { materialTakeOff } = req.body;
 
   if (!Array.isArray(materialTakeOff) || materialTakeOff.length === 0) {
     return res.status(400).json({ message: "Missing material takeoff data" });
   }
 
+  const sow_proposal_id = materialTakeOff[0].sow_proposal_id; // ✅ Real source
+
   const mtoValues = materialTakeOff.map(item => [
     item.sow_proposal_id,
     item.work_item_id,
     item.resource_id,
-    item.multiplier || 1, 
+    item.multiplier || 1,
     item.actual_qty,
     item.material_cost
   ]);
@@ -95,39 +95,66 @@ const saveFullMaterialTakeOff = (req, res) => {
 
   db.query(mtoQuery, [mtoValues], (err1, result1) => {
     if (err1) {
-      console.error("Error saving MTO:", err1);
+      console.error("❌ Error saving MTO:", err1);
       return res.status(500).json({ message: "Failed to save MTO", error: err1 });
     }
 
+    console.log("✅ MTO Saved, running parent total query...");
+
     const parentTotalQuery = `
-    REPLACE INTO mto_parent_totals (sow_proposal_id, work_item_id, mto_parent_grandTotal)
-    SELECT 
-      m.sow_proposal_id,
-      p.work_item_id,
-      SUM(m.material_cost)
-    FROM mto_materiallists m
-    JOIN sow_work_items c ON m.work_item_id = c.work_item_id
-    JOIN sow_work_items p ON c.parent_id = p.work_item_id
-    WHERE m.sow_proposal_id = 31
-    GROUP BY p.work_item_id;
-
-
+      SELECT 
+        m.sow_proposal_id,
+        p.work_item_id AS parent_work_item_id,
+        SUM(m.material_cost) AS mto_parent_grandTotal
+      FROM mto_materiallists m
+      JOIN sow_work_items c ON m.work_item_id = c.work_item_id
+      JOIN sow_work_items p ON c.parent_id = p.work_item_id
+      WHERE m.sow_proposal_id = ?
+      GROUP BY p.work_item_id
     `;
 
-    db.query(parentTotalQuery, [proposal_id], (err2, result2) => {
+    db.query(parentTotalQuery, [sow_proposal_id], (err2, rows) => {
       if (err2) {
-        console.error("Error updating parent totals:", err2);
-        return res.status(500).json({ message: "Failed to update parent totals", error: err2 });
+        console.error("❌ Error fetching parent totals:", err2);
+        return res.status(500).json({ message: "Failed to calculate parent totals", error: err2 });
       }
 
-      return res.status(201).json({
-        message: "Material Take-Off saved successfully",
-        mtoInserted: result1.affectedRows,
-        parentUpdated: result2.affectedRows
+      if (!rows.length) {
+        console.warn("⚠️ No parent totals found to update.");
+        return res.status(200).json({
+          message: "MTO saved, but no parent totals to update.",
+          mtoInserted: result1.affectedRows,
+          parentUpdated: 0
+        });
+      }
+
+      const replaceValues = rows.map(row => [
+        row.sow_proposal_id,
+        row.parent_work_item_id,
+        row.mto_parent_grandTotal
+      ]);
+
+      const replaceQuery = `
+        REPLACE INTO mto_parent_totals (sow_proposal_id, work_item_id, mto_parent_grandTotal)
+        VALUES ?
+      `;
+
+      db.query(replaceQuery, [replaceValues], (err3, result3) => {
+        if (err3) {
+          console.error("❌ Error updating parent totals:", err3);
+          return res.status(500).json({ message: "Failed to update parent totals", error: err3 });
+        }
+
+        return res.status(201).json({
+          message: "Material Take-Off and Parent Totals saved successfully",
+          mtoInserted: result1.affectedRows,
+          parentUpdated: result3.affectedRows
+        });
       });
     });
   });
 };
+
 
 
 const getFullMaterialTakeOff = (req, res) => {

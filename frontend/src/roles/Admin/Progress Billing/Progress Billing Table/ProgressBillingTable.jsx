@@ -1,100 +1,93 @@
 import React, { useEffect, useState } from "react";
 import AddProgressBillingModal from "./AddProgressBillingModal";
-import { Link, useParams } from "react-router-dom"; // ✅ Add Link here
+import { Link, useParams } from "react-router-dom";
 import ActionDropdown from "./ActionDropdown";
 
 const PROGRESSBILL_API_URL = "http://localhost:5000/api/progress-billing";
 
 const ProgressBillingTable = () => {
-    const { project_id } = useParams(); 
+    const { project_id } = useParams();
     const [showModal, setShowModal] = useState(false);
     const [billingList, setBillingList] = useState([]);
     const [selectedProposal, setSelectedProposal] = useState(null);
+
     const user = JSON.parse(localStorage.getItem("user"));
     const user_id = user?.id;
     const user_name = user?.name;
 
- useEffect(() => {
-    if (project_id) {
-        // ✅ Immediately reset state before fetch to avoid showing old data
-        setSelectedProposal(null);
-        setBillingList([]);
+    // ✅ Helper to remove duplicates based on billing_id
+    const deduplicate = (arr) =>
+        Array.from(new Map(arr.map((item) => [item.billing_id, item])).values());
 
-        fetch(`${PROGRESSBILL_API_URL}/approved-proposal/${project_id}`)
-            .then((res) => {
-                if (!res.ok) throw new Error("No approved proposal found");
-                return res.json();
-            })
-            .then((data) => {
-                setSelectedProposal(data.data);
+    useEffect(() => {
+        if (!project_id) {
+            setSelectedProposal(null);
+            setBillingList([]);
+            return;
+        }
 
-                // ✅ Fetch billings for that proposal
-                return fetch(`${PROGRESSBILL_API_URL}/fetch/${data.data.proposal_id}`);
-            })
-            .then((res) => res.json())
-            .then((billingData) => setBillingList(billingData.data))
-            .catch((err) => {
+        const fetchProposalAndBillings = async () => {
+            try {
+                setSelectedProposal(null);
+                setBillingList([]); // ✅ Clear before fetch
+
+                const proposalRes = await fetch(`${PROGRESSBILL_API_URL}/approved-proposal/${project_id}`);
+                if (!proposalRes.ok) throw new Error("No approved proposal found");
+                const proposalData = await proposalRes.json();
+                setSelectedProposal(proposalData.data);
+
+                const billingRes = await fetch(`${PROGRESSBILL_API_URL}/fetch/${proposalData.data.proposal_id}`);
+                const billingData = await billingRes.json();
+                setBillingList(deduplicate(billingData.data));
+            } catch (err) {
                 console.error("Proposal or Billing fetch failed:", err);
                 setSelectedProposal(null);
                 setBillingList([]);
-            });
-    } else {
-        // ✅ Reset if project_id is undefined
-        setSelectedProposal(null);
-        setBillingList([]);
-    }
-}, [project_id]);
-
-
-    const handleAddProgressBilling = (billing) => {
-        const payload = {
-            ...billing,
-            user_id: user_id,
-            previous_billing_id: billingList?.at(-1)?.billing_id || null, 
-
+            }
         };
 
-        fetch(`${PROGRESSBILL_API_URL}/add/${selectedProposal?.proposal_id}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error(`Server error: ${res.status}`);
-                return res.json();
-            })
-            .then(() => {
-                return fetch(`${PROGRESSBILL_API_URL}/fetch/${selectedProposal?.proposal_id}`);
-            })
-            .then((res) => res.json())
-            .then((data) => setBillingList(data.data))
-            .catch((err) => {
-                console.error("Error adding billing:", err);
+        fetchProposalAndBillings();
+    }, [project_id]);
+
+    const handleAddProgressBilling = async (billing) => {
+        try {
+            const payload = {
+                ...billing,
+                user_id,
+                previous_billing_id: billingList?.at(-1)?.billing_id || null,
+            };
+
+            const res = await fetch(`${PROGRESSBILL_API_URL}/add/${selectedProposal?.proposal_id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
             });
+
+            if (!res.ok) throw new Error("Failed to add billing");
+
+            const updated = await fetch(`${PROGRESSBILL_API_URL}/fetch/${selectedProposal?.proposal_id}`);
+            const data = await updated.json();
+            setBillingList(deduplicate(data.data));
+
+            return true;
+        } catch (err) {
+            console.error("Error adding billing:", err);
+            return false;
+        }
     };
 
-    const handleCopyBilling = (billingId) => {
-        fetch(`${PROGRESSBILL_API_URL}/copy/${billingId}`, {
-            method: "POST",
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error("Failed to copy");
-                return res.json();
-            })
-            .then(() => {
-                return fetch(`${PROGRESSBILL_API_URL}/fetch/${selectedProposal?.proposal_id}`);
-            })
-            .then((res) => res.json())
-            .then((data) => {
-                setBillingList(data.data);
-            })
-            .catch((err) => {
-                console.error("Copy failed:", err);
-            });
+    const handleCopyBilling = async (billingId) => {
+        try {
+            const res = await fetch(`${PROGRESSBILL_API_URL}/copy/${billingId}`, { method: "POST" });
+            if (!res.ok) throw new Error("Failed to copy");
+
+            const updated = await fetch(`${PROGRESSBILL_API_URL}/fetch/${selectedProposal?.proposal_id}`);
+            const data = await updated.json();
+            setBillingList(deduplicate(data.data));
+        } catch (err) {
+            console.error("Copy failed:", err);
+        }
     };
-
-
-
 
     return (
         <div className="p-4 space-y-6 bg-white shadow rounded">
@@ -118,7 +111,6 @@ const ProgressBillingTable = () => {
                         <th className="border px-4 py-2 text-left">Evaluated By</th>
                         <th className="border px-4 py-2 text-left">Status</th>
                         <th className="border px-4 py-2 text-left">Notes</th>
-
                         <th className="border px-4 py-2 text-left">Actions</th>
                     </tr>
                 </thead>
@@ -130,32 +122,26 @@ const ProgressBillingTable = () => {
                             </td>
                         </tr>
                     ) : (
-                        billingList.map((billing, index) => (
-                            <tr key={index}>
+                        billingList.map((billing) => (
+                            <tr key={billing.billing_id}>
                                 <td className="border px-4 py-2 text-blue-600 underline">
                                     <Link to={`${billing.billing_id}`}>
-                                        {billing.subject}&nbsp;{billing.billing_no}
+                                        {billing.subject} {billing.billing_no}
                                     </Link>
-
                                 </td>
-
                                 <td className="border px-4 py-2">
                                     {new Date(billing.billing_date).toLocaleDateString("en-CA")}
                                 </td>
                                 <td className="border px-4 py-2">{billing.evaluated_by || "N/A"}</td>
                                 <td className="border px-4 py-2">{billing.status}</td>
                                 <td className="border px-4 py-2">{billing.notes}</td>
-
                                 <td className="border px-4 py-2 space-x-2">
                                     <ActionDropdown
                                         onEdit={() => console.log("✏️ Edit", billing.billing_id)}
                                         onDelete={() => console.log("🗑️ Delete", billing.billing_id)}
                                         onCopy={() => handleCopyBilling(billing.billing_id)}
                                     />
-
                                 </td>
-
-
                             </tr>
                         ))
                     )}
@@ -172,10 +158,7 @@ const ProgressBillingTable = () => {
                     user_id={user_id}
                     full_name={user_name}
                     billingList={billingList}
-
                 />
-
-
             )}
         </div>
     );

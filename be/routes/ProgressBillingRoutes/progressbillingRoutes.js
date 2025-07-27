@@ -6,7 +6,7 @@ const progressBillingController = require('../../controllers/ProgressBilling/pro
 
 router.post(`/add/:proposal_id`, progressBillingController.addProgressBillList);
 router.get('/fetch/:proposal_id', progressBillingController.getProgressBillList);
-// routes/progressBillingRoutes.js
+
 router.get("/approved-proposal/:project_id", progressBillingController.getApprovedProposalByProject);
 router.post('/copy/:billing_id', progressBillingController.copyProgressBilling);
 router.get('/summary/:billing_id', progressBillingController.getFinalEstimationSummary);
@@ -14,7 +14,6 @@ router.get('/summary/:billing_id', progressBillingController.getFinalEstimationS
 
 router.post('/accomp', progressBillingController.saveProgressAccomp);
 router.get('/accomp/:billing_id', progressBillingController.getProgressAccomp);
-// router.put('/accomp/update/:billing_id', progressBillingController.updateProgressAccomp);
 
 router.post('/accomp/log', progressBillingController.addAccompLogs);
 

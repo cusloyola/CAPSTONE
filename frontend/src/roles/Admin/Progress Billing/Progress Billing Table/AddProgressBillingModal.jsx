@@ -17,6 +17,7 @@ const AddProgressBillingModal = ({
     const [billingNo, setBillingNo] = useState("");
     const [notes, setNotes] = useState("");
     const [previousBillingId, setPreviousBillingId] = useState("");
+const [submitting, setSubmitting] = useState(false);
 
 
     useEffect(() => {
@@ -27,28 +28,35 @@ const AddProgressBillingModal = ({
         console.log("User ID:", user_id);
     }, [proposal_name, project_name, proposal_id, user_id]);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
 
-        const billing = {
-            billing_no: billingNo,
-            proposal_id,
-            subject: "Progress Billing",
-            billing_date: billingDate.toISOString().split("T")[0],
-            status: "Draft",
-            revision: 0,
-            evaluated_by: full_name || "",
-            user_id: user_id,
-            notes: notes,
-            previous_billing_id: previousBillingId || null, // ✅ Include this
-
-        };
-
-        console.log("📤 Submitting billing data:", billing);
-
-        onSave(billing);
-        onClose();
+    const billing = {
+        billing_no: billingNo,
+        proposal_id,
+        subject: "Progress Billing",
+        billing_date: billingDate.toISOString().split("T")[0],
+        status: "Draft",
+        revision: 0,
+        evaluated_by: full_name || "",
+        user_id,
+        notes,
+        previous_billing_id: previousBillingId || null,
     };
+
+    console.log("📤 Submitting billing data:", billing);
+
+    const success = await onSave(billing); // ✅ wait for success
+    if (success) {
+        onClose(); // ✅ close only after full fetch cycle
+    } else {
+        alert("Failed to save billing.");
+    }
+
+    setSubmitting(false);
+};
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
@@ -151,11 +159,13 @@ const AddProgressBillingModal = ({
                             Cancel
                         </button>
                         <button
-                            type="submit"
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                        >
-                            Save
-                        </button>
+  type="submit"
+  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+  disabled={submitting}
+>
+  Save
+</button>
+
                     </div>
                 </form>
             </div>

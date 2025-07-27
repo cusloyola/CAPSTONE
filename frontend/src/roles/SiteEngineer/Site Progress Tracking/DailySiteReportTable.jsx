@@ -104,7 +104,6 @@ const DailySiteReportTable = ({
           </select>
         </div>
 
-      {/* Entries per page */}
             <div className="text-sm text-gray-700 mb-6">
               Show
               <select
@@ -122,7 +121,6 @@ const DailySiteReportTable = ({
             </div>
 
 
-        {/* Table */}
         <div className="overflow-x-auto shadow-md rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -208,11 +206,9 @@ const DailySiteReportTable = ({
             </tbody>
           </table>
 
-          {/* Pagination */}
           <div className="flex flex-col md:flex-row justify-between items-center mt-4 space-y-2 md:space-y-0 px-4 pb-4">
 
 
-            {/* Page info */}
             <div className="text-sm text-gray-600">
               Showing{" "}
               {filteredReports.length === 0
@@ -224,7 +220,6 @@ const DailySiteReportTable = ({
               of {filteredReports.length} entries
             </div>
 
-            {/* Navigation */}
             <div className="space-x-2">
               <button
                 onClick={handlePrevious}

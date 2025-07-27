@@ -4,7 +4,7 @@ const db = require("../../config/db");
 const getFinalCostByProposalId = (req, res) => {
   const { proposal_id } = req.params;
 
-  const sql = `
+const sql = `
     SELECT 
       sp.sow_proposal_id,
       swt.type_name,
@@ -15,16 +15,7 @@ const getFinalCostByProposalId = (req, res) => {
         ELSE IF(qpt.total_with_allowance = 0, qpt.total_value, qpt.total_with_allowance)
       END AS quantity,
 
-      uom.unitCode AS unit,
-      mc.material_uc,
-      ROUND(
-        (CASE 
-          WHEN swi.work_item_id = 185 THEN rt.rebar_overall_weight 
-          ELSE qpt.total_value 
-        END) * mc.material_uc,
-        2
-      ) AS material_amount,
-      
+      uom.unitCode AS unit,     
       lc.labor_uc,
       ROUND(
         (CASE 
@@ -35,18 +26,16 @@ const getFinalCostByProposalId = (req, res) => {
       ) AS labor_amount,
 
       ROUND(
-        ((CASE 
-          WHEN swi.work_item_id = 185 THEN IFNULL(rt.rebar_overall_weight, 0) 
-          ELSE IFNULL(qpt.total_value, 0) 
-        END) * IFNULL(mc.material_uc, 0)) +
-        ((CASE 
-          WHEN swi.work_item_id = 185 THEN IFNULL(rt.rebar_overall_weight, 0) 
-          ELSE IFNULL(qpt.total_value, 0) 
-        END) * IFNULL(lc.labor_uc, 0)),
+        CASE 
+          WHEN swi.work_item_id = 185 THEN IFNULL(mrt.rebar_grand_total, 0)
+          ELSE IFNULL(mpt.mto_parent_grandTotal, 0)
+        END,
         2
       ) AS total_amount,
 
-      mpt.mto_parent_grandTotal AS mto_total_cost,  -- ✅ ADDED HERE
+      mpt.mto_parent_grandTotal AS mto_total_cost, 
+      mrt.rebar_grand_total AS mto_rebar_total_cost,
+
       pc.markup_percent
 
     FROM sow_proposal sp
@@ -54,12 +43,16 @@ const getFinalCostByProposalId = (req, res) => {
     LEFT JOIN sow_work_types swt ON swi.work_type_id = swt.work_type_id
     LEFT JOIN qto_parent_totals qpt ON qpt.sow_proposal_id = sp.sow_proposal_id
     LEFT JOIN unit_of_measure uom ON swi.unitID = uom.unitID
-    LEFT JOIN material_costs mc ON mc.sow_proposal_id = sp.sow_proposal_id
     LEFT JOIN labor_cost lc ON lc.sow_proposal_id = sp.sow_proposal_id
-    LEFT JOIN rebar_totals rt ON rt.sow_proposal_id = sp.sow_proposal_id
+    LEFT JOIN rebar_totals rt ON rt.sow_proposal_id = sp.sow_proposal_id -- QTO quantity only
+
     LEFT JOIN mto_parent_totals mpt 
       ON mpt.sow_proposal_id = sp.sow_proposal_id 
-      AND mpt.work_item_id = swi.work_item_id  -- ✅ JOIN CONDITION
+      AND mpt.work_item_id = swi.work_item_id  
+
+    LEFT JOIN mto_rebar_totals mrt
+      ON mrt.sow_proposal_id = sp.sow_proposal_id
+
     JOIN proposals p ON sp.proposal_id = p.proposal_id
     JOIN projects pr ON p.project_id = pr.project_id
     JOIN project_categories pc ON pr.category_id = pc.category_id
