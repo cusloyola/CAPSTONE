@@ -21,6 +21,8 @@ import EmployeeManagement from "./roles/Admin/EmployeeManagement.jsx";
 import ViewSafetyReportAdmin from "./roles/Admin/Safety Report/SafetyReportsManagement.jsx";
 import ViewIncidentReportAdmin from "./roles/Admin/Incident Report/ViewIncidentReportAdmin.jsx";
 
+import ResoureManagement from "./roles/Admin/Resource Management/ResourceManagement.jsx";
+
 // site
 import SiteEngineerDashboard from "./roles/SiteEngineer/Site Engineer Dashboard/SiteEngineerDashboard.jsx";
 import DailySiteReport from "./roles/SiteEngineer/Site Progress Tracking/DailySiteReport.jsx";
@@ -154,7 +156,7 @@ export default function App() {
               <Route path="/ViewIncidentReportAdmin" element={<ViewIncidentReportAdmin />} />
               <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
               <Route path="/InProgressProjectTable" element={<InProgressProjectTable />} />
-
+              <Route path="/ResourceManagement" element={<ResoureManagement />} />
 
               <Route path="/AllPendingProjects/:project_id/profile" element={<ProjectLayout />}>
                 <Route element={<ProjectProfile />}>
