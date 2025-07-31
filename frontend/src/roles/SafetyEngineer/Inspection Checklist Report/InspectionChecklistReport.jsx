@@ -3,24 +3,27 @@ import axios from 'axios';
 
 const InspectionChecklistReport = () => {
   // Sample project names for the dropdown
-  const projectNames = [
-    "Select Project",
-    "Project Alpha Construction",
-    "Project Beta Renovation",
-    "Project Gamma Infrastructure",
-    "Project Delta Expansion",
-    "Project Epsilon Demolition",
-  ];
 
-  // Static inspector name
-  const staticInspectorName = "Maria De Guzman";
-
+  const [user, setUser] = useState(null);
   // State for general report information
   const [reportInfo, setReportInfo] = useState({
-    projectName: projectNames[0], // Default to "Select Project"
+    projectName: '', // Default to "Select Project"
     date: '',
-    inspector: staticInspectorName, // Inspector name is static
+    inspector: '', // Inspector name is static
   });
+  useEffect(() => {
+    // Get user from localStorage
+    const storedUser = localStorage.getItem("user");
+    console.log("storedUser from localStorage:", storedUser); // <-- Add this line
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      setReportInfo(prev => ({
+        ...prev,
+        inspector: parsedUser.name || "Unknown Inspector", // Adjust property as needed
+      }));
+    }
+  }, []);
 
   // State for modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -114,26 +117,56 @@ const InspectionChecklistReport = () => {
 
   // Handle form submission - show confirmation modal
   const handleSubmit = (e) => {
+    if (!reportInfo.date) {
+      alert("Please select a date.");
+      return;
+    }
+    if (!reportInfo.inspector) {
+      alert("Inspector name is missing.");
+      return;
+    }
+    if (!checklist.length) {
+      alert("Checklist is empty.");
+      return;
+    }
+
     e.preventDefault();
+    if (!reportInfo.projectName) {
+      alert("Please select a project.");
+      return;
+    }
     setShowConfirmModal(true);
   };
 
   // Confirm submission after user clicks "Yes" in confirmation modal
-  const confirmSubmit = () => {
-    setShowConfirmModal(false); // Close confirmation modal
-    console.log("Report Info:", reportInfo);
-    console.log("Checklist Data:", checklist);
-    // Here you would typically send this data to your backend API
+  const confirmSubmit = async () => {
+    setShowConfirmModal(false);
 
-    setShowSuccessModal(true); // Show success modal
-    // Optionally reset form after successful submission
-    setReportInfo({
-      projectName: projectNames[0],
-      date: '',
-      inspector: staticInspectorName,
-    });
-    setChecklist(initialChecklist);
+    try {
+      const payload = {
+        project_name: reportInfo.projectName,
+        report_date: reportInfo.date,
+        inspector: reportInfo.inspector,
+        checklist: checklist
+      };
+
+      console.log("Submitting payload:", payload); // <-- Add this line
+
+      await axios.post("http://localhost:5000/api/inspection/inspection-reports", payload);
+      setShowSuccessModal(true);
+
+      // Reset
+      setReportInfo({
+        projectName: '',
+        date: '',
+        inspector: '',
+      });
+      setChecklist([]);
+    } catch (err) {
+      console.error("❌ Error submitting report:", err);
+    }
   };
+
 
   // Date Picker Logic
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -211,6 +244,7 @@ const InspectionChecklistReport = () => {
               onChange={handleReportInfoChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
+              <option value="">Select Project</option> {/* Add this line */}
               {projectList.map((project) => (
                 <option key={project.id} value={project.project_name}>
                   {project.project_name}
@@ -298,7 +332,7 @@ const InspectionChecklistReport = () => {
                 </div>
               ))}
 
-              <div className="mt-6">
+              {/*               <div className="mt-6">
                 <label htmlFor={`action-required-${sectionIndex}`} className="block text-sm font-medium text-gray-700 mb-1">
                   Action required, if any
                 </label>
@@ -310,7 +344,7 @@ const InspectionChecklistReport = () => {
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter any actions required for this section..."
                 ></textarea>
-              </div>
+              </div> */}
             </div>
           ))}
 

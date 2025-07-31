@@ -75,6 +75,7 @@ const materialunitcostRoutes = require('./routes/MaterialUnitCostRoutes/material
 
 const finalcostestimationRoutes = require('./routes/FinalCostEstimationRoutes/finalcostestimationRoutes');
 
+const inspectionReportRoutes = require('./routes/inspectionRoutes');
 
 const progressbillingRoutes = require('./routes/ProgressBillingRoutes/progressbillingRoutes');
 
@@ -114,7 +115,7 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
 app.use('/api/projects', projectRoutes);
-
+app.use('/api/inspection', inspectionReportRoutes); // Use the inspection report routes
 app.use('/api/events', eventRoutes);
 
 app.use("/api/bom", bomRoutes);
