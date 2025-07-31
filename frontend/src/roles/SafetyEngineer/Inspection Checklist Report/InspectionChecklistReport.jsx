@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 
 const InspectionChecklistReport = () => {
   // Sample project names for the dropdown
@@ -31,97 +32,50 @@ const InspectionChecklistReport = () => {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const datePickerRef = useRef(null);
   const dateInputRef = useRef(null);
+  const [projectList, setProjectList] = useState([]);
+  const [checklist, setChecklist] = useState([]);
 
-  // Structure for the checklist items
-  const initialChecklist = [
-    {
-      section: "1. GENERAL SAFETY",
-      items: [
-        { id: "gs1", text: "Adequate signage and barricades are in place.", response: null, actionRequired: "" },
-        { id: "gs2", text: "Personal protective equipment (PPE) is being worn by workers.", response: null, actionRequired: "" },
-        { id: "gs3", text: "Emergency contact information is prominently displayed.", response: null, actionRequired: "" },
-        { id: "gs4", text: "First aid kits and fire extinguishers are readily accessible.", response: null, actionRequired: "" },
-        { id: "gs5", text: "Scaffolding and ladders are secure and in good condition.", response: null, actionRequired: "" },
-      ],
-    },
-    {
-      section: "2. SITE ORGANIZATION",
-      items: [
-        { id: "so1", text: "Construction materials are properly stored and organized.", response: null, actionRequired: "" },
-        { id: "so2", text: "Waste and debris are regularly removed from the site.", response: null, actionRequired: "" },
-        { id: "so3", text: "Equipment and tools are appropriately stored when not in use.", response: null, actionRequired: "" },
-        { id: "so4", text: "Access routes and walkways are clear and well-maintained.", response: null, actionRequired: "" },
-        { id: "so5", text: "Temporary fencing or barriers are installed where required.", response: null, actionRequired: "" },
-      ],
-    },
-    {
-      section: "3. STRUCTURAL SAFETY",
-      items: [
-        { id: "ss1", text: "Foundations and structural components are being constructed as per design specifications.", response: null, actionRequired: "" },
-        { id: "ss2", text: "Reinforcement and formwork are properly installed and secured.", response: null, actionRequired: "" },
-        { id: "ss3", text: "Proper curing measures are in place for concrete elements.", response: null, actionRequired: "" },
-        { id: "ss4", text: "Shoring and bracing are used where necessary and correctly placed.", response: null, actionRequired: "" },
-        { id: "ss5", text: "Structural steel components are secure, correctly installed, and aligned.", response: null, actionRequired: "" },
-      ],
-    },
-    {
-      section: "4. ELECTRICAL SYSTEMS",
-      items: [
-        { id: "es1", text: "Electrical installations comply with local regulations and codes.", response: null, actionRequired: "" },
-        { id: "es2", text: "Proper grounding measures are implemented.", response: null, actionRequired: "" },
-        { id: "es3", text: "Wiring and connections are safely installed and protected", response: null, actionRequired: "" },
-        { id: "es4", text: "Electrical panels and junction boxes are properly labeled.", response: null, actionRequired: "" },
-        { id: "es5", text: "Temporary electrical installations are secured and inspected regularly", response: null, actionRequired: "" },
-      ],
-    },
-    {
-      section: "5. PLUMBING AND MECHANICAL SYSTEMS",
-      items: [
-        { id: "pm1", text: "Plumbing installations comply with local regulations and codes.", response: null, actionRequired: "" },
-        { id: "pm2", text: "Water supply lines are leak-free and properly connected.", response: null, actionRequired: "" },
-        { id: "pm3", text: "Drainage systems are functioning correctly.", response: null, actionRequired: "" },
-        { id: "pm4", text: "Mechanical equipment and systems are installed and operating as per design.", response: null, actionRequired: "" },
-        { id: "pm5", text: "HVAC systems are properly maintained and provide adequate ventilation.", response: null, actionRequired: "" },
-      ],
-    },
-    {
-      section: "6. HAZARDOUS MATERIALS",
-      items: [
-        { id: "hm1", text: "Proper handling and storage of hazardous materials (e.g., chemicals, fuels) are observed.", response: null, actionRequired: "" },
-        { id: "hm2", text: "Hazardous waste is being appropriately disposed of.", response: null, actionRequired: "" },
-        { id: "hm3", text: "Material Safety Data Sheets (MSDS) are readily available for all hazardous substances used on-site.", response: null, actionRequired: "" },
-        { id: "hm4", text: "Spill response measures and cleanup kits are in place.", response: null, actionRequired: "" },
-      ],
-    },
-    {
-      section: "7. WORKFORCE SAFETY",
-      items: [
-        { id: "ws1", text: "Workers are trained on safety procedures and have appropriate certifications.", response: null, actionRequired: "" },
-        { id: "ws2", text: "Fall protection measures are in place where there is a risk of falling.", response: null, actionRequired: "" },
-        { id: "ws3", text: "Personal protective equipment (PPE) is being used correctly.", response: null, actionRequired: "" },
-        { id: "ws4", text: "Work areas are adequately illuminated.", response: null, actionRequired: "" },
-        { id: "ws5", text: "Equipment operators are properly trained and certified.", response: null, actionRequired: "" },
-      ],
-    },
-    {
-      section: "8. DOCUMENTATION AND PERMITS",
-      items: [
-        { id: "dp1", text: "Building permits and relevant documents are posted and up to date.", response: null, actionRequired: "" },
-        { id: "dp2", text: "Inspection reports and records are being maintained.", response: null, actionRequired: "" },
-        { id: "dp3", text: "Safety plans and hazard assessments are available and followed.", response: null, actionRequired: "" },
-        { id: "dp4", text: "Daily construction logs are being recorded.", response: null, actionRequired: "" },
-        { id: "dp5", text: "Subcontractor licenses and insurance certificates are on file.", response: null, actionRequired: "" },
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchChecklist = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/checklist');
+        console.log("Fetched Checklist Response:", res.data);
 
-  const [checklist, setChecklist] = useState(initialChecklist);
+        // Correctly access the array inside the "checklist" property
+        if (Array.isArray(res.data.checklist)) {
+          setChecklist(res.data.checklist);
+        } else {
+          console.error("❌ checklist is not an array:", res.data.checklist);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching checklist:', err);
+      }
+    };
+
+    fetchChecklist();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+
+        const response = await fetch("http://localhost:5000/api/projects");
+        const data = await response.json();
+        setProjectList(data);
+        console.log("Fetched Projects:", data);
+      } catch (err) {
+        console.error("Failed to fetch projects", err);
+      };
+    };
+    fetchProject();
+  }, []);
 
   // Handle clicks outside the date picker to close it
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (datePickerRef.current && !datePickerRef.current.contains(event.target) &&
-          dateInputRef.current && !dateInputRef.current.contains(event.target)) {
+        dateInputRef.current && !dateInputRef.current.contains(event.target)) {
         setShowDatePicker(false);
       }
     };
@@ -244,7 +198,7 @@ const InspectionChecklistReport = () => {
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 font-sans flex justify-center items-start">
       <div className="bg-white p-6 sm:p-8 rounded-lg shadow-xl w-full max-w-4xl">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center mb-6 border-b-2 border-blue-600 pb-3">
-Inspection Checklist Report        </h1>
+          Inspection Checklist Report        </h1>
 
         {/* Project Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -257,8 +211,10 @@ Inspection Checklist Report        </h1>
               onChange={handleReportInfoChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
-              {projectNames.map(name => (
-                <option key={name} value={name}>{name}</option>
+              {projectList.map((project) => (
+                <option key={project.id} value={project.project_name}>
+                  {project.project_name}
+                </option>
               ))}
             </select>
           </div>
@@ -320,20 +276,20 @@ Inspection Checklist Report        </h1>
               <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-300">
                 {section.section}
               </h2>
+
               {section.items.map((item, itemIndex) => (
                 <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center py-3 border-b border-gray-100 last:border-b-0">
                   <p className="text-base text-gray-700 flex-1 mb-2 sm:mb-0 mr-4">{item.text}</p>
                   <div className="flex space-x-4 flex-shrink-0">
-                    {/* Using radio buttons to ensure only one selection per row */}
                     {['Yes', 'No', 'NA'].map(option => (
                       <label key={option} className="inline-flex items-center cursor-pointer">
                         <input
-                          type="radio" // Changed to radio for single selection enforcement
-                          name={`item-${sectionIndex}-${itemIndex}`} // Unique name for radio group
+                          type="radio"
+                          name={`item-${sectionIndex}-${itemIndex}`}
                           value={option}
                           checked={item.response === option}
                           onChange={() => handleResponseChange(sectionIndex, itemIndex, option)}
-                          className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 rounded" // Tailwind for radio styling
+                          className="form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-700">{option}</span>
                       </label>
@@ -341,6 +297,7 @@ Inspection Checklist Report        </h1>
                   </div>
                 </div>
               ))}
+
               <div className="mt-6">
                 <label htmlFor={`action-required-${sectionIndex}`} className="block text-sm font-medium text-gray-700 mb-1">
                   Action required, if any
@@ -348,7 +305,7 @@ Inspection Checklist Report        </h1>
                 <textarea
                   id={`action-required-${sectionIndex}`}
                   rows="3"
-                  value={section.items[0].actionRequired} // Assuming actionRequired is consistent per section or only first item's is used for display
+                  value={section.actionRequired || ""}
                   onChange={(e) => handleActionRequiredChange(sectionIndex, e.target.value)}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter any actions required for this section..."
@@ -357,7 +314,6 @@ Inspection Checklist Report        </h1>
             </div>
           ))}
 
-          {/* Submit Button */}
           <div className="flex justify-center mt-8">
             <button
               type="submit"
@@ -367,6 +323,7 @@ Inspection Checklist Report        </h1>
             </button>
           </div>
         </form>
+
 
         {/* Confirmation Modal */}
         {showConfirmModal && (
