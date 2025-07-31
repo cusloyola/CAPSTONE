@@ -83,6 +83,8 @@ const incidentreportRoutes = require('./routes/IncidentReportsRoutes/incidentrep
 
 
 const projectInfoRoutes = require('./routes/ProjectInfoRoutes/projectInfoRoutes');
+const resourceRoutes = require('./routes/Resource/resourceRoutes');
+
 
 // Import the clientInfoRoutes for the /api/client-info endpoint
 const clientInfoRoutes = require('./routes/ProjectInfoRoutes/clientInfoRoutes');
@@ -112,6 +114,8 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/leave-contract", leaveContractRoutes);
 app.use('/api/projects', projectRoutes);
+
+app.use('/api/resource', resourceRoutes);
 
 app.use('/api/events', eventRoutes);
 
