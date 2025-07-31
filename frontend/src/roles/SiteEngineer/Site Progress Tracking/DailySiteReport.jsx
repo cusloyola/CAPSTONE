@@ -17,24 +17,24 @@ const DailySiteReport = () => {
 
   const reportRefs = useRef({});
 
-const loadReports = () => {
-  fetch("http://localhost:5000/api/daily-site-report/getSiteReport")
-    .then((res) => res.json())
-    .then((res) => {
-      if (Array.isArray(res.data)) {
-        setReports(res.data);
-      } else if (res.data) {
-        setReports([res.data]);
-      } else {
-        setReports([]);
-      }
-    })
-    .catch((err) => console.error("Failed to load reports", err));
-};
+  const loadReports = () => {
+    fetch("http://localhost:5000/api/daily-site-report/getSiteReport")
+      .then((res) => res.json())
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setReports(res.data);
+        } else if (res.data) {
+          setReports([res.data]);
+        } else {
+          setReports([]);
+        }
+      })
+      .catch((err) => console.error("Failed to load reports", err));
+  };
 
-useEffect(() => {
-  loadReports();
-}, []);
+  useEffect(() => {
+    loadReports();
+  }, []);
 
 
   const handleAction = (report, actionType) => {
@@ -49,14 +49,14 @@ useEffect(() => {
     console.log("🟡 Selected Report:", selectedReport);
   }, [modalType, selectedReport]);
 
- const closeModals = (shouldRefresh = false) => {
-  if (shouldRefresh) {
-    loadReports(); 
-  }
-  setShowAddModal(false);
-  setSelectedReport(null);
-  setModalType(null);
-};
+  const closeModals = (shouldRefresh = false) => {
+    if (shouldRefresh) {
+      loadReports();
+    }
+    setShowAddModal(false);
+    setSelectedReport(null);
+    setModalType(null);
+  };
 
 
   const dailySiteColumns = [
@@ -86,19 +86,19 @@ useEffect(() => {
 
   return (
     <div>
-     <DailySiteReportTable
-  title="Daily Site Report"
-  reports={reports}
-  columns={dailySiteColumns}
-  userRole="site_engineer"
-  searchQuery={searchQuery}
-  setSearchQuery={setSearchQuery}
-  filterStatus={filterStatus}
-  setFilterStatus={setFilterStatus}
-  reportRefs={reportRefs}
-  onAction={handleAction} 
-  onAdd={() => setShowAddModal(true)}
-/>
+      <DailySiteReportTable
+        title="Daily Site Report"
+        reports={reports}
+        columns={dailySiteColumns}
+        userRole="site_engineer"
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+        reportRefs={reportRefs}
+        onAction={handleAction}
+        onAdd={() => setShowAddModal(true)}
+      />
 
 
       {showAddModal &&

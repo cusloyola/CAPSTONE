@@ -80,13 +80,14 @@ export const ActionButtons = ({ onViewSummary, onDownloadPDF, onApprove, onRejec
   );
 };
 
-// Component for Status Badge
 export const StatusBadge = ({ status }) => {
-  // Increased padding and font size for a larger badge
-  let badgeClasses = "inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold"; // px-4 py-1.5 and text-sm
+  let badgeClasses = "inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold";
   let badgeText = '';
 
-  switch (status) {
+  // Normalize status string to lowercase
+  const normalizedStatus = status?.toLowerCase();
+
+  switch (normalizedStatus) {
     case 'pending':
       badgeClasses += " bg-yellow-400 text-yellow-900";
       badgeText = 'Pending';

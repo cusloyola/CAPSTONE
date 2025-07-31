@@ -3,20 +3,29 @@ import { useParams } from 'react-router-dom';
 import { TreeTable } from 'primereact/treetable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
-import { FaPencilAlt, FaTrashAlt, FaCalculator, FaEllipsisH } from 'react-icons/fa';
+import { FaPencilAlt, FaTrashAlt, FaCalculator, FaEllipsisV } from 'react-icons/fa';
 
 import EditQTOModal from './EditQTOModal';
 import AddQtoModal from '../AddQtoModal';
 import DeleteQTOModal from './DeleteQTOModal';
 import AddAllowanceQTOModal from './AddAllowanceQTOModal';
+import QuantityTakeOff from './QuantityTakeOff';
+
 
 const QTO_DIMENSION_API = 'http://localhost:5000/api/qto';
 
-const GeneralDimension = () => {
-    const { proposal_id, project_id } = useParams();
+const GeneralDimension = ({
+     proposal_id,
+  project_id,
+  showAddModal,
+  setShowAddModal,
+  selectedItems,
+  setSelectedItems,
+}) => {
+    // const { proposal_id, project_id } = useParams();
     const [nodes, setNodes] = useState([]);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [selectedItems, setSelectedItems] = useState([]);
+    // const [showAddModal, setShowAddModal] = useState(false);
+    // const [selectedItems, setSelectedItems] = useState([]);
     const [showRowModal, setShowRowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRowData, setSelectedRowData] = useState(null);
@@ -149,9 +158,9 @@ const GeneralDimension = () => {
                         setSelectedRowData(node);
                         setOpen((prev) => !prev);
                     }}
-                    className="p-2 rounded hover:bg-gray-100"
+                    className="p-2 rounded-full hover:bg-gray-100"
                 >
-                    <FaEllipsisH className="text-gray-600" />
+                    <FaEllipsisV className="text-gray-600" />
                 </button>
 
                 {open && (
@@ -214,15 +223,22 @@ const GeneralDimension = () => {
     };
 
     return (
-        <div className="p-4 space-y-6 bg-white shadow-rounded">
-            <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
-                <h2 className="text-xl font-semibold">Quantity Take-Off Table</h2>
-                <Button
-                    label="+ Add Parent"
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded"
-                />
-            </div>
+        <div className="space-y-6 bg-white shadow-rounded">
+            {/* <div className="flex justify-between items-center mt-6 mb-6">
+                <p className="text-2xl font-semibold">Quantity Take-Off</p>
+                <div className="flex items-center space-x-2">
+
+                    <Button
+                        label="+ Add Parent"
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded"
+                    />
+                </div>
+            </div> */}
+
+ {/* <div>
+    <QuantityTakeOff/>
+ </div> */}
 
             <TreeTable
                 value={nodes}
@@ -273,7 +289,7 @@ const GeneralDimension = () => {
                 <Column header="Actions" body={actionTemplate} style={{ width: '15%', textAlign: 'center' }} />
             </TreeTable>
 
-            {showAddModal && (
+            {/* {showAddModal && (
                 <AddQtoModal
                     proposal_id={proposal_id}
                     project_id={project_id}
@@ -281,7 +297,7 @@ const GeneralDimension = () => {
                     onSelectItem={(items) => setSelectedItems((prev) => [...prev, ...items])}
                 />
 
-            )}
+            )} */}
 
             <EditQTOModal
                 visible={showRowModal}

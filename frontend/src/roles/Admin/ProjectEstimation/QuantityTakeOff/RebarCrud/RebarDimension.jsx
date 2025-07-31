@@ -97,10 +97,8 @@ const RebarDimension = () => {
     };
 
     return (
-   <div className="p-4 space-y-6 bg-white shadow-rounded">
-              <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
-                  <h2 className="text-xl font-semibold">Rebars Table</h2>
-              </div>
+   <div className="space-y-6 bg-white shadow-rounded">
+
   
 
             <TreeTable value={nodes} tableStyle={{ minWidth: '60rem' }}>
@@ -132,9 +130,9 @@ const RebarDimension = () => {
 
             {rebarUsageTotals.length > 0 && (
                 <>
-                    <hr className="my-6 border-t border-gray-300" />
+                    {/* <hr className="my-6 border-t border-gray-300" /> */}
                     <div className="mt-8">
-                        <h3 className="text-lg font-semibold mb-2 text-gray-700">📊 Rebar Usage Summary</h3>
+                        <h3 className="text-lg font-semibold mb-2 text-gray-700">Rebar Usage Summary</h3>
                         <div className="overflow-x-auto">
                             <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                                 <thead>

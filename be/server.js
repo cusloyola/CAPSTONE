@@ -37,7 +37,7 @@ const userManagementController = require("./routes/userManagementRoutes")
 const eventRoutes = require('./routes/eventRoutes');
 const reportsRoutes = require("./routes/reportsRoutes");
 const projectRoutes = require('./routes/projectRoutes');
-
+const checkListRoutes = require('./routes/checkListRoutes');
 const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
 const materialtakeoffRoutes = require('./routes/MaterialTakeOffRoutes/materialtakeoffRoutes');
 
@@ -49,7 +49,9 @@ const employeeManagementRoutes = require("./routes/employeeManagementRoutes");
 const taskRoutes = require('./routes/taskRoutes');
 
 const bomRoutes = require("./routes/bomRoutes");
+
 const dailySiteReportRoutes = require("./routes/DailySiteReportRoutes/dailySiteReportRoutes");
+ 
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
 const clientRoutes = require("./routes/clientRoutes"); // Existing client routes
@@ -122,7 +124,7 @@ app.use('/api/events', eventRoutes);
 app.use("/api/bom", bomRoutes);
 
 app.use("/api/daily-site-report", dailySiteReportRoutes);
-
+app.use("/api/checklist", checkListRoutes);
 
 app.use("/api/admin-site-reports", adminSiteReport);
 app.use("/api/clients", clientRoutes); // Existing client routes mapping
@@ -160,8 +162,6 @@ app.use('/api/dashboard', dashboardRoutes);
 
 
 app.use('/api/incident-report', incidentreportRoutes);
-
-
 app.use('/api/project-info', projectInfoRoutes);
 
 // Use the clientInfoRoutes for the /api/client-info endpoint

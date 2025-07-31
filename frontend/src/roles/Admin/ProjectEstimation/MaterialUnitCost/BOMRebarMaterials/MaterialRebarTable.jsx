@@ -149,14 +149,14 @@ const MaterialRebarTable = () => {
 
     return (
         <div className="p-4 space-y-6 bg-white shadow-rounded">
-            <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
+            {/* <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
                 <h1 className="text-lg font-semibold">Material Take Off Table</h1>
                 <Button
                     onClick={() => setShowAddModal(true)}
                     label="+ Add Parent"
                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded"
                 />
-            </div>
+            </div> */}
 
             <TreeTable
                 value={nodes}

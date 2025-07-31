@@ -1,52 +1,116 @@
-import React from "react";
-import { NavLink, Outlet, useParams } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { NavLink, Outlet } from "react-router-dom";
+import {
+  FaTasks,
+  FaRulerCombined,
+  FaBoxOpen,
+  FaHardHat,
+  FaCalculator,
+} from "react-icons/fa";
 
 const ProposalDetails = () => {
-    const steps = [
-        { to: "scope-of-work", label: "Scope of Works", number: 1 },
-        { to: "quantity-take-off", label: "Quantity Take-Off", number: 2 },
-        { to: "material-unit-cost", label: "Material Unit", number: 3 },
-        { to: "labor-unit-cost", label: "Labor Unit", number: 4 },
-        { to: "final-cost-estimation", label: "Final Cost Estimation", number: 5 },
-    ];
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showNav, setShowNav] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const scrollRef = useRef(null);
 
-    return (
-        <div className="space-y-4 p-4">
-            <ol className="flex items-center w-full p-3 space-x-2 text-sm font-medium text-center text-gray-500 bg-white border border-gray-200 rounded-lg shadow-sm sm:text-base sm:p-4 sm:space-x-4 rtl:space-x-reverse">
-                {steps.map(({ to, label, number }) => (
-                    <li key={to}>
-                        <NavLink
-                            to={to}
-                            className={({ isActive }) =>
-                                `flex items-center group ${
-                                    isActive ? "text-blue-600" : "text-gray-500"
-                                } no-underline`
-                            }
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    <span
-                                        className={`flex items-center justify-center w-5 h-5 me-2 text-xs rounded-full shrink-0 border ${
-                                            isActive
-                                                ? "border-blue-600 text-blue-600"
-                                                : "border-gray-500"
-                                        }`}
-                                    >
-                                        {number}
-                                    </span>
-                                    {label}
-                                </>
-                            )}
-                        </NavLink>
-                    </li>
-                ))}
-            </ol>
+  // Clock updater
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-            <div className="bg-white p-4 shadow rounded">
-                <Outlet />
+  // Scroll listener for internal scroll container
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const currentY = el.scrollTop;
+      if (currentY > lastScrollY && currentY > 80) {
+        setShowNav(false);
+      } else {
+        setShowNav(true);
+      }
+      setLastScrollY(currentY);
+    };
+
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
+  const steps = [
+    { to: "scope-of-work", label: "Scope of Works", icon: <FaTasks size={20} /> },
+    { to: "quantity-take-off", label: "Quantity Take-Off", icon: <FaRulerCombined size={20} /> },
+    { to: "material-unit-cost", label: "Material Take-Off", icon: <FaBoxOpen size={20} /> },
+    { to: "labor-unit-cost", label: "Labor Unit", icon: <FaHardHat size={20} /> },
+    { to: "final-cost-estimation", label: "Final Cost Estimation", icon: <FaCalculator size={20} /> },
+  ];
+
+  return (
+    <div className="flex flex-col h-full relative">
+      {/* Floating Header - absolute inside scroll container */}
+      <div
+        className={`absolute top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
+          showNav ? "translate-y-0" : "-translate-y-full"
+        } bg-white shadow-sm`}
+      >
+        <div className="flex justify-between items-center px-4 py-3">
+          {/* Left */}
+          <div className="text-xs text-gray-400 tracking-widest">ESTIMATOR STEPPER</div>
+
+          {/* Center */}
+          <div className="flex gap-12">
+            {steps.map(({ to, label, icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `group relative flex flex-col items-center transition duration-200 ${
+                    isActive ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
+                  }`
+                }
+              >
+                {icon}
+                <span className="absolute top-full mt-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap bg-white px-2 py-1 rounded shadow-lg z-20">
+                  {label}
+                </span>
+              </NavLink>
+            ))}
+          </div>
+
+          {/* Right: Clock */}
+          <div className="text-sm text-gray-500 text-right leading-tight font-mono min-w-[120px]">
+            <div>
+              {currentTime.toLocaleTimeString("en-PH", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
             </div>
+            <div>
+              {currentTime.toLocaleDateString("en-PH", {
+                weekday: "short",
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              })}
+            </div>
+          </div>
         </div>
-    );
+      </div>
+
+      {/* Scrollable Content */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 pb-4 pt-[72px]"
+      >
+        <Outlet />
+      </div>
+    </div>
+  );
 };
 
 export default ProposalDetails;
