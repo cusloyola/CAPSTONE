@@ -30,7 +30,6 @@ const DailySiteReportTable = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openMenuId]);
 
-  // ✅ Filter & sort reports
   const filteredReports = reports
     .filter((r) => {
       const matchQuery = r.project_name
@@ -41,7 +40,6 @@ const DailySiteReportTable = ({
     })
     .sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
 
-  // ✅ Paginate
   const indexOfLast = currentPage * entriesPerPage;
   const indexOfFirst = indexOfLast - entriesPerPage;
   const currentReports = filteredReports.slice(indexOfFirst, indexOfLast);

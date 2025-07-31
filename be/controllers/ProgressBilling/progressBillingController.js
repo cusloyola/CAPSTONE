@@ -10,7 +10,7 @@ const addProgressBillList = async (req, res) => {
         revision,
         user_id,
         notes,
-        previous_billing_id, // ✅ Include this
+        previous_billing_id, 
     } = req.body;
 
     if (!proposal_id || user_id == null) {

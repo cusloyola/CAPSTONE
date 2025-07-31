@@ -1,54 +1,63 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import AddSowModal from "./AddSowModal";
+import { FaEllipsisV } from "react-icons/fa";
 
+
+const SOW_API_URL_ALL = "http://localhost:5000/api/sowproposal/sow-work-items/all-work-items";
 const SOW_API_URL = "http://localhost:5000/api/sowproposal/sow-list";
 
 const ScopeOfWorks = () => {
   const { project_id, proposal_id } = useParams();
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [sowWorkItems, setSowWorkItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
 
-  console.log("🔍 useParams -> project_id:", project_id, "| proposal_id:", proposal_id);
+  const [sowItems, setSowItems] = useState([]);
+  const [uniqueCategories, setUniqueCategories] = useState([]);
+  const [uniqueUnits, setUniqueUnits] = useState([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [unitFilter, setUnitFilter] = useState("");
+  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchSowWorkItems = () => {
-    if (!proposal_id) {
-      console.warn("No proposal_id provided, skipping fetch");
-      return;
-    }
-
+    if (!proposal_id) return;
     fetch(`${SOW_API_URL}/${proposal_id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setSowWorkItems(data);
-        } else {
-          console.warn("Unexpected data format:", data);
-          setSowWorkItems([]);
-        }
-      })
-      .catch((err) => console.error("Error fetching SOW items:", err));
+      .then(res => res.json())
+      .then(data => setSowWorkItems(Array.isArray(data) ? data : []))
+      .catch(err => console.error("Error fetching SOW items:", err));
   };
 
-  // Fetch when the component mounts
   useEffect(() => {
     fetchSowWorkItems();
-  }, [proposal_id]); // refetch if proposal_id changes
+  }, [proposal_id]);
 
-  // Also fetch when the Add Modal opens (optional, if needed)
   useEffect(() => {
-    if (showAddModal) {
-      fetchSowWorkItems();
-    }
+    const fetchSowItems = async () => {
+      try {
+        const res = await fetch(`${SOW_API_URL_ALL}?proposal_id=${proposal_id}`);
+        const data = await res.json();
+        setSowItems(data);
+        setUniqueCategories([...new Set(data.map(item => item.category))]);
+        setUniqueUnits([...new Set(data.map(item => item.unitCode))]);
+      } catch (err) {
+        console.error("Error fetching SOW items:", err);
+      }
+    };
+
+    fetchSowItems();
+  }, [proposal_id]);
+
+  useEffect(() => {
+    if (showAddModal) fetchSowWorkItems();
   }, [showAddModal]);
 
   const handleClose = () => setShowAddModal(false);
-
 
   const handleSelectItem = (newItems) => {
     setSowWorkItems((prev) => {
@@ -59,52 +68,87 @@ const ScopeOfWorks = () => {
     setShowAddModal(false);
   };
 
+  // Filtered + Search
+  const filteredItems = sowWorkItems.filter(item => {
+    const matchesSearch = item.item_title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter ? item.category === categoryFilter : true;
+    const matchesUnit = unitFilter ? item.unitCode === unitFilter : true;
+    return matchesSearch && matchesCategory && matchesUnit;
+  });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredItems.length / entriesPerPage);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * entriesPerPage,
+    currentPage * entriesPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, unitFilter, entriesPerPage]);
 
   return (
-    <div className="p-4 space-y-6 bg-white shadow rounded">
-      <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
-        <h1 className="text-lg font-semibold">List of all Scope of Works (SOW)</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mt-6 mb-6">
+        <p className="text-2xl font-semibold">Scope of Works</p>
         <div className="flex items-center space-x-2">
           <Link
             to={`/AllPendingProjects/${project_id}/estimation/scope-of-work/tables`}
-            className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
+            className=" text-white text-gray-900 px-4 py-2 rounded font-medium bg-blue-600 hover:bg-blue-900"
           >
-            Scope of Works Table
+            Table List
           </Link>
-
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
+            className=" text-white text-gray-900 px-4 py-2 rounded font-medium bg-blue-600 hover:bg-blue-900"
           >
-            Add Scope of Work
+            Add List
           </button>
-
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex flex-col gap-2">
-          <label className="block font-medium text-gray-700">Categories:</label>
-          <select className="border p-2 rounded w-48">
+      <hr />
+      <div className="flex flex-wrap gap-4 mt-10">
+        <div className="flex flex-col gap-2  mt-6">
+          {/* <label className="text-sm text-gray-600">Filter by Category</label> */}
+          <select
+            className="border p-2 rounded w-48"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
             <option value="">All Categories</option>
+            {uniqueCategories.map((cat, index) => (
+              <option key={index} value={cat}>{cat}</option>
+            ))}
           </select>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label className="block font-medium text-gray-700">Work Items:</label>
-          <select>
-            <option value="">All Work Items</option>
+        <div className="flex flex-col gap-2 mt-6">
+          {/* <label className="text-sm text-gray-600">Filter by Unit</label> */}
+          <select
+            className="border p-2 rounded w-48"
+            value={unitFilter}
+            onChange={(e) => setUnitFilter(e.target.value)}
+          >
+            <option value="">All Units</option>
+            {uniqueUnits.map((unit, index) => (
+              <option key={index} value={unit}>{unit}</option>
+            ))}
           </select>
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mt-4">
         <div>
           <label className="text-sm">
             Show
-            <select className="mx-2 border p-1 rounded" defaultValue={1}>
-              <option value={1}>1</option>
+            <select
+              className="mx-2 border p-1 rounded w-14"
+              value={entriesPerPage}
+              onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
             </select>
@@ -112,51 +156,78 @@ const ScopeOfWorks = () => {
           </label>
         </div>
         <div className="flex items-center gap-2">
-          <label className="block font-medium text-gray-700">Search:</label>
           <input
-            id="searchInput"
+            placeholder="Search Work List..."
             type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="border p-2 rounded w-64"
           />
         </div>
       </div>
 
       <table className="table-auto w-full border border-gray-300 text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="border px-4 py-2 text-left">Category (Work Type)</th>
-            <th className="border px-4 py-2 text-left">Work Item (Specific Task)</th>
-            <th className="border px-4 py-2 text-left">Unit of Measure</th>
-            <th className="border px-4 py-2 text-left">Sequence Order</th>
-            <th className="border px-4 py-2 text-left">Status</th>
-            <th className="border px-4 py-2 text-left">Actions</th>
+        <thead className="bg-gray-100 ">
+          <tr className="">
+            <th className="border px-4 py-2 text-center">Category</th>
+            <th className="border px-4 py-2 text-center">Work Item</th>
+            <th className="border px-4 py-2 text-center">Unit</th>
+            <th className="border px-4 py-2 text-center">Sequence</th>
+
+            <th className="border px-4 py-2 text-center">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {sowWorkItems.length === 0 ? (
+          {paginatedItems.length === 0 ? (
             <tr>
-              <td colSpan={6} className="border px-4 py-2 text-center">
-                No work items found.
-              </td>
+              <td colSpan={5} className="text-center p-4">No work items found.</td>
             </tr>
           ) : (
-            sowWorkItems.map((item) => (
+            paginatedItems.map((item) => (
               <tr key={item.work_item_id}>
-                <td className="border px-4 py-2">{item.category || item.type_name}</td>
+                <td className="border px-4 py-2">{item.category}</td>
                 <td className="border px-4 py-2">{item.item_title}</td>
                 <td className="border px-4 py-2">{item.unitCode}</td>
                 <td className="border px-4 py-2">{item.sequence_order}</td>
-                <td className="border px-4 py-2">Active</td>
+
                 <td className="border px-4 py-2">
-                  <div className="flex gap-x-2">
-                    <button className="bg-yellow-500 text-white px-6 h-10 rounded hover:bg-yellow-700">
-                      Edit
+                  <div className="relative inline-block text-left">
+                    <button
+                      onClick={() =>
+                        setOpenMenuId((prevId) =>
+                          prevId === item.work_item_id ? null : item.work_item_id
+                        )
+                      }
+                      className="p-2 hover:bg-gray-200 rounded-full ml-20"
+                    >
+                      <FaEllipsisV className="text-gray-600 item-center " />
                     </button>
-                    <button className="bg-red-600 text-white px-6 h-10 rounded hover:bg-red-700">
-                      Delete
-                    </button>
+
+                    {openMenuId === item.work_item_id && (
+                      <div className="absolute right-0 z-10 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg">
+                        <button
+                          className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50"
+                          onClick={() => {
+                            setOpenMenuId(null);
+                            console.log("Edit", item.work_item_id);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            setOpenMenuId(null);
+                            console.log("Delete", item.work_item_id);
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </td>
+
               </tr>
             ))
           )}
@@ -164,13 +235,24 @@ const ScopeOfWorks = () => {
       </table>
 
       <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm">
-        <p>Showing {selectedItems.length} entries</p>
-
+        <p>
+          Showing {filteredItems.length === 0 ? 0 : ((currentPage - 1) * entriesPerPage) + 1}
+          {" to "}
+          {Math.min(currentPage * entriesPerPage, filteredItems.length)} of {filteredItems.length} entries
+        </p>
         <div className="flex gap-2 mt-2 sm:mt-0">
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
             Previous
           </button>
-          <button className="px-3 py-1 border rounded disabled:opacity-50" disabled>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
             Next
           </button>
         </div>
@@ -184,7 +266,6 @@ const ScopeOfWorks = () => {
           existingItemIds={new Set(selectedItems.map(item => item.work_item_id))}
         />
       )}
-
     </div>
   );
 };
