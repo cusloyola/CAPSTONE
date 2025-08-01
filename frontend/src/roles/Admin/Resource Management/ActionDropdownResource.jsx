@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { FaEllipsisV, FaPencilAlt, FaTrashAlt, FaCopy } from "react-icons/fa";
 
 
-const ActionDropdown = ({ onEdit, onDelete, onCopy }) => {
+const ActionDropdownResource = ({ onEdit, onDelete, onCopy }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef();
 
@@ -35,15 +35,7 @@ const ActionDropdown = ({ onEdit, onDelete, onCopy }) => {
                     >
                         <FaPencilAlt className="text-blue-500" /> Edit
                     </button>
-                    <button
-                        onClick={() => {
-                            onCopy();
-                            setOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-                    >
-                        <FaCopy className="text-green-500" /> Make a Copy
-                    </button>
+                   
                     <button
                         onClick={() => {
                             onDelete();
@@ -59,4 +51,4 @@ const ActionDropdown = ({ onEdit, onDelete, onCopy }) => {
     );
 };
 
-export default ActionDropdown;
+export default ActionDropdownResource;

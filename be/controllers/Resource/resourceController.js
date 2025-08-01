@@ -2,18 +2,18 @@ const db = require("../../config/db");
 
 // Controller to get all resources, joining with brand and unit tables for full details
 const getAllResources = (req, res) => {
-    // A more comprehensive query to include brand and unit names
+    // A more comprehensive query to include brand, unit names, and the new stocks column
     const query = `
         SELECT 
             r.*, 
             rb.brand_name, 
-            u.unitName /* CHANGED: Corrected column name from u.unit_name to u.unitName */
+            u.unitName
         FROM 
             resource r
         JOIN 
             resource_brand rb ON r.brand_id = rb.brand_id
         JOIN 
-            unit_of_measure u ON r.unitId = u.unitId /* CHANGED: Corrected table name from 'unit' to 'unit_of_measure' */
+            unit_of_measure u ON r.unitId = u.unitId
         WHERE 
             r.isDeleted = 0
     `;
@@ -32,25 +32,66 @@ const getAllResources = (req, res) => {
     });
 };
 
-// Controller to add a new resource
-const addResource = (req, res) => {
-    const { material_name, unitId, default_unit_cost, brand_id } = req.body;
+// Controller to get all brands for dropdown selection
+const getAllBrands = (req, res) => {
+    const query = "SELECT brand_id, brand_name FROM resource_brand";
     
-    // Validate that all required fields are present
-    if (!material_name || !unitId || !default_unit_cost || !brand_id) {
-        return res.status(400).json({ error: "All fields (material_name, unitId, default_unit_cost, brand_id) are required." });
-    }
-
-    const query = "INSERT INTO resource (material_name, unitId, default_unit_cost, brand_id, created_at, isDeleted) VALUES (?, ?, ?, ?, NOW(), 0)";
-    db.query(query, [material_name, unitId, default_unit_cost, brand_id], (err, result) => {
+    db.query(query, (err, results) => {
         if (err) {
-            console.error("❌ Error adding resource:", err);
-            return res.status(500).json({ error: "Failed to add resource." });
+            console.error("❌ Error fetching brands:", err);
+            return res.status(500).json({ error: "Server error while fetching brands" });
         }
-        console.log("📌 Resource added:", result);
-        return res.status(201).json({ message: "Resource added successfully", resourceId: result.insertId });
+        if (!results || results.length === 0) {
+            console.warn("⚠️ No brands found.");
+            return res.status(404).json({ message: "No brands found." });
+        }
+        console.log("📌 Sending Brand Data:", results);
+        return res.json(results);
     });
 };
+
+// ADDED: Controller to get all units for dropdown selection
+const getAllUnits = (req, res) => {
+    const query = "SELECT unitId, unitName FROM unit_of_measure";
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching units:", err);
+            return res.status(500).json({ error: "Server error while fetching units" });
+        }
+        if (!results || results.length === 0) {
+            console.warn("⚠️ No units found.");
+            return res.status(404).json({ message: "No units found." });
+        }
+        console.log("📌 Sending Unit Data:", results);
+        return res.json(results);
+    });
+};
+
+// Controller to add a new resource, now including the stocks column
+const addResource = (req, res) => {
+    // Correctly destructure all fields, including stocks, from the request body
+    const { material_name, unitId, default_unit_cost, brand_id, stocks } = req.body;
+
+    // --- DEBUGGING STEP ---
+    // Check your server's console for this message. It should show '50' if Postman is correct.
+    console.log('Received stocks value:', stocks);
+    // ----------------------
+
+    // The SQL query must explicitly list the 'stocks' column
+    const sql = "INSERT INTO resource (material_name, unitId, default_unit_cost, brand_id, stocks) VALUES (?, ?, ?, ?, ?)";
+    
+    // The array of values must include the 'stocks' variable
+    db.query(sql, [material_name, unitId, default_unit_cost, brand_id, stocks], (err, result) => {
+        if (err) {
+            console.error('Error adding resource:', err);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+        console.log('Resource added successfully:', result);
+        res.status(201).json({ message: 'Resource added successfully', resourceId: result.insertId });
+    });
+};
+
 
 // Controller for soft deleting a resource by its ID
 const deleteResource = (req, res) => {
@@ -69,20 +110,20 @@ const deleteResource = (req, res) => {
     });
 };
 
-// Controller to get a single resource by its ID
+// Controller to get a single resource by its ID, now including the stocks column
 const getResourceById = (req, res) => {
     const resourceId = req.params.id;
     const query = `
         SELECT 
             r.*, 
             rb.brand_name, 
-            u.unitName /* CHANGED: Corrected column name from u.unit_name to u.unitName */
+            u.unitName
         FROM 
             resource r
         JOIN 
             resource_brand rb ON r.brand_id = rb.brand_id
         JOIN 
-            unit_of_measure u ON r.unitId = u.unitId /* CHANGED: Corrected table name from 'unit' to 'unit_of_measure' */
+            unit_of_measure u ON r.unitId = u.unitId
         WHERE 
             r.resource_id = ? AND r.isDeleted = 0
     `;
@@ -100,16 +141,17 @@ const getResourceById = (req, res) => {
     });
 };
 
-// Controller to update an existing resource
+// Controller to update an existing resource, now allowing stocks to be updated
 const updateResource = (req, res) => {
     console.log("updateResource: Request received for resource ID:", req.params.id);
     console.log("updateResource: Request body:", req.body);
 
     const resourceId = req.params.id;
-    const { material_name, unitId, default_unit_cost, brand_id } = req.body;
+    const { material_name, unitId, default_unit_cost, brand_id, stocks } = req.body;
 
-    const query = "UPDATE resource SET material_name = ?, unitId = ?, default_unit_cost = ?, brand_id = ? WHERE resource_id = ? AND isDeleted = 0";
-    db.query(query, [material_name, unitId, default_unit_cost, brand_id, resourceId], (err, result) => {
+    // The query now includes the 'stocks' column in the update statement
+    const query = "UPDATE resource SET material_name = ?, unitId = ?, default_unit_cost = ?, brand_id = ?, stocks = ? WHERE resource_id = ? AND isDeleted = 0";
+    db.query(query, [material_name, unitId, default_unit_cost, brand_id, stocks, resourceId], (err, result) => {
         if (err) {
             console.error("updateResource: Database error:", err);
             return res.status(500).json({ error: "Failed to update resource." });
@@ -128,6 +170,8 @@ const updateResource = (req, res) => {
 
 module.exports = { 
     getAllResources, 
+    getAllBrands, 
+    getAllUnits,
     addResource, 
     deleteResource, 
     getResourceById, 
