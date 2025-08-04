@@ -8,22 +8,28 @@ const InspectionChecklistReport = () => {
   // State for general report information
   const [reportInfo, setReportInfo] = useState({
     projectName: '', // Default to "Select Project"
+    project_id: '', // Project ID will be set from project selection
     date: '',
     inspector: '', // Inspector name is static
+    inspectorId: '' // Inspector ID will be set from user data
   });
   useEffect(() => {
-    // Get user from localStorage
     const storedUser = localStorage.getItem("user");
-    console.log("storedUser from localStorage:", storedUser); // <-- Add this line
     if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      setReportInfo(prev => ({
-        ...prev,
-        inspector: parsedUser.name || "Unknown Inspector", // Adjust property as needed
-      }));
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setReportInfo(prev => ({
+          ...prev,
+          inspector: parsedUser?.name || "Unknown Inspector",
+          inspectorId: parsedUser?.id ?? "" // fallback to empty string or null as needed
+        }));
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+      }
     }
   }, []);
+
 
   // State for modals
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -42,7 +48,6 @@ const InspectionChecklistReport = () => {
     const fetchChecklist = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/checklist');
-        console.log("Fetched Checklist Response:", res.data);
 
         // Correctly access the array inside the "checklist" property
         if (Array.isArray(res.data.checklist)) {
@@ -66,7 +71,6 @@ const InspectionChecklistReport = () => {
         const response = await fetch("http://localhost:5000/api/projects");
         const data = await response.json();
         setProjectList(data);
-        console.log("Fetched Projects:", data);
       } catch (err) {
         console.error("Failed to fetch projects", err);
       };
@@ -91,8 +95,26 @@ const InspectionChecklistReport = () => {
   // Handle changes in general report info fields
   const handleReportInfoChange = (e) => {
     const { name, value } = e.target;
-    setReportInfo(prev => ({ ...prev, [name]: value }));
+
+    if (name === "project_id") {
+      const selectedProject = projectList.find(
+        (project) => project.id === parseInt(value)
+      );
+
+      setReportInfo((prev) => ({
+        ...prev,
+        project_id: value,
+        projectName: selectedProject?.project_name || ""
+      }));
+    } else {
+      setReportInfo((prev) => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
+
+
 
   // Handle changes in checklist item responses (Yes/No/NA)
   const handleResponseChange = (sectionIndex, itemIndex, responseValue) => {
@@ -131,7 +153,7 @@ const InspectionChecklistReport = () => {
     }
 
     e.preventDefault();
-    if (!reportInfo.projectName) {
+    if (!reportInfo.project_id) {
       alert("Please select a project.");
       return;
     }
@@ -144,9 +166,10 @@ const InspectionChecklistReport = () => {
 
     try {
       const payload = {
-        project_name: reportInfo.projectName,
+        project_id: reportInfo.project_id,
         report_date: reportInfo.date,
         inspector: reportInfo.inspector,
+        inspectorID: reportInfo.inspectorId,
         checklist: checklist
       };
 
@@ -157,9 +180,11 @@ const InspectionChecklistReport = () => {
 
       // Reset
       setReportInfo({
-        projectName: '',
+        projectName: '', // Default to "Select Project"
+        project_id: '', // Project ID will be set from project selection
         date: '',
-        inspector: '',
+        inspector: user?.name || "Unknown Inspector", // Inspector name is static
+        inspectorId: user?.id ?? "" // Inspector ID will be set from user data
       });
       setChecklist([]);
     } catch (err) {
@@ -238,19 +263,22 @@ const InspectionChecklistReport = () => {
           <div>
             <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
             <select
-              id="projectName"
-              name="projectName"
-              value={reportInfo.projectName}
+              id="project_id"
+              name="project_id"
+              value={reportInfo.project_id}
               onChange={handleReportInfoChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
-              <option value="">Select Project</option> {/* Add this line */}
+              <option value="">Select Project</option>
               {projectList.map((project) => (
-                <option key={project.id} value={project.project_name}>
+                <option key={project.project_id} value={project.project_id}>
                   {project.project_name}
                 </option>
               ))}
             </select>
+
+
+
           </div>
           <div className="relative"> {/* Added relative for date picker positioning */}
             <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
