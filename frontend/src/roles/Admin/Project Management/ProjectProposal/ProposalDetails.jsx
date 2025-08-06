@@ -53,7 +53,7 @@ const ProposalDetails = () => {
     <div className="flex flex-col h-full relative">
       {/* Floating Header - absolute inside scroll container */}
       <div
-        className={`absolute top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
+        className={`absolute top-0 left-0 right-0 z-10 transition-transform duration-300 ease-in-out ${
           showNav ? "translate-y-0" : "-translate-y-full"
         } bg-white shadow-sm`}
       >

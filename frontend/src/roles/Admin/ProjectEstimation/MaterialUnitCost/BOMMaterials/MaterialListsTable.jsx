@@ -8,7 +8,7 @@ import React, {
 import { useParams } from "react-router-dom";
 import { TreeTable } from "primereact/treetable";
 import { Column } from "primereact/column";
-import { FaEllipsisH, FaPencilAlt, FaTrashAlt } from "react-icons/fa";
+import { FaEllipsisV, FaPencilAlt, FaTrashAlt } from "react-icons/fa";
 import EditModalBOMMaterials from "./EditModalBOMMaterials";
 import DeleteModalBOMMaterials from "./DeleteModalBOMMaterials";
 
@@ -34,7 +34,7 @@ const ActionMenu = ({
   return (
     <div className="relative inline-block" ref={dropdownRef}>
       <button onClick={() => setOpen((prev) => !prev)} className="p-2 rounded hover:bg-gray-100">
-        <FaEllipsisH className="text-gray-600" />
+        <FaEllipsisV className="text-gray-600" />
       </button>
 
       {open && (
@@ -67,12 +67,16 @@ const ActionMenu = ({
   );
 };
 
-const MaterialListTable = forwardRef(({ proposal_id }, ref) => {
+const MaterialListTable = forwardRef(({ proposal_id, selectedParent, setParentList }, ref) => {
   const [showRowModal, setShowRowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRowData, setSelectedRowData] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [parentTotals, setParentTotals] = useState([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [entriesCount, setEntriesCount] = useState(10);
+
 
   const fetchMaterialCosts = async () => {
     try {
@@ -90,7 +94,7 @@ const MaterialListTable = forwardRef(({ proposal_id }, ref) => {
       const res = await fetch(`http://localhost:5000/api/mto/list-parent/${proposal_id}`);
       if (!res.ok) throw new Error(`Status: ${res.status}`);
       const data = await res.json();
-      setParentTotals(data);
+      setParentList?.(data);
     } catch (err) {
       console.error("Failed to fetch parent totals:", err.message);
     }
@@ -109,6 +113,7 @@ const MaterialListTable = forwardRef(({ proposal_id }, ref) => {
       fetchParentTotals();
     }
   }, [proposal_id]);
+
 
   const buildTree = (items) => {
     const parentMap = {};
@@ -177,10 +182,69 @@ const MaterialListTable = forwardRef(({ proposal_id }, ref) => {
     );
   };
 
+  
+const filteredByParent =
+  selectedParent === "All" || !selectedParent
+    ? nodes
+    : nodes.filter((node) => node.data.name === selectedParent);
+
+const filteredBySearch = filteredByParent.map((parent) => {
+  const parentMatches = parent.data.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const matchingChildren = parent.children.map((child) => {
+    const childMatches = child.data.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (childMatches || parentMatches) {
+      return { ...child }; 
+    }
+
+    return null;
+  }).filter(Boolean);
+
+  if (parentMatches || matchingChildren.length > 0) {
+    return { ...parent, children: matchingChildren };
+  }
+
+  return null;
+}).filter(Boolean);
+
+const paginatedNodes = filteredBySearch.slice(0, entriesCount);
+
+
   return (
-    <div className="p-4 space-y-6 bg-white shadow-rounded">
+    <div className="space-y-6 bg-white shadow-rounded">
+
+      <div className="flex justify-between items-center mb-4">
+  {/* Show Entries Dropdown */}
+  <div className="flex items-center space-x-2">
+    <label htmlFor="entries">Show</label>
+    <select
+      id="entries"
+      value={entriesCount}
+      onChange={(e) => setEntriesCount(Number(e.target.value))}
+              className="mx-2 border p-1 rounded w-14 mt-2  "
+    >
+      {[2, 10, 25, 50, 100].map((num) => (
+        <option key={num} value={num}>{num}</option>
+      ))}
+    </select>
+    <span>entries</span>
+  </div>
+
+  {/* Search Input */}
+  <div>
+    <input
+      type="text"
+      placeholder="Search material..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="border p-2 rounded w-64"
+    />
+  </div>
+</div>
+
       <TreeTable
-        value={nodes}
+        value={paginatedNodes}
         tableStyle={{ minWidth: "60rem" }}
         rowClassName={(node) => {
           if (node.data.nodeType === "parent") return "qto-parent-row";

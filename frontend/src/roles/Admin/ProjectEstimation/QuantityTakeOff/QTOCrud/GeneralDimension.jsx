@@ -15,17 +15,16 @@ import QuantityTakeOff from './QuantityTakeOff';
 const QTO_DIMENSION_API = 'http://localhost:5000/api/qto';
 
 const GeneralDimension = ({
-     proposal_id,
-  project_id,
-  showAddModal,
-  setShowAddModal,
-  selectedItems,
-  setSelectedItems,
+    proposal_id,
+    project_id,
+    showAddModal,
+    setShowAddModal,
+    selectedItems,
+    setSelectedItems,
+    categoryFilter,
+    setAvailableCategories
 }) => {
-    // const { proposal_id, project_id } = useParams();
     const [nodes, setNodes] = useState([]);
-    // const [showAddModal, setShowAddModal] = useState(false);
-    // const [selectedItems, setSelectedItems] = useState([]);
     const [showRowModal, setShowRowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRowData, setSelectedRowData] = useState(null);
@@ -33,18 +32,54 @@ const GeneralDimension = ({
     const [selectedNode, setSelectedNode] = useState(null);
 
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [entryLimit, setEntryLimit] = useState(10);
+    const [rawData, setRawData] = useState([]);
+
+
     useEffect(() => {
         if (!proposal_id) return;
+
         fetch(`${QTO_DIMENSION_API}/${proposal_id}`)
             .then((res) => {
                 if (!res.ok) throw new Error('Failed to fetch QTO data');
                 return res.json();
             })
             .then((data) => {
+                setRawData(data);
                 setNodes(buildTreeStructure(data));
+
+                const uniqueCats = [...new Set(data.map(d => d.parent_title))];
+                setAvailableCategories(uniqueCats);
             })
             .catch((err) => console.error('Error loading QTO table:', err));
     }, [proposal_id]);
+
+
+
+
+    useEffect(() => {
+        let filtered = [...rawData];
+
+        if (categoryFilter !== '' && categoryFilter !== 'All Categories') {
+            filtered = filtered.filter(
+                (entry) => entry.parent_title === categoryFilter
+            );
+        }
+
+        if (searchQuery) {
+            filtered = filtered.filter((entry) =>
+                `${entry.label} ${entry.item_title} ${entry.parent_title}`
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())
+            );
+        }
+
+        const limited = entryLimit ? filtered.slice(0, entryLimit) : filtered;
+        setNodes(buildTreeStructure(limited));
+    }, [categoryFilter, searchQuery, entryLimit, rawData]);
+
+
 
     const buildTreeStructure = (flatData) => {
         const tree = [];
@@ -170,9 +205,9 @@ const GeneralDimension = ({
                                 <button
                                     className="block w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-gray-100 flex items-center gap-2"
                                     onClick={() => {
-                                        setSelectedNode(node);         // store selected node data
-                                        setShowAllowanceModal(true);   // show the modal
-                                        setOpen(false);                // close dropdown or menu
+                                        setSelectedNode(node);
+                                        setShowAllowanceModal(true);
+                                        setOpen(false);
                                     }}
                                 >
                                     <FaPencilAlt className="text-blue-600" />
@@ -224,21 +259,36 @@ const GeneralDimension = ({
 
     return (
         <div className="space-y-6 bg-white shadow-rounded">
-            {/* <div className="flex justify-between items-center mt-6 mb-6">
-                <p className="text-2xl font-semibold">Quantity Take-Off</p>
-                <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap justify-between items-center gap-4 mt-6">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm">Show</span>
+                    <select
+                        className="border p-1 rounded w-14"
+                        value={entryLimit}
+                        onChange={(e) => setEntryLimit(Number(e.target.value))}
+                    >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                        <option value="80">80</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span className="text-sm">entries</span>
+                </div>
 
-                    <Button
-                        label="+ Add Parent"
-                        onClick={() => setShowAddModal(true)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded"
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        placeholder="Search Work List..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="border p-2 rounded w-64"
                     />
                 </div>
-            </div> */}
+            </div>
 
- {/* <div>
-    <QuantityTakeOff/>
- </div> */}
+
 
             <TreeTable
                 value={nodes}
@@ -249,19 +299,19 @@ const GeneralDimension = ({
                     return '';
                 }}
             >
-                <Column field="name" header="Item / Label" expander style={{ width: '20%' }} />
-                <Column field="floor" header="Floor" style={{ width: '16%', textAlign: 'center' }} />
-                <Column field="length" header="Length (m)" style={{ width: '10%', textAlign: 'center' }} />
-                <Column field="width" header="Width (m)" style={{ width: '10%', textAlign: 'center' }} />
-                <Column field="depth" header="Depth (m)" style={{ width: '10%', textAlign: 'center' }} />
+                <Column field="name" header="Item / Label" expander style={{ width: '20%', fontSize: '14px' }} />
+                <Column field="floor" header="Floor" style={{ width: '16%', textAlign: 'center', fontSize: '14px' }} />
+                <Column field="length" header="Length" style={{ width: '10%', textAlign: 'center', fontSize: '14px' }} />
+                <Column field="width" header="Width" style={{ width: '10%', textAlign: 'center', fontSize: '14px' }} />
+                <Column field="depth" header="Depth" style={{ width: '10%', textAlign: 'center', fontSize: '14px' }} />
                 <Column
-                    header="Initial Quantity"
+                    header="Initial Qty"
                     body={(node) =>
                         node.data?.volume != null && !isNaN(node.data.volume)
                             ? parseFloat(node.data.volume).toFixed(2)
                             : '—'
                     }
-                    style={{ width: '15%', textAlign: 'center' }}
+                    style={{ width: '15%', textAlign: 'center', fontSize: '14px' }}
                 />
 
 
@@ -272,32 +322,23 @@ const GeneralDimension = ({
                             ? parseFloat(node.data.allowance).toFixed(2)
                             : null
                     }
-                    style={{ width: '10%', textAlign: 'center' }}
+                    style={{ width: '10%', textAlign: 'center', fontSize: '14px' }}
                 />
 
 
                 <Column
-                    header="Adjusted Quantity"
+                    header="Adjusted Qty"
                     body={(node) =>
                         node.data?.nodeType === 'parent'
                             ? parseFloat(node.data.adjustedVolume).toFixed(2)
                             : null
                     }
-                    style={{ width: '15%', textAlign: 'center' }}
+                    style={{ width: '15%', textAlign: 'center', fontSize: '14px' }}
                 />
 
-                <Column header="Actions" body={actionTemplate} style={{ width: '15%', textAlign: 'center' }} />
+                <Column header="Actions" body={actionTemplate} style={{ width: '15%', textAlign: 'center', fontSize: '14px' }} />
             </TreeTable>
 
-            {/* {showAddModal && (
-                <AddQtoModal
-                    proposal_id={proposal_id}
-                    project_id={project_id}
-                    onClose={() => setShowAddModal(false)}
-                    onSelectItem={(items) => setSelectedItems((prev) => [...prev, ...items])}
-                />
-
-            )} */}
 
             <EditQTOModal
                 visible={showRowModal}

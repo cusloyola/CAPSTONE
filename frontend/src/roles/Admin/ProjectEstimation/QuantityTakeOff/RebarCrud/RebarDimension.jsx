@@ -18,6 +18,11 @@ const RebarDimension = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRebar, setSelectedRebar] = useState(null);
 
+    const [entryLimit, setEntryLimit] = useState(30);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filteredNodes, setFilteredNodes] = useState([]); // this will be used in TreeTable
+
+
     const fetchRebarDetails = async () => {
         try {
             const res = await fetch(`${REBAR_API}/by-proposal/${proposal_id}`);
@@ -48,6 +53,52 @@ const RebarDimension = () => {
             fetchRebarTotals();
         }
     }, [proposal_id]);
+
+    useEffect(() => {
+        if (!nodes.length) return;
+
+        const keyword = searchQuery.trim().toLowerCase();
+
+        const filterTree = (node) => {
+            const { name, location, floor, quantity, total_weight } = node.data || {};
+            const searchable = `${name ?? ""} ${location ?? ""} ${floor ?? ""} ${quantity ?? ""} ${total_weight ?? ""}`.toLowerCase();
+
+            const childMatches = node.children
+                ? node.children
+                    .map(filterTree)
+                    .filter(Boolean)
+                : [];
+
+            const selfMatches = searchable.includes(keyword);
+
+            if (selfMatches || childMatches.length > 0) {
+                return {
+                    ...node,
+                    children: childMatches.length > 0
+                        ? childMatches.map(applyEntryLimit)
+                        : node.children ?? []
+                };
+            }
+
+            return null;
+        };
+
+        const applyEntryLimit = (node) => {
+            if (!node.children || node.children.length === 0) return node;
+            return {
+                ...node,
+                children: node.children.slice(0, entryLimit)
+            };
+        };
+
+        const filteredTree = keyword
+            ? nodes.map(filterTree).filter(Boolean)
+            : nodes.map(applyEntryLimit);
+
+        setFilteredNodes(filteredTree);
+    }, [nodes, searchQuery, entryLimit]);
+
+
 
     const buildTreeStructure = (data) => {
         const treeMap = new Map();
@@ -97,11 +148,39 @@ const RebarDimension = () => {
     };
 
     return (
-   <div className="space-y-6 bg-white shadow-rounded">
+        <div className="space-y-6 bg-white shadow-rounded">
 
-  
+            <div className="flex flex-wrap justify-between items-center gap-4 mt-6">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm">Show</span>
+                    <select
+                        className="border p-1 rounded w-14"
+                        value={entryLimit}
+                        onChange={(e) => setEntryLimit(Number(e.target.value))}
+                    >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                        <option value="80">80</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span className="text-sm">entries</span>
+                </div>
 
-            <TreeTable value={nodes} tableStyle={{ minWidth: '60rem' }}>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        placeholder="Search Work List..."
+                        className="border p-2 rounded w-64"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
+
+
+            <TreeTable value={filteredNodes} tableStyle={{ minWidth: '60rem' }}>
                 <Column field="name" header="Item / Label" expander style={{ width: '20%' }} />
                 <Column field="floor" header="Floor" style={{ width: '16%', textAlign: 'center' }} />
                 <Column field="location" header="Location" style={{ width: '16%', textAlign: 'center' }} />
@@ -130,7 +209,6 @@ const RebarDimension = () => {
 
             {rebarUsageTotals.length > 0 && (
                 <>
-                    {/* <hr className="my-6 border-t border-gray-300" /> */}
                     <div className="mt-8">
                         <h3 className="text-lg font-semibold mb-2 text-gray-700">Rebar Usage Summary</h3>
                         <div className="overflow-x-auto">

@@ -71,6 +71,10 @@ const MaterialRebarTable = () => {
     const [nodes, setNodes] = useState([]);
     const [parentTotals, setParentTotals] = useState([]);
 
+    const [searchTerm, setSearchTerm] = useState('');
+    const [entriesCount, setEntriesCount] = useState(10);
+
+
     const fetchMaterialCosts = async () => {
         try {
             const res = await fetch(`http://localhost:5000/api/rebar-details/rebars/${proposal_id}`);
@@ -141,6 +145,23 @@ const MaterialRebarTable = () => {
         );
     };
 
+
+    const filteredNodes = nodes.map((parent) => {
+        const parentMatches = parent.data.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchingChildren = parent.children.filter((child) => {
+            const childMatches = child.data.name.toLowerCase().includes(searchTerm.toLowerCase());
+            return parentMatches || childMatches;
+        });
+
+        if (parentMatches || matchingChildren.length > 0) {
+            return { ...parent, children: matchingChildren };
+        }
+
+        return null;
+    }).filter(Boolean);
+
+
     useEffect(() => {
         if (!proposal_id) return;
         fetchMaterialCosts();
@@ -148,7 +169,7 @@ const MaterialRebarTable = () => {
     }, [proposal_id]);
 
     return (
-        <div className="p-4 space-y-6 bg-white shadow-rounded">
+        <div className="space-y-6 bg-white shadow-rounded">
             {/* <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
                 <h1 className="text-lg font-semibold">Material Take Off Table</h1>
                 <Button
@@ -158,8 +179,35 @@ const MaterialRebarTable = () => {
                 />
             </div> */}
 
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center space-x-2">
+                    <label htmlFor="entries" className="text-sm text-gray-700">Show</label>
+                    <select
+                        id="entries"
+                        value={entriesCount}
+                        onChange={(e) => setEntriesCount(Number(e.target.value))}
+                        className="border p-1 rounded"
+                    >
+                        {[2, 10, 25, 50, 100].map((num) => (
+                            <option key={num} value={num}>{num}</option>
+                        ))}
+                    </select>
+                    <span className="text-sm text-gray-700">entries</span>
+                </div>
+
+                <div>
+                    <input
+                        type="text"
+                        placeholder="Search material..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="border p-2 rounded w-64"
+                    />
+                </div>
+            </div>
+
             <TreeTable
-                value={nodes}
+                value={filteredNodes.slice(0, entriesCount)}
                 tableStyle={{ minWidth: '60rem' }}
                 rowClassName={(node) => {
                     if (node.data.nodeType === 'parent') return 'qto-parent-row';
@@ -214,24 +262,24 @@ const MaterialRebarTable = () => {
                 />
             )}
 
-{showRowModal && selectedRowData && (
-    <>
-        {/* ADD THIS LOG */}
-        {console.log("Parent - selectedRowData before passing to modal:", selectedRowData)}
-        <EditModalBOMRebarMaterials
-            proposal_id={proposal_id}
-            data={{
-                ...selectedRowData,
-                parent_id: selectedRowData.parent_work_item_id,
-            }}
-            onClose={() => {
-                setShowRowModal(false);
-                fetchMaterialCosts();
-                fetchParentTotals();
-            }}
-        />
-    </>
-)}
+            {showRowModal && selectedRowData && (
+                <>
+                    {/* ADD THIS LOG */}
+                    {console.log("Parent - selectedRowData before passing to modal:", selectedRowData)}
+                    <EditModalBOMRebarMaterials
+                        proposal_id={proposal_id}
+                        data={{
+                            ...selectedRowData,
+                            parent_id: selectedRowData.parent_work_item_id,
+                        }}
+                        onClose={() => {
+                            setShowRowModal(false);
+                            fetchMaterialCosts();
+                            fetchParentTotals();
+                        }}
+                    />
+                </>
+            )}
             {showDeleteModal && selectedRowData && (
                 <DeleteModalBOMRebarMaterials
                     data={selectedRowData}

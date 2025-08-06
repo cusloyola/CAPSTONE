@@ -36,7 +36,7 @@ const MUCInputForm = ({ selectedItems, resources, onUpdateItems, onUpdateGrandTo
           unit_cost: 0,
           unitId: "",
           unitCode: "",
-          resource_id: "" // Initialize resource_id for new rows
+          resource_id: "" 
         }
       ];
     });

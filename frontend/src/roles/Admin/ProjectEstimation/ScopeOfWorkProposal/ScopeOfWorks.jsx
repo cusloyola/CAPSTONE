@@ -110,7 +110,6 @@ const ScopeOfWorks = () => {
       <hr />
       <div className="flex flex-wrap gap-4 mt-10">
         <div className="flex flex-col gap-2  mt-6">
-          {/* <label className="text-sm text-gray-600">Filter by Category</label> */}
           <select
             className="border p-2 rounded w-48"
             value={categoryFilter}
@@ -124,7 +123,6 @@ const ScopeOfWorks = () => {
         </div>
 
         <div className="flex flex-col gap-2 mt-6">
-          {/* <label className="text-sm text-gray-600">Filter by Unit</label> */}
           <select
             className="border p-2 rounded w-48"
             value={unitFilter}
@@ -138,12 +136,12 @@ const ScopeOfWorks = () => {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex justify-between items-center mt-6 mb-6">
         <div>
           <label className="text-sm">
             Show
             <select
-              className="mx-2 border p-1 rounded w-14"
+              className="mx-2 border p-1 rounded w-14 mt-2  "
               value={entriesPerPage}
               onChange={(e) => setEntriesPerPage(Number(e.target.value))}
             >

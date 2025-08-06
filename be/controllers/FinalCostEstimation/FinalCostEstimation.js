@@ -36,7 +36,11 @@ const sql = `
       mpt.mto_parent_grandTotal AS mto_total_cost, 
       mrt.rebar_grand_total AS mto_rebar_total_cost,
 
-      pc.markup_percent
+      pc.markup_percent,
+      pr.project_name,
+      pr.location,
+      pr.projectManager,
+      cl.client_name
 
     FROM sow_proposal sp
     JOIN sow_work_items swi ON sp.work_item_id = swi.work_item_id
@@ -56,7 +60,7 @@ const sql = `
     JOIN proposals p ON sp.proposal_id = p.proposal_id
     JOIN projects pr ON p.project_id = pr.project_id
     JOIN project_categories pc ON pr.category_id = pc.category_id
-
+    JOIN clients cl ON pr.client_id = cl.client_id
     WHERE sp.proposal_id = ?
     ORDER BY swt.sequence_order, swi.sequence_order;
   `;

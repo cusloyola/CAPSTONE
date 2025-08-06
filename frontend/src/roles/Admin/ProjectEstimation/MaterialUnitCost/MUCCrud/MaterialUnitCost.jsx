@@ -8,6 +8,8 @@ const MaterialUnitCost = () => {
   const { proposal_id, project_id } = useParams();
   const [activeTab, setActiveTab] = useState("material");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedParent, setSelectedParent] = useState("All");
+  const [parentList, setParentList] = useState([]);
 
   // Optional: Refresh functions after modal close
   const fetchMaterialCosts = () => {
@@ -35,32 +37,64 @@ const MaterialUnitCost = () => {
       </div>
 
       <hr />
+      <div className="flex flex-wrap items-center mb-7 mt-12 gap-4">
+        <div>
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="border p-2 rounded w-48"
+          >
+            <option value="material">General List</option>
+            <option value="rebar">Rebar List</option>
+          </select>
+        </div>
 
-      <div className="mb-10 flex gap-4 mt-10">
-        <button
-          onClick={() => setActiveTab("material")}
-          className={`px-4 py-2 rounded ${activeTab === "material"
-            ? "bg-gray-600 text-white"
-            : "bg-white border border-gray-400 text"
-            }`}
-        >
-          General List
-        </button>
-        <button
-          onClick={() => setActiveTab("rebar")}
-          className={`px-4 py-2 rounded ${activeTab === "rebar"
-            ? "bg-gray-600 text-white"
-            : "bg-white border border-gray-400 text"
-            }`}
-        >
-          Rebar List
-        </button>
+        <div>
+          <select
+            className={`border p-2 rounded w-48 ${activeTab !== "material" ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            value={selectedParent}
+            onChange={(e) => setSelectedParent(e.target.value)}
+            disabled={activeTab !== "material"}
+          >
+            {activeTab === "material" ? (
+              <>
+                <option value="All">All</option>
+                {parentList.map((parent) => (
+                  <option key={parent.work_item_id} value={parent.parent_title}>
+                    {parent.parent_title}
+                  </option>
+                ))}
+              </>
+            ) : (
+              <option>Filter Unavailable</option>
+            )}
+          </select>
+        </div>
       </div>
+
+
+
 
       <div>
-        {activeTab === "material" && <MaterialListTable proposal_id={proposal_id} />}
-        {activeTab === "rebar" && <RebarMaterialTable proposal_id={proposal_id} />}
+        {activeTab === "material" && (
+          <MaterialListTable
+            proposal_id={proposal_id}
+            selectedParent={selectedParent}
+            setParentList={setParentList}
+
+          />
+        )}
+        {activeTab === "rebar" && (
+          <RebarMaterialTable
+            proposal_id={proposal_id}
+            selectedParent={selectedParent}
+          />
+        )}
       </div>
+
+
+
 
 
       {/* Modals */}

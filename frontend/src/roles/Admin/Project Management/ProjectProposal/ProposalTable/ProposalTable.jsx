@@ -170,7 +170,7 @@ const ProposalTable = () => {
                             <tr key={proposal.proposal_id}>
                                 <td className="border px-4 py-2">
                                     <Link
-                                        to={`${proposal.proposal_id}`}
+                                        to={`${proposal.proposal_id}/scope-of-work`}
                                         className="text-blue-600 hover:underline"
                                     >
                                         {proposal.proposal_title}

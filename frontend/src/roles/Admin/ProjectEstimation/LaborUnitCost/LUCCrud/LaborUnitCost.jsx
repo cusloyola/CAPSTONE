@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { TreeTable } from 'primereact/treetable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
-import { FaEllipsisH, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
+import { FaEllipsisV, FaPencilAlt, FaTrashAlt } from 'react-icons/fa';
 
 import AddModalLUC from "./AddModalLUC";
 import EditModalLUC from "./EditModalLUC";
@@ -34,7 +34,7 @@ const ActionMenu = ({ node, setSelectedRowData, setShowRowModal, setShowDeleteMo
                 }}
                 className="p-2 rounded hover:bg-gray-100"
             >
-                <FaEllipsisH className="text-gray-600" />
+                <FaEllipsisV className="text-gray-600 ml-12" />
             </button>
 
             {open && (
@@ -72,16 +72,28 @@ const LaborUnitCost = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRowData, setSelectedRowData] = useState(null);
     const [nodes, setNodes] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [entriesCount, setEntriesCount] = useState(10);
+
+
+    const [parentFilter, setParentFilter] = useState('All');
+    const [allParentTitles, setAllParentTitles] = useState([]);
 
     const fetchLaborCostData = async () => {
         try {
             const res = await fetch(`http://localhost:5000/api/laborunitcost/labor-rate/details/${proposal_id}`);
             const data = await res.json();
+
+            // Store unique parent titles
+            const uniqueParents = [...new Set(data.map(row => row.item_title))];
+            setAllParentTitles(uniqueParents);
+
             setNodes(buildTree(data));
         } catch (err) {
             console.error("❌ Error fetching labor cost data:", err);
         }
     };
+
 
     const buildTree = (data) => {
         const grouped = {};
@@ -98,7 +110,7 @@ const LaborUnitCost = () => {
                 data: {
                     labor_entry_id: row.labor_entry_id,
                     sow_proposal_id: row.sow_proposal_id,
-                                        labor_rate_id: row.labor_rate_id, // <--- Add this!
+                    labor_rate_id: row.labor_rate_id, 
 
                     name: row.labor_type,
                     quantity: row.quantity,
@@ -126,6 +138,38 @@ const LaborUnitCost = () => {
         fetchLaborCostData();
     }, [proposal_id]);
 
+    const filteredNodes = nodes
+        .filter(parent => {
+            return parentFilter === 'All' || parent.data.name === parentFilter;
+        })
+        .map(parent => {
+            const parentName = parent.data.name?.toLowerCase() || '';
+            const query = searchTerm.toLowerCase();
+
+            const parentMatches = parentName.includes(query);
+
+            const matchingChildren = parent.children?.filter(child =>
+                `${child.data.name} ${child.data.quantity} ${child.data.daily_rate}`
+                    .toLowerCase()
+                    .includes(query)
+            );
+
+            if (!searchTerm) return parent;
+
+            if (parentMatches || matchingChildren.length > 0) {
+                return {
+                    ...parent,
+                    children: matchingChildren.length > 0 ? matchingChildren : parent.children
+                };
+            }
+
+            return null;
+        })
+        .filter(Boolean)
+        .slice(0, entriesCount);
+
+
+
     const actionTemplate = (node) => {
         if (!node?.data || node.data.nodeType !== 'child') return null;
         return (
@@ -139,18 +183,64 @@ const LaborUnitCost = () => {
     };
 
     return (
-        <div className="p-4 space-y-6 bg-white shadow-rounded">
-            <div className="bg-[#030839] text-white flex justify-between items-center p-4 rounded">
-                <h1 className="text-lg font-semibold">Labor Unit Cost</h1>
+        <div className="space-y-6 bg-white shadow-rounded">
+            <div className="flex justify-between items-center mt-6">
+                <p className="text-2xl font-semibold">Labor Details</p>
                 <Button
                     onClick={() => setShowAddModal(true)}
-                    label="+ Add Parent"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded"
+                    label="Add Labor"
+                    className="text-white px-4 py-2 rounded font-medium bg-blue-600 hover:bg-blue-900"
                 />
             </div>
 
+       <div>
+    <hr className="mb-2" />
+    <div className="mt-12 mb-4">
+      <select
+        value={parentFilter}
+        onChange={(e) => setParentFilter(e.target.value)}
+        className="border p-2 rounded w-48"
+      >
+        <option value="All">All Items</option>
+        {allParentTitles.map((title, idx) => (
+          <option key={idx} value={title}>{title}</option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+
+
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center space-x-2">
+                    <label htmlFor="entries" className="text-sm text-gray-700">Show</label>
+                    <select
+                        id="entries"
+                        value={entriesCount}
+                        onChange={(e) => setEntriesCount(Number(e.target.value))}
+              className="mx-2 border p-1 rounded w-14 mt-2  "
+                    >
+                        {[5, 10, 25, 50, 100].map((num) => (
+                            <option key={num} value={num}>{num}</option>
+                        ))}
+                    </select>
+                    <span className="text-sm text-gray-700">entries</span>
+                </div>
+
+                <div>
+                    <input
+                        type="text"
+                        placeholder="Search labor..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="border p-2 rounded w-64"
+                    />
+                </div>
+            </div>
+
+
             <TreeTable
-                value={nodes}
+                value={filteredNodes}
                 tableStyle={{ minWidth: '60rem' }}
                 rowClassName={(node) => {
                     if (node.data.nodeType === 'parent') return 'qto-parent-row';
@@ -158,13 +248,13 @@ const LaborUnitCost = () => {
                     return '';
                 }}
             >
-                <Column field="name" header="Item / Labor Type" expander style={{ width: '20%' }} />
-                <Column field="quantity" header="Qty" style={{ width: '10%', textAlign: 'center' }} />
-                <Column field="daily_rate" header="Daily Rate" style={{ width: '10%', textAlign: 'center' }} />
-                <Column field="average_output" header="Avg Output" style={{ width: '10%', textAlign: 'center' }} />
-                <Column field="allowance_percent" header="Allowance (%)" style={{ width: '10%', textAlign: 'center' }} />
-                <Column field="labor_row_cost" header="Row Cost" style={{ width: '15%', textAlign: 'center' }} />
-                <Column header="Actions" body={actionTemplate} style={{ width: '15%' }} />
+                <Column field="name" header="Item / Labor Type" expander style={{ width: '20%', fontSize: '14px' }} />
+                <Column field="quantity" header="Qty" style={{ width: '10%', textAlign: 'center', fontSize: '14px' }} />
+                <Column field="daily_rate" header="Daily Rate" style={{ width: '10%', textAlign: 'center', fontSize: '14px' }} />
+                <Column field="average_output" header="Avg Output" style={{ width: '10%', textAlign: 'center', fontSize: '14px' }} />
+                <Column field="allowance_percent" header="Allowance" style={{ width: '10%', textAlign: 'center', fontSize: '14px' }} />
+                <Column field="labor_row_cost" header="Row Cost" style={{ width: '15%', textAlign: 'center', fontSize: '14px' }} />
+                <Column header="Actions" body={actionTemplate} style={{ width: '15%', fontSize: '14px' }} />
             </TreeTable>
 
             {/* Add */}
@@ -205,6 +295,8 @@ const LaborUnitCost = () => {
             )}
 
         </div>
+
+
     );
 };
 
