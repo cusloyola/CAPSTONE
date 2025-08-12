@@ -27,29 +27,29 @@ const AdminDailySiteReportTable = ({
     const [entriesPerPage, setEntriesPerPage] = useState(5);
 
 
-const filteredReports = reports
-  .filter((r) => {
-    const search = searchQuery.toLowerCase();
+    const filteredReports = reports
+        .filter((r) => {
+            const search = searchQuery.toLowerCase();
 
-    const matchProject = r.project_name?.toLowerCase().includes(search);
-    const matchFullName = r.full_name?.toLowerCase().includes(search);
-    const matchDate = new Date(r.report_date).toDateString().toLowerCase().includes(search);
+            const matchProject = r.project_name?.toLowerCase().includes(search);
+            const matchFullName = r.full_name?.toLowerCase().includes(search);
+            const matchDate = new Date(r.report_date).toDateString().toLowerCase().includes(search);
 
-    const matchQuery = matchProject || matchFullName || matchDate;
+            const matchQuery = matchProject || matchFullName || matchDate;
 
-    // Handle status filter
-    let matchStatus = false;
-    if (filterStatus === "all") {
-      matchStatus = true;
-    } else if (filterStatus === "Unviewed") {
-      matchStatus = !r.last_viewed; // If last_viewed is null or undefined
-    } else {
-      matchStatus = r.status?.toLowerCase() === filterStatus.toLowerCase();
-    }
+            // Handle status filter
+            let matchStatus = false;
+            if (filterStatus === "all") {
+                matchStatus = true;
+            } else if (filterStatus === "Unviewed") {
+                matchStatus = !r.last_viewed; // If last_viewed is null or undefined
+            } else {
+                matchStatus = r.status?.toLowerCase() === filterStatus.toLowerCase();
+            }
 
-    return matchQuery && matchStatus;
-  })
-  .sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
+            return matchQuery && matchStatus;
+        })
+        .sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
 
     const indexOfLast = currentPage * entriesPerPage;
     const indexOfFirst = indexOfLast - entriesPerPage;
@@ -129,10 +129,10 @@ const filteredReports = reports
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="border px-3 py-1 rounded-lg text-md h-10"
                         />
-
+{/* 
                         <button className="border rounded border-black b hover:bg-gray-300 text-black px-3 py-1 rounded-lg text-sm h-10">
                             Export PDF
-                        </button>
+                        </button> */}
 
                         {/* <button className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm h-10">
                             Export Excel
@@ -141,23 +141,23 @@ const filteredReports = reports
                 </div>
 
                 {/* Table */}
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-100">
+                <table className="table-auto w-full border border-gray-300 text-sm">
+                    <thead className="bg-gray-100 ">
                         <tr>
                             {columns.map((col, i) => (
                                 <th
                                     key={i}
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                    className="border px-4 py-2 text-center"
                                 >
                                     {col.label}
                                 </th>
                             ))}
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            <th className="border px-4 py-2 text-center">
                                 Actions
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                         {currentReports.map((report) => (
                             <tr
                                 key={report.report_id}
@@ -169,7 +169,7 @@ const filteredReports = reports
                                 {columns.map((col, i) => (
                                     <td
                                         key={i}
-                                        className="px-6 py-4 text-sm text-gray-700 whitespace-pre-wrap"
+                                        className="border px-4 py-2"
                                     >
                                         {col.customRender
                                             ? col.customRender(report)

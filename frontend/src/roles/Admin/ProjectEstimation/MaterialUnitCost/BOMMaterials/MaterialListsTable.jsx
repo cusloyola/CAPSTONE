@@ -252,14 +252,15 @@ const paginatedNodes = filteredBySearch.slice(0, entriesCount);
           return "";
         }}
       >
-        <Column field="name" header="Item / Material" expander style={{ width: "25%" }} />
-        <Column field="brand_name" header="Brand Name" />
-        <Column field="unitCode" header="Unit" />
-        <Column field="multiplier" header="Multiplier" />
-        <Column field="actual_qty" header="Qty" />
+        <Column field="name" header="Item / Material" expander style={{ width: "25%", fontSize: "14px" }} />
+        <Column field="brand_name" header="Brand Name" style={{fontSize: "14px" }}  />
+        <Column field="unitCode" header="Unit"  style={{ fontSize: "14px" }} />
+        <Column field="multiplier" header="Multiplier" style={{fontSize: "14px" }}  />
+        <Column field="actual_qty" header="Qty" style={{  fontSize: "14px" }} />
         <Column
           field="total_cost"
           header="Total Cost"
+          style={{  fontSize: "14px" }}
           body={(node) => {
             if (node.data.nodeType === "parent") {
               const found = parentTotals.find(

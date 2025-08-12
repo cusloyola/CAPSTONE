@@ -32,9 +32,9 @@ const ProjectProfile = () => {
 
                     {isInProgress && (
                         <>
-                            <Link to="calendar" className={linkClass("calendar")}>
+                            {/* <Link to="calendar" className={linkClass("calendar")}>
                                 <span>Project Calendar</span>
-                            </Link>
+                            </Link> */}
                             <Link to="materials" className={linkClass("materials")}>
                                 <span>Material Request</span>
                             </Link>

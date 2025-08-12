@@ -84,11 +84,11 @@ const navItems = [
     name: "Request Management ",
     subItems: [{ name: "Material Request", path: "/MaterialRequestManagement", pro: false }],
   },
-  {
-    icon: <FolderIcon />,
-    name: "Document Management",
-    subItems: [{ name: "Files", path: "/AdminFileManagement", pro: false }],
-  },
+  // {
+  //   icon: <FolderIcon />,
+  //   name: "Document Management",
+  //   subItems: [{ name: "Files", path: "/AdminFileManagement", pro: false }],
+  // },
   {
     icon: <FileIcon />,
     name: "Contract Management",
@@ -115,11 +115,11 @@ const navItems = [
 
 
 
-  {
-    icon: <PieChartIcon />,
-    name: "Reports and Analytics",
-    subItems: [{ name: "Reports", path: "/Reports", pro: false }],
-  },
+  // {
+  //   icon: <PieChartIcon />,
+  //   name: "Reports and Analytics",
+  //   subItems: [{ name: "Reports", path: "/Reports", pro: false }],
+  // },
 
   // Add more admin-specific items as needed...
 ];

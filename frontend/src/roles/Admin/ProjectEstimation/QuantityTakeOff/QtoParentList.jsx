@@ -1,4 +1,5 @@
 import React from "react";
+import { FaChevronRight } from "react-icons/fa";
 
 const QtoParentList = ({
   workItems,
@@ -55,11 +56,12 @@ const QtoParentList = ({
               <span>{parent.item_title}</span>
               <button
                 onClick={() => onSelectParent(parent)}
-                className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                className="px-3 py-1 rounded hover:bg-gray-100 transition-colors"
               >
-                Next ▶
+                <FaChevronRight className="text-black" />
               </button>
             </div>
+
             <div className="text-sm text-gray-500 dark:text-gray-300">{parent.category}</div>
           </div>
         ))}

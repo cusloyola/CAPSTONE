@@ -56,10 +56,11 @@ const [submitting, setSubmitting] = useState(false);
 
     setSubmitting(false);
 };
+        // className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
 
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-gray-400/50 backdrop-blur-[32px] flex justify-center items-center z-50">
             <div className="bg-white rounded p-6 w-full max-w-md shadow space-y-4">
                 <h2 className="text-lg font-semibold">Add Progress Billing</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">

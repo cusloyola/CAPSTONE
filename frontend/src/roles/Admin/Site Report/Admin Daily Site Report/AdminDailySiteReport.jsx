@@ -157,7 +157,7 @@ const AdminDailySiteReport = () => {
             <h2 className="text-3xl font-bold text-gray-800">{totalReports}</h2>
             <FcInspection className="text-3xl" />
           </div>
-          <p className="text-green-600 text-sm">Daily logs compiled</p>
+          <p className="text-blue-600 text-sm">Daily logs compiled</p>
         </div>
 
         {/* Unviewed Reports */}
@@ -167,33 +167,33 @@ const AdminDailySiteReport = () => {
             <h2 className="text-3xl font-bold text-gray-800">{unviewedReports}</h2>
             <FaEyeSlash className="text-3xl text-gray-600" />
           </div>
-          <p className="text-green-600 text-sm">Up to date</p>
+          <p className="text-blue-600 text-sm">Up to date</p>
         </div>
 
         <div className="bg-white p-5 border border-gray-200 rounded-2xl shadow space-y-2 col-span-1 md:col-span-2 lg:col-span-2">
           <p className="text-sm text-gray-500">Site Activity Completion</p>
           <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden flex">
             <div
-              className="bg-green-500 h-full"
+              className="bg-blue-700 h-full"
               style={{
                 width: `${((totalReports - unviewedReports) / totalReports) * 100 || 0}%`,
               }}
             ></div>
             <div
-              className="bg-yellow-400 h-full"
+              className="bg-blue-300 h-full"
               style={{
                 width: `${(unviewedReports / totalReports) * 100 || 0}%`,
               }}
             ></div>
           </div>
           <div className="text-sm text-gray-600 mt-1 flex justify-between">
-            <span className="text-green-600">
+            <span className="text-blue-700">
               {Math.round(
                 ((totalReports - unviewedReports) / totalReports) * 100 || 0
               )}
               % Viewed
             </span>
-            <span className="text-yellow-500">
+            <span className="text-blue-400">
               {Math.round((unviewedReports / totalReports) * 100 || 0)}% Unviewed
             </span>
           </div>

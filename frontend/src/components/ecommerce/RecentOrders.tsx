@@ -20,53 +20,55 @@ interface Product {
 }
 
 // Define the table data using the interface
+// Define the table data using the interface
 const tableData: Product[] = [
   {
     id: 1,
-    name: "MacBook Pro 13”",
+    name: "Portland Cement (50kg bag)",
     variants: "2 Variants",
-    category: "Laptop",
-    price: "$2399.00",
+    category: "Cement & Concrete",
+    price: "$8.50",
     status: "Delivered",
-    image: "/images/product/product-01.jpg", // Replace with actual image URL
+    image: "/images/product/product-01.jpg",
   },
   {
     id: 2,
-    name: "Apple Watch Ultra",
+    name: "Steel Rebar (10mm)",
     variants: "1 Variant",
-    category: "Watch",
-    price: "$879.00",
+    category: "Steel & Metal",
+    price: "$12.00",
     status: "Pending",
-    image: "/images/product/product-02.jpg", // Replace with actual image URL
+    image: "/images/product/product-02.jpg",
   },
   {
     id: 3,
-    name: "iPhone 15 Pro Max",
+    name: "Plywood Sheet (4x8 ft)",
     variants: "2 Variants",
-    category: "SmartPhone",
-    price: "$1869.00",
+    category: "Wood & Boards",
+    price: "$18.50",
     status: "Delivered",
-    image: "/images/product/product-03.jpg", // Replace with actual image URL
+    image: "/images/product/product-03.jpg",
   },
   {
     id: 4,
-    name: "iPad Pro 3rd Gen",
+    name: "Ceramic Floor Tiles (per box)",
     variants: "2 Variants",
-    category: "Electronics",
-    price: "$1699.00",
+    category: "Flooring",
+    price: "$25.00",
     status: "Canceled",
-    image: "/images/product/product-04.jpg", // Replace with actual image URL
+    image: "/images/product/product-04.jpg",
   },
   {
     id: 5,
-    name: "AirPods Pro 2nd Gen",
+    name: "PVC Water Pipe (3 inches)",
     variants: "1 Variant",
-    category: "Accessories",
-    price: "$240.00",
+    category: "Plumbing",
+    price: "$15.00",
     status: "Delivered",
-    image: "/images/product/product-05.jpg", // Replace with actual image URL
+    image: "/images/product/product-05.jpg",
   },
 ];
+
 
 export default function RecentOrders() {
   return (

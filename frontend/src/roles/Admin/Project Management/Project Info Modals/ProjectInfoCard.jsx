@@ -338,13 +338,15 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
 
     return (
         <>
-            <div className="p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-8">
+                    {/* <div className="p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-8"> */}
+
+            <div className="p-6  rounded-2xl dark:border-gray-800 lg:p-8">
                 <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h4 className="text-3xl font-semibold text-gray-800 dark:text-white/90 lg:mb-8">
-                            Detailed Information for the Project
+                        <h6 className="text-2xl font-bold text-gray-800 dark:text-white/90 lg:mb-8 uppercase">
+                                Project Information
                             {/* {projectData.project_name} */}
-                        </h4>
+                        </h6>
 
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 2xl:gap-x-36">
                             {/* Display only requested fields */}

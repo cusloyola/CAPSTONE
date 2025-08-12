@@ -186,7 +186,7 @@ const MaterialRebarTable = () => {
                         id="entries"
                         value={entriesCount}
                         onChange={(e) => setEntriesCount(Number(e.target.value))}
-                        className="border p-1 rounded"
+              className="mx-2 border p-1 rounded w-14 mt-2  "
                     >
                         {[2, 10, 25, 50, 100].map((num) => (
                             <option key={num} value={num}>{num}</option>
