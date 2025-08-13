@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { FaDownload, FaPrint } from "react-icons/fa";
 import html2pdf from "html2pdf.js";
+import { useReactToPrint } from "react-to-print";
+
 import * as XLSX from "xlsx";
 import "../FinalCostEstimation/Downloads/pdfstyles.css";
 
@@ -19,6 +21,7 @@ const ViewModalFinalEntry = ({
 }) => {
     const [showOptions, setShowOptions] = useState(false);
     const { project_name, location, owner, project_manager, date } = projectInfo || {};
+    const pdfContentRef = useRef();
 
     const formatNumber = (value) => {
         const num = parseFloat(value);
@@ -62,23 +65,149 @@ const ViewModalFinalEntry = ({
             });
     };
 
-    const exportToExcel = () => {
-        const worksheetData = costData.map((row) => ({
-            Description: row.description,
-            Quantity: row.quantity,
-            Unit: row.unit,
-            "Material UC": row.material_uc,
-            "Material Amount": row.material_amount,
-            "Labor UC": row.labor_uc,
-            "Labor Amount": row.labor_amount,
-            Total: row.total_with_allowance ?? row.total_amount,
-        }));
 
-        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Estimate");
-        XLSX.writeFile(workbook, "cost-estimate.xlsx");
+    const exportToExcel = () => {
+    if (!costData || costData.length === 0) return;
+
+    const ws_data = [];
+
+    // --- Helper to format numbers ---
+    const formatNum = (value) => {
+        const num = parseFloat(value);
+        if (!num) return "";
+        return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
+
+    // --- Project info ---
+    ws_data.push(["PROJECT:", project_name || "—"]);
+    ws_data.push(["LOCATION:", location || "—"]);
+    ws_data.push(["SUBJECT:", "ESTIMATED COST"]);
+    ws_data.push(["DATE:", date || "—"]);
+    ws_data.push(["OWNER:", owner || "—"]);
+    ws_data.push([]);
+
+    // --- Table headers ---
+    ws_data.push([
+        "No.",
+        "Description/Scope of Works",
+        "Qty",
+        "Material", "", // merged
+        "Labor", "", // merged
+        "Amount",
+    ]);
+    ws_data.push([
+        "", "", "", // No., Description, Qty
+        "U/C", "Amount", // Material
+        "U/C", "Amount", // Labor
+        "", // Total
+    ]);
+
+    // Group rows by type_name
+    const groupedData = costData.reduce((acc, row) => {
+        const type = row.type_name || "Uncategorized";
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(row);
+        return acc;
+    }, {});
+
+    let counter = 1;
+
+    Object.entries(groupedData).forEach(([typeName, rows]) => {
+        // Category row (blue)
+        ws_data.push([counter++, typeName]);
+        rows.forEach((row) => {
+            ws_data.push([
+                "",
+                row.description,
+                row.quantity || "",
+                formatNum(row.material_uc),
+                formatNum(row.material_amount),
+                formatNum(row.labor_uc),
+                formatNum(row.labor_amount),
+                formatNum(row.total_with_allowance ?? row.total_amount),
+            ]);
+        });
+
+        // Subtotal row
+        const subtotal = rows.reduce((sum, row) => sum + (parseFloat(row.total_amount) || 0), 0);
+        ws_data.push(["", "", "", "", "", "",`Subtotal(PHP)`, formatNum(subtotal)]);
+    });
+
+    // Total, Markup, Grand Total rows
+    ws_data.push([]);
+    ws_data.push(["", "", "", "", "", "", "Total", formatNum(totalAmount)]);
+    ws_data.push(["", "", "", "", "", "",  `Markup (${markupPercent}%)`, formatNum(markupAmount)]);
+    ws_data.push(["", "", "", "", "", "", "Grand Total(PHP)", formatNum(grandTotal)]);
+    ws_data.push([]);
+    ws_data.push(["Prepared By:", project_manager || "—"]);
+
+    // --- Create worksheet ---
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+    // Merge headers and project info
+    ws['!merges'] = [
+        { s: { r: 6, c: 3 }, e: { r: 6, c: 4 } }, // Material
+        { s: { r: 6, c: 5 }, e: { r: 6, c: 6 } }, // Labor
+        { s: { r: 0, c: 1 }, e: { r: 0, c: 7 } }, // Project name
+        { s: { r: 1, c: 1 }, e: { r: 1, c: 7 } }, // Location
+        { s: { r: 2, c: 1 }, e: { r: 2, c: 7 } }, // Subject
+        { s: { r: 3, c: 1 }, e: { r: 3, c: 7 } }, // Date
+        { s: { r: 4, c: 1 }, e: { r: 4, c: 7 } }, // Owner
+    ];
+
+    // Column widths
+    ws['!cols'] = [
+        { wch: 15 },   // No.
+        { wch: 40 },  // Description
+        { wch: 10 },  // Qty
+        { wch: 12 },  // Material U/C
+        { wch: 15 },  // Material Amount
+        { wch: 20 },  // Labor U/C (for labels like Subtotal)
+        { wch: 15 },  // Labor Amount
+        { wch: 15 },  // Total
+    ];
+
+    // Row styles
+    ws['!rows'] = ws_data.map((row, idx) => {
+        const rowStyle = {};
+
+        // Table headers centered
+        if (idx === 6 || idx === 7) {
+            rowStyle.hpt = 25;
+            rowStyle.alignment = { horizontal: "center", vertical: "center" };
+        } else {
+            // Right-align numeric columns
+            rowStyle.alignment = {
+                horizontal: "left",
+                vertical: "center",
+            };
+        }
+
+        // Category rows (blue)
+        if (typeof row[1] === "string" && groupedData[row[1]]) {
+            rowStyle.fill = { fgColor: { rgb: "D0E4FF" } };
+            rowStyle.font = { bold: true };
+        }
+
+        // Subtotal, Total, Markup, Grand Total rows bold
+        if (row[5] && ["Subtotal", "Total", "Markup", "Grand Total"].some(label => row[5].includes(label))) {
+            rowStyle.font = { bold: true };
+        }
+
+        // Grand Total highlight yellow
+        if (row[5] && row[5].includes("Grand Total")) {
+            rowStyle.fill = { fgColor: { rgb: "FFF3B0" } };
+        }
+
+        return rowStyle;
+    });
+
+    // --- Save workbook ---
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Estimate");
+    XLSX.writeFile(wb, "cost-estimate.xlsx");
+};
+
 
     const handleDownload = (type) => {
         setShowOptions(false);
@@ -86,9 +215,12 @@ const ViewModalFinalEntry = ({
         else if (type === "excel") exportToExcel();
     };
 
-    const handlePrint = () => {
-        window.print();
-    };
+    const handlePrint = useReactToPrint({
+        content: () => pdfContentRef.current,
+        documentTitle: "Final_Estimation",
+        onAfterPrint: () => console.log("Print success"),
+    });
+
 
     return (
         <div className="fixed inset-0 flex items-center justify-center overflow-y-auto z-[99999]">
@@ -107,8 +239,9 @@ const ViewModalFinalEntry = ({
 
                 <h2 className="text-xl font-semibold p-6">Printable View – Final Estimation</h2>
 
-                <div className="flex-1 overflow-y-auto px-12 py-4" id="pdf-content">
-                  
+
+                <div className="flex-1 overflow-y-auto px-12 py-4" id="pdf-content" >
+
                     <div className="mb-10">
                         <div className="flex justify-between items-center project-header">
                             <img src="/images/assets/drl_construction_address.png" alt="Logo" className="h-[100px] project-image" />
@@ -147,6 +280,7 @@ const ViewModalFinalEntry = ({
                                     >
                                         <FaPrint className="text-gray-700 text-xl" />
                                     </button>
+
                                 </div>
                             </div>
                         </div>

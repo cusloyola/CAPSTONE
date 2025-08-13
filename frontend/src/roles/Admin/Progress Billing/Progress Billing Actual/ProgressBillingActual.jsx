@@ -30,6 +30,16 @@ const ProgressBillingTableDesign = () => {
     const [selectedItems, setSelectedItems] = useState(null);
     const [accomplishments, setAccomplishments] = useState({});
 
+    const [showExtraModal, setShowExtraModal] = useState(false);
+const [newItem, setNewItem] = useState({
+  category: "",
+  description: "",
+  qty: "",
+  unit: "",
+  amount: ""
+});
+
+
     const fetchProgressBilling = async () => {
         try {
             const res = await fetch(`${PROGRESSBILL_API_URL}/summary/${billing_id}`);
@@ -106,20 +116,32 @@ const ProgressBillingTableDesign = () => {
     };
 
     return (
-        <div className="p-4 space-y-6 bg-white shadow rounded">
-            <div className="bg-[#2fbcbc] text-white flex justify-between items-center p-4 rounded">
-                <h1 className="text-lg font-semibold">Progress Billing</h1>
-                <button
-                    title="Enter % accomplishment for this billing period"
-                    className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
-                    onClick={() => handleOpenModal(null)}
-                >
-                    Add % Present
-                </button>
-            </div>
+        <div className="space-y-6 ">
+     <div className="flex justify-between items-center mt-6 mb-6">
+  <h1 className="text-2xl font-semibold">Progress Billing</h1>
+  <div className="flex gap-2">
+    <button
+      title="Enter % accomplishment for this billing period"
+      className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
+      onClick={() => handleOpenModal(null)}
+    >
+      Add % Present
+    </button>
+    <button
+      title="Add extra billing items"
+      className="bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700"
+      onClick={() => setShowExtraModal(true)}
+    >
+      Add Extra Items
+    </button>
+  </div>
+</div>
+
+            
+      <hr />
 
             <div className="overflow-x-auto">
-                <table className="table-auto w-full border border-gray-300 text-sm min-w-[1000px]">
+                <table className="table-auto w-full mt-10 border border-gray-300 text-sm min-w-[1000px]">
                     <thead className="bg-gray-100">
                         <tr>
                             <th className="border px-4 py-2 text-left">Item No.</th>
@@ -224,6 +246,84 @@ const ProgressBillingTableDesign = () => {
                 items={progressData}
                 accomplishments={accomplishments}
             />
+
+            {showExtraModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+      <h2 className="text-xl font-semibold mb-4">Add Extra Item</h2>
+
+      {/* Category Dropdown */}
+      <label className="block mb-2 font-medium">Category</label>
+      <select
+        value={newItem.category}
+        onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+        className="w-full border px-3 py-2 rounded mb-4"
+      >
+        <option value="">Select category</option>
+        {grouped.map(({ typeName }) => (
+          <option key={typeName} value={typeName}>{typeName}</option>
+        ))}
+      </select>
+
+      {/* Description */}
+      <label className="block mb-2 font-medium">Description</label>
+      <input
+        type="text"
+        value={newItem.description}
+        onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+        className="w-full border px-3 py-2 rounded mb-4"
+        placeholder="Enter item description"
+      />
+
+      {/* Qty */}
+      <label className="block mb-2 font-medium">Quantity</label>
+      <input
+        type="number"
+        value={newItem.qty}
+        onChange={(e) => setNewItem({ ...newItem, qty: e.target.value })}
+        className="w-full border px-3 py-2 rounded mb-4"
+      />
+
+      {/* Unit */}
+      <label className="block mb-2 font-medium">Unit</label>
+      <input
+        type="text"
+        value={newItem.unit}
+        onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+        className="w-full border px-3 py-2 rounded mb-4"
+      />
+
+      {/* Amount */}
+      <label className="block mb-2 font-medium">Amount</label>
+      <input
+        type="number"
+        value={newItem.amount}
+        onChange={(e) => setNewItem({ ...newItem, amount: e.target.value })}
+        className="w-full border px-3 py-2 rounded mb-4"
+      />
+
+      {/* Actions */}
+      <div className="flex justify-end gap-2">
+        <button
+          className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+          onClick={() => setShowExtraModal(false)}
+        >
+          Cancel
+        </button>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          onClick={() => {
+            console.log("Extra item data:", newItem); // Later send to backend
+            setShowExtraModal(false);
+          }}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
 
         </div>

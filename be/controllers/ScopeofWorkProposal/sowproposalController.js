@@ -1,32 +1,25 @@
 const db = require('../../config/db');
 
 const getAllSOWWorkItems = (req, res) => {
-  const proposal_id = req.query.proposal_id;
-  if (!proposal_id) {
-    return res.status(400).json({ error: "Missing proposal_id" });
-  }
-
-  const sql = `
-   SELECT
-    s.work_item_id,
-    s.item_title,
-    u.unitCode, 
-    s.sequence_order,
-    t.type_name AS category
-FROM
-    sow_work_items s
-JOIN
-    sow_work_types t ON s.work_type_id = t.work_type_id
-JOIN
-    unit_of_measure u ON s.unitID = u.unitID 
-WHERE
-    s.work_item_id NOT IN (
-        SELECT work_item_id FROM sow_proposal WHERE proposal_id = ?
-    )
-ORDER BY s.sequence_order;
+ const sql = `
+  SELECT
+      s.work_item_id,
+      s.item_title,
+      u.unitCode, 
+      s.sequence_order,
+      t.type_name AS category
+  FROM
+      sow_work_items s
+  JOIN
+      sow_work_types t ON s.work_type_id = t.work_type_id
+  JOIN
+      unit_of_measure u ON s.unitID = u.unitID 
+  WHERE
+      s.parent_id IS NULL
+  ORDER BY s.sequence_order;
   `;
 
-  db.query(sql, [proposal_id], (err, results) => {
+  db.query(sql, (err, results) => {
     if (err) {
       console.error("DB error:", err);
       return res.status(500).json({ error: "DB error" });
@@ -253,31 +246,6 @@ const addWorkItem = (req, res) => {
   });
 };
 
-// UPDATE
-const updateWorkItem = (req, res) => {
-  const { id } = req.params;
-  const { item_title, item_description, unitID, sequence_order } = req.body;
-  const sql = `
-    UPDATE sow_work_items
-    SET item_title=?, item_description=?, unitID=?, sequence_order=?
-    WHERE work_item_id=?
-  `;
-  db.query(sql, [item_title, item_description, unitID, sequence_order, id], (err) => {
-    if (err) return res.status(500).json({ error: "DB error" });
-    res.json({ success: true });
-  });
-};
-
-// DELETE
-const deleteWorkItem = (req, res) => {
-  const { id } = req.params;
-  const sql = `DELETE FROM sow_work_items WHERE work_item_id=?`;
-  db.query(sql, [id], (err) => {
-    if (err) return res.status(500).json({ error: "DB error" });
-    res.json({ success: true });
-  });
-};
-
 const getAllWorkTypes = (req, res) => {
   const sql = "SELECT work_type_id, type_name, type_description, sequence_order FROM sow_work_types ORDER BY sequence_order";
   db.query(sql, (err, results) => {
@@ -332,6 +300,38 @@ const getWorkTypesAndItemsByProposal = (req, res) => {
 
 
 
+const updateProposalWorkItem = async (req, res) => {
+  const { proposal_id, work_item_id, new_work_item_id } = req.body;
+
+  if (!proposal_id || !work_item_id || !new_work_item_id) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    await db.query(
+      "UPDATE sow_proposal SET work_item_id = ? WHERE proposal_id = ? AND work_item_id = ?",
+      [new_work_item_id, proposal_id, work_item_id]
+    );
+    res.json({ message: "Updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+const deleteWorkItem = (req, res) => {
+  const { id } = req.params;
+  const sql = `DELETE FROM sow_work_items WHERE work_item_id=?`;
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("MySQL error:", err); // <-- Log the real error
+      return res.status(500).json({ error: err.sqlMessage }); // <-- Return MySQL error for debugging
+    }
+    res.json({ success: true, affectedRows: result.affectedRows });
+  });
+};
+
 module.exports = {
   getAllSOWWorkItems,
   getSOWfromTable,
@@ -342,7 +342,7 @@ module.exports = {
   getSowWorkItemsByProposal,
   getAllWorkItemsRaw,
   addWorkItem,
-  updateWorkItem,
+  updateProposalWorkItem,
   deleteWorkItem,
   getAllWorkTypes,
 

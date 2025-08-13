@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import AddSowModal from "./AddSowModal";
+import EditSowModal from "./EditSowModal";
+import DeleteSowModal from "./DeleteSowModal";
+
 import { FaEllipsisV } from "react-icons/fa";
 
 
@@ -14,6 +17,15 @@ const ScopeOfWorks = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [sowWorkItems, setSowWorkItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
+
+
+
+  const [editItem, setEditItem] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+
 
   const [sowItems, setSowItems] = useState([]);
   const [uniqueCategories, setUniqueCategories] = useState([]);
@@ -68,6 +80,83 @@ const ScopeOfWorks = () => {
     setShowAddModal(false);
   };
 
+
+  const handleOpenEdit = (item) => {
+
+    setEditItem(item);
+    setShowEditModal(true);
+  };
+
+
+
+  const handleUpdateItem = async ({ work_item_id, new_work_item_id }) => {
+    const payload = {
+      proposal_id: proposal_id,
+      work_item_id: work_item_id,
+      new_work_item_id: new_work_item_id,
+    };
+
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/sowproposal/sow-work-items`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+
+      const data = await res.json();
+      console.log("Response from server:", data);
+
+
+      if (res.ok) {
+        alert("Updated successfully");
+        fetchSowWorkItems();
+      } else {
+        alert(data.message || "Failed to update");
+      }
+    } catch (err) {
+      console.error("Error updating work item:", err);
+      alert("Error updating work item");
+    }
+  };
+
+
+  const openDeleteModal = (item) => {
+    setItemToDelete(item);
+    setDeleteModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const closeDeleteModal = () => {
+    setItemToDelete(null);
+    setDeleteModalOpen(false);
+  };
+
+const handleDelete = async () => {
+  if (!itemToDelete) return;
+
+  try {
+    const res = await fetch(`http://localhost:5000/api/sowproposal/sow-work-items/${itemToDelete.work_item_id}`, {
+      method: "DELETE"
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Deleted successfully");
+      fetchSowWorkItems(); // refresh table
+      closeDeleteModal();
+    } else {
+      alert(data.message || "Failed to delete");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Error deleting item");
+  }
+};
+
+
+
   // Filtered + Search
   const filteredItems = sowWorkItems.filter(item => {
     const matchesSearch = item.item_title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -75,6 +164,7 @@ const ScopeOfWorks = () => {
     const matchesUnit = unitFilter ? item.unitCode === unitFilter : true;
     return matchesSearch && matchesCategory && matchesUnit;
   });
+
 
   // Pagination logic
   const totalPages = Math.ceil(filteredItems.length / entriesPerPage);
@@ -207,20 +297,19 @@ const ScopeOfWorks = () => {
                           className="block w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50"
                           onClick={() => {
                             setOpenMenuId(null);
-                            console.log("Edit", item.work_item_id);
+                            handleOpenEdit(item); // this sets the editItem and opens the modal
                           }}
+
                         >
                           Edit
                         </button>
                         <button
                           className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                          onClick={() => {
-                            setOpenMenuId(null);
-                            console.log("Delete", item.work_item_id);
-                          }}
+                          onClick={() => openDeleteModal(item)}
                         >
                           Delete
                         </button>
+
                       </div>
                     )}
                   </div>
@@ -261,9 +350,31 @@ const ScopeOfWorks = () => {
           proposal_id={proposal_id}
           onClose={handleClose}
           onSelectItem={handleSelectItem}
-          existingItemIds={new Set(selectedItems.map(item => item.work_item_id))}
+          existingItemIds={new Set(sowWorkItems.map(item => item.work_item_id))}
         />
       )}
+
+      {showEditModal && (
+        <EditSowModal
+          show={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          item={editItem}
+          onUpdate={handleUpdateItem} // This is the correct way to pass the function
+          sowItems={sowItems}
+          proposals={[{ proposal_id, proposal_name: `Proposal ${proposal_id}` }]}
+          existingItemIds={new Set(sowWorkItems.map(i => i.work_item_id))} // items already added
+
+        />
+      )}
+
+      <DeleteSowModal
+  isOpen={deleteModalOpen}
+  onClose={closeDeleteModal}
+  onDelete={handleDelete}
+  itemTitle={itemToDelete?.item_title}
+/>
+
+
     </div>
   );
 };

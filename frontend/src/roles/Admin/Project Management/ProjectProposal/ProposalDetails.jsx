@@ -57,7 +57,7 @@ const ProposalDetails = () => {
           showNav ? "translate-y-0" : "-translate-y-full"
         } bg-white shadow-sm`}
       >
-        <div className="flex justify-between items-center px-4 py-3">
+        <div className="flex justify-between items-center p-20 px-4 py-3">
           {/* Left */}
           <div className="text-xs text-gray-400 tracking-widest">ESTIMATOR STEPPER</div>
 

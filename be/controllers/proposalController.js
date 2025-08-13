@@ -44,24 +44,35 @@ const addProposalByProject = (req, res) => {
 const deleteProposalByProject = (req, res) => {
   const { project_id, proposal_id } = req.params;
 
-  const sql = `
-    DELETE FROM proposals
-    WHERE proposal_id = ? AND project_id = ?
-  `;
+  const deleteBillingSql = `DELETE FROM progress_billing WHERE proposal_id = ?`;
 
-  db.query(sql, [proposal_id, project_id], (err, result) => {
+  db.query(deleteBillingSql, [proposal_id], (err) => {
     if (err) {
-      console.error("Error deleting proposal:", err);
-      return res.status(500).json({ error: "Failed to delete proposal" });
+      console.error("Error deleting related progress billing:", err);
+      return res.status(500).json({ error: "Failed to delete related records" });
     }
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Proposal not found or does not belong to this project" });
-    }
+    const deleteProposalSql = `
+      DELETE FROM proposals
+      WHERE proposal_id = ? AND project_id = ?
+    `;
 
-    return res.status(200).json({ message: "Proposal deleted successfully" });
+    db.query(deleteProposalSql, [proposal_id, project_id], (err, result) => {
+      if (err) {
+        console.error("Error deleting proposal:", err);
+        return res.status(500).json({ error: "Failed to delete proposal" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "Proposal not found or does not belong to this project" });
+      }
+
+      return res.status(200).json({ message: "Proposal deleted successfully" });
+    });
   });
 };
+
+
 
 const editProposalByProject = (req, res) => {
   const { project_id, proposal_id } = req.params;

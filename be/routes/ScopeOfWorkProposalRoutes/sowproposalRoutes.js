@@ -12,7 +12,7 @@ router.get('/sow-work-items/sow-table/', sowproposalController.getSOWfromTable);
 router.post('/sow-work-items/add', sowproposalController.addSOWWorkItems);
 router.get('/sow-work-items/raw', sowproposalController.getAllWorkItemsRaw);
 router.post('/sow-work-items', sowproposalController.addWorkItem);
-router.put('/sow-work-items/:id', sowproposalController.updateWorkItem);
+router.put('/sow-work-items', sowproposalController.updateProposalWorkItem);
 router.delete('/sow-work-items/:id', sowproposalController.deleteWorkItem);
 router.get("/work-types", sowproposalController.getAllWorkTypes);
 

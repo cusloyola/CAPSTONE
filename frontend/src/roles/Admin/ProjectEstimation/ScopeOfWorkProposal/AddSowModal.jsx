@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 const SOW_API_URL_ALL = "http://localhost:5000/api/sowproposal/sow-work-items/all-work-items"; 
 const SOW_API_URL_POST = "http://localhost:5000/api/sowproposal/sow-work-items/add";
 
-const AddSowModal = ({ proposal_id, onClose, onSelectItem }) => {
+const AddSowModal = ({ proposal_id, onClose, onSelectItem, existingItemIds }) => {
   const [workItems, setWorkItems] = useState([]);
     const [filteredItems, setFilteredItems] = useState([]);
 
@@ -16,7 +16,9 @@ useEffect(() => {
     .then(res => res.json())
     .then(data => {
       if (Array.isArray(data)) {
-        setWorkItems(data);
+        // Filter out already added items
+        const filtered = data.filter(item => !existingItemIds.has(item.work_item_id));
+        setWorkItems(filtered);
       } else {
         setWorkItems([]);
         console.error("Expected array but got:", data);
@@ -26,7 +28,8 @@ useEffect(() => {
       console.error(err);
       setWorkItems([]);
     });
-}, [proposal_id]);
+}, [proposal_id, existingItemIds]);
+
 
   const toggleSelect = (id) => {
     setSelectedIds(prev => {

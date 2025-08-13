@@ -145,9 +145,8 @@ const ProposalTable = () => {
                 </div>
             </div>
 
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-6">
-                <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
+                <div className="bg-gray-50 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
                     <p className="text-sm text-gray-500">Total Proposals</p>
                     <div className="flex items-center gap-4">
                         <h2 className="text-3xl font-bold text-gray-800">{totalProposals}</h2>
@@ -155,6 +154,8 @@ const ProposalTable = () => {
                     </div>
                     <p className="text-blue-600 text-sm">Includes all statuses</p>
                 </div>
+
+
                 <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow space-y-2">
                     <p className="text-sm text-gray-500">Pending Proposals</p>
                     <div className="flex items-center gap-4">
@@ -173,6 +174,18 @@ const ProposalTable = () => {
                 </div>
             </div>
 
+            <div>
+                <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="border px-3 py-1 rounded-lg text-md h-10 w-40"
+                >
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
             {/* Search and Filter Controls */}
             <div className="flex justify-between items-center flex-wrap gap-4 pt-4">
                 <div className="flex items-center gap-2">
@@ -190,16 +203,6 @@ const ProposalTable = () => {
                     <label className="text-sm text-gray-700">entries</label>
                 </div>
                 <div className="flex flex-wrap gap-4 items-center">
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="border px-3 py-1 rounded-lg text-md h-10 w-40"
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
                     <input
                         id="searchInput"
                         type="text"
@@ -213,7 +216,7 @@ const ProposalTable = () => {
 
             {/* Proposal Table */}
             <div>
-      <table className="table-auto w-full border border-gray-300 text-sm">
+                <table className="table-auto w-full border border-gray-300 text-sm">
                     <thead className="bg-gray-100">
                         <tr>
                             <th className="border px-4 py-2 text-left">Proposal Title</th>
