@@ -123,7 +123,8 @@ import FolderPage from "./roles/Admin/File Management/FolderPage.jsx";
 import UploadDocument from "./roles/Admin/File Management/UploadDocument.jsx";
 import SubFolderPage from "./roles/Admin/File Management/SubFolderPage.jsx";
 import Task from "./roles/Admin/Task Management/TaskSchedule.jsx";
-
+import ForgotPassword from "./pages/AuthPages/ForgotPassword.jsx";
+import ResetPassword from "./pages/AuthPages/ResetPassword.jsx";
 
 export default function App() {
   return (
@@ -134,9 +135,11 @@ export default function App() {
           {/* Redirect root to /signin */}
           <Route path="/" element={<Navigate to="/signin" replace />} />
 
-          {/* Public Route: Sign In */}
+          {/* ===== PUBLIC ROUTES ===== */}
           <Route path="/signin" element={<SignIn />} />
-          {/* <Route path="/signup" element={<SignUp />} /> */}
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+
 
           {/* Protected Routes */}
           <Route element={<AppLayout />}>
@@ -232,8 +235,8 @@ export default function App() {
 
             {/* Site Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
-             <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
-              <Route path= "/DailySiteReport" element={<DailySiteReport/>} />
+              <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
+              <Route path="/DailySiteReport" element={<DailySiteReport />} />
               <Route path="/RequestMaterial" element={<RequestMaterial />} />
               <Route path="/ViewRequestHistory" element={<MaterialRequestHistory />} />
             </Route>

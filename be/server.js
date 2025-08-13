@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
@@ -8,7 +10,6 @@ const {verifyToken} = require('./middleware/authMiddleware'); // Correct way for
 const db = require("./config/db"); // Ensure DB connection is initialized
 
 dotenv.config(); // Load environment variables
-
 const app = express();
 
 // ✅ Middleware
@@ -161,6 +162,7 @@ app.use('/api/progress-billing',progressbillingRoutes );
 
 app.use('/api/dashboard', dashboardRoutes);
 
+app.use('/api/auth', authRoutes); // Ensure auth routes are mounted
 
 app.use('/api/incident-report', incidentreportRoutes);
 app.use('/api/project-info', projectInfoRoutes);

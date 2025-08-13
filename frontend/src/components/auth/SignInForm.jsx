@@ -131,12 +131,22 @@ export default function SignInForm() {
                   </span>
                 </div>
               </div>
+              <div className="text-center mt-0">
+                <button
+                  type="button"
+                  className="text-sm text-blue-500 hover:underline"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  Forgot Password?
+                </button>
+              </div>
 
               <div>
                 <Button className="w-full" size="sm" disabled={loading}>
                   {loading ? "Signing in..." : "Sign in"}
                 </Button>
               </div>
+
             </div>
           </form>
 
@@ -146,5 +156,5 @@ export default function SignInForm() {
         </div>
       </div>
     </div>
-  );
+ ); 
 }
