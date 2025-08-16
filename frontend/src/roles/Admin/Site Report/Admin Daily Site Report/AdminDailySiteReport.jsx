@@ -151,23 +151,23 @@ const AdminDailySiteReport = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
-        <div className="bg-gray-50 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-          <p className="text-sm text-gray-500">Reports Submitted</p>
+        <div className="bg-[#508afd] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+          <p className="text-md text-white font-semibold">Reports Submitted</p>
           <div className="flex items-center gap-4">
-            <h2 className="text-3xl font-bold text-gray-800">{totalReports}</h2>
+            <h2 className="text-4xl font-bold text-white">{totalReports}</h2>
             <FcInspection className="text-3xl" />
           </div>
-          <p className="text-blue-600 text-sm">Daily logs compiled</p>
+          <p className="text-white text-sm">Daily logs compiled</p>
         </div>
 
         {/* Unviewed Reports */}
-        <div className="bg-white border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-          <p className="text-sm text-gray-500">Unviewed Reports</p>
+        <div className="bg-blue-300 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+          <p className="text-md text-white font-semibold">Unviewed Reports</p>
           <div className="flex items-center gap-4">
-            <h2 className="text-3xl font-bold text-gray-800">{unviewedReports}</h2>
+            <h2 className="text-4xl font-bold text-white">{unviewedReports}</h2>
             <FaEyeSlash className="text-3xl text-gray-600" />
           </div>
-          <p className="text-blue-600 text-sm">Up to date</p>
+          <p className="text-white text-sm">Up to date</p>
         </div>
 
         <div className="bg-white p-5 border border-gray-200 rounded-2xl shadow space-y-2 col-span-1 md:col-span-2 lg:col-span-2">

@@ -17,6 +17,10 @@ const DailySiteReport = () => {
 
   const reportRefs = useRef({});
 
+  const [selectedReports, setSelectedReports] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+
+
   const loadReports = () => {
     fetch("http://localhost:5000/api/daily-site-report/getSiteReport")
       .then((res) => res.json())
@@ -58,8 +62,28 @@ const DailySiteReport = () => {
     setModalType(null);
   };
 
+  const handleSelectReport = (reportId) => {
+    if (selectedReports.includes(reportId)) {
+      setSelectedReports(selectedReports.filter(id => id !== reportId));
+    } else {
+      setSelectedReports([...selectedReports, reportId]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedReports([]); // deselect all
+    } else {
+      const allIds = filteredReports.map(r => r.report_id); // only current filtered reports
+      setSelectedReports(allIds); // select all
+    }
+    setSelectAll(!selectAll);
+  };
+
+
 
   const dailySiteColumns = [
+   
     {
       label: "Project",
       key: "project_name",
@@ -98,6 +122,12 @@ const DailySiteReport = () => {
         reportRefs={reportRefs}
         onAction={handleAction}
         onAdd={() => setShowAddModal(true)}
+
+        selectedReports={selectedReports}
+        setSelectedReports={setSelectedReports}
+        selectAll={selectAll}
+        setSelectAll={setSelectAll}
+
       />
 
 
