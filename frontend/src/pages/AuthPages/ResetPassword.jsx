@@ -11,6 +11,8 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [validToken, setValidToken] = useState(null); // null = loading, true = valid, false = invalid
+  const [error, setError] = useState(""); // Add state for error messages
+  const [confirmPassword, setConfirmPassword] = useState(""); // Add state for confirm password
 
   // Verify token on page load
   useEffect(() => {
@@ -28,6 +30,14 @@ export default function ResetPassword() {
 
   const handleReset = async (e) => {
     e.preventDefault();
+    setError(""); // Clear previous errors
+
+    // Validate password and confirm password match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    // Optionally, add more password validation here (length, complexity, etc.)
     try {
       const res = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
         method: "POST",
@@ -93,7 +103,21 @@ export default function ResetPassword() {
               required
             />
           </div>
-
+          <div>
+            <Label>
+              Confirm Password <span className="text-error-500">*</span>
+            </Label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              placeholder="Confirm new password"
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && (
+            <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
+          )}
           <div>
             <Button className="w-full" size="sm">
               Reset Password

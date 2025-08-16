@@ -6,6 +6,9 @@ import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Button from "../ui/button/Button";
 
+const MAX_ATTEMPTS = 3;
+const TIMEOUT_DURATION = 30; // seconds
+
 export default function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,6 +18,10 @@ export default function SignInForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useUser(); // Handles user login context
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [timeout, setTimeoutState] = useState(false);
+  const [timeoutSeconds, setTimeoutSeconds] = useState(TIMEOUT_DURATION);
+
 
   // 🚫 Redirect to dashboard if already logged in
   useEffect(() => {
@@ -31,8 +38,29 @@ export default function SignInForm() {
     }
   }, []);
 
+  // Handle timeout countdown
+  useEffect(() => {
+    let timer;
+    if (timeout && timeoutSeconds > 0) {
+      timer = setInterval(() => {
+        setTimeoutSeconds((sec) => sec - 1);
+      }, 1000);
+    } else if (timeout && timeoutSeconds === 0) {
+      setTimeoutState(false);
+      setLoginAttempts(0);
+      setTimeoutSeconds(TIMEOUT_DURATION);
+      setMessage("");
+    }
+    return () => clearInterval(timer);
+  }, [timeout, timeoutSeconds]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (timeout) {
+      setMessage(`Too many failed attempts. Please wait ${timeoutSeconds} seconds.`);
+      return;
+    }
 
     if (!email || !password) {
       setMessage("Email and Password are required.");
@@ -63,10 +91,18 @@ export default function SignInForm() {
           "site engineer": "/SiteProgressTracking",
           "safety engineer": "/SafetyEngineerDashboard",
         };
+        setLoginAttempts(0);
 
         navigate(roleRoutes[userRole] || "/unauthorized", { replace: true });
       } else {
-        setMessage(result.message || "Login failed.");
+        const attempts = loginAttempts + 1;
+        setLoginAttempts(attempts);
+        if (attempts >= MAX_ATTEMPTS) {
+          setTimeoutState(true);
+          setMessage(`Too many failed attempts. Please wait ${TIMEOUT_DURATION} seconds.`);
+        } else {
+          setMessage(result.message || "Login failed.");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -151,10 +187,17 @@ export default function SignInForm() {
           </form>
 
           {message && (
-            <div className="mt-3 text-center text-red-500">{message}</div>
+            <div className="mt-3 text-center text-red-500">
+              {message}
+              {timeout && (
+                <div className="mt-2 text-sm text-gray-500">
+                  Try again in {timeoutSeconds} seconds.
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
     </div>
- ); 
+  );
 }
