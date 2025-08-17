@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import PageMeta from '../../components/common/PageMeta';
 import axios from 'axios';
 
-
-const RESOURCES_API_URL = "http://localhost:5000/api/resource";
-
+const RESOURCES_API_URL = "http://localhost:5000/api/resources";
+const BRANDS_API_URL = "http://localhost:5000/api/resource/brands";
 
 const RequestMaterial = () => {
   const [selectedMaterials, setSelectedMaterials] = useState([]);
@@ -22,6 +21,8 @@ const RequestMaterial = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [requestError, setRequestError] = useState('');
+  const [brandFilter, setBrandFilter] = useState('');
+  const [brandOptions, setBrandOptions] = useState([]);
 
 
   const projects = [
@@ -44,6 +45,20 @@ const RequestMaterial = () => {
   ];
 
 
+  // Fetch brand options for filter dropdown
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const response = await axios.get(BRANDS_API_URL);
+        setBrandOptions(Array.isArray(response.data) ? response.data : []);
+      } catch {
+        setBrandOptions([]);
+      }
+    };
+    fetchBrands();
+  }, []);
+
+
   // Debounce search input to avoid excessive API calls and flickering
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -56,45 +71,44 @@ const RequestMaterial = () => {
   }, [searchInput]);
 
 
-  // Reset page to 1 whenever the search term or limit changes
-  // This ensures that new searches/pagination limits start from the first page
+  // Reset page to 1 whenever the search term or brand filter changes
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, limit]);
+  }, [debouncedSearch, brandFilter]);
 
 
-  // Effect to fetch materials from the backend
-  // This runs on initial load and whenever page, limit, or debouncedSearch changes
+  // Fetch materials with pagination, search, and brand filter
   useEffect(() => {
     const fetchMaterials = async () => {
-      setLoading(true); // Set loading state to true before fetching
-      setError(''); // Clear any previous errors
-
-
+      setLoading(true);
+      setError('');
       try {
-        // Construct the API URL with current page, limit, and debounced search term
-        const response = await axios.get(
-          `${RESOURCES_API_URL}?page=${page}&limit=${limit}&search=${debouncedSearch}`
-        );
-       
-        // The backend now returns an object with 'items' (array of materials) and 'total' (total count)
-        const items = response.data.items || [];
-        const total = response.data.total || 0;
-
-
-        setMaterials(items); // Update materials state with fetched items
-        setTotalItems(total); // Update total items count for pagination
+        let url = `${RESOURCES_API_URL}?page=${page}&limit=${limit}`;
+        if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
+        if (brandFilter) url += `&brand=${encodeURIComponent(brandFilter)}`;
+        const response = await axios.get(url);
+        let items = [];
+        let total = 0;
+        if (Array.isArray(response.data.items)) {
+          items = response.data.items;
+          total = response.data.total || items.length;
+        } else if (Array.isArray(response.data)) {
+          items = response.data;
+          total = response.data.length;
+        } else {
+          items = [];
+          total = 0;
+        }
+        setMaterials(items);
+        setTotalItems(total);
       } catch (error) {
-        console.error('Error fetching materials:', error);
         setError('Failed to fetch materials. Please ensure the backend is running and accessible.');
       } finally {
-        setLoading(false); // Set loading state to false after fetching (success or error)
+        setLoading(false);
       }
     };
-
-
-    fetchMaterials(); // Call the fetch function
-  }, [page, limit, debouncedSearch]); // Dependencies for this effect
+    fetchMaterials();
+  }, [page, limit, debouncedSearch, brandFilter]);
 
 
   // Function to toggle selection of a material
@@ -222,15 +236,36 @@ const RequestMaterial = () => {
 
       <div className="bg-white p-6 rounded-lg shadow-md mb-6">
         <h3 className="text-xl font-semibold mb-4">Select Materials</h3>
+        {/* Brand Category Filter Group */}
+        <div className="flex flex-col gap-2 mb-4">
+          <label className="block font-medium text-gray-700">
+            Brand Category:
+          </label>
+          <select
+            className="border p-2 rounded w-48"
+            value={brandFilter}
+            onChange={(e) => setBrandFilter(e.target.value)}
+          >
+            <option value="">All Brand Categories</option>
+            {brandOptions.map((brand) => (
+              <option key={brand.brand_id} value={brand.brand_name}>
+                {brand.brand_name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* Show entries and Search bar in the same row */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-2">
-          {/* "Show entries" dropdown */}
           <div className="flex items-center gap-2">
             <label htmlFor="show-entries" className="font-medium">Show</label>
             <select
               id="show-entries"
               className="border rounded px-2 py-1 pr-4 appearance-none"
               value={limit}
-              onChange={e => setLimit(Number(e.target.value))}
+              onChange={e => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'16\' height=\'16\' viewBox=\'0 0 16 16\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M4 6L8 10L12 6\' stroke=\'%23333\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1rem' }}
             >
               {[10, 25, 50, 100].map(opt => (
@@ -239,13 +274,12 @@ const RequestMaterial = () => {
             </select>
             <span className="ml-2">entries</span>
           </div>
-          {/* Search input field */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             <label htmlFor="search-materials" className="font-medium">Search:</label>
             <input
               id="search-materials"
               type="text"
-              placeholder="Material name..."
+              placeholder="Search by Material Name..."
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               className="border rounded px-2 py-1"
@@ -257,11 +291,11 @@ const RequestMaterial = () => {
           <table className="min-w-full border border-gray-300 rounded-lg">
             <thead>
               <tr className="bg-gray-100 text-left">
-                <th className="p-3 border-b">Select</th>
-                <th className="p-3 border-b">Material Name</th>
-                <th className="p-3 border-b">Unit</th>
-                <th className="p-3 border-b">Brand</th>
-                <th className="p-3 border-b">Unit Cost</th>
+                <th className="p-3 border-b border-r">Select</th>
+                <th className="p-3 border-b border-r">Material Name</th>
+                <th className="p-3 border-b border-r">Unit</th>
+                <th className="p-3 border-b border-r">Brand</th>
+                <th className="p-3 border-b border-r">Unit Cost</th>
                 <th className="p-3 border-b text-center">Stock Quantity</th>
               </tr>
             </thead>
@@ -279,28 +313,33 @@ const RequestMaterial = () => {
                   </td>
                 </tr>
               ) : materials.length > 0 ? (
-                materials.map((material) => {
-                  const id = material.resource_id; // Use resource_id as the unique key
+                // Filter materials by brand if a brand is selected
+                materials
+                  .filter(material =>
+                    !brandFilter || material.brand_name === brandFilter
+                  )
+                  .map((material) => {
+                    const id = material.resource_id;
                     return (
-                    <tr key={id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedMaterials.some(m => m.item_id === id)}
-                        onChange={() => toggleMaterial(material)}
-                        className="w-4 h-4"
-                      />
-                      </td>
-                      <td className="p-3">{material.material_name}</td>
-                      <td className="p-3">{material.unitName || material.unitId}</td>
-                      <td className="p-3">{material.brand_name || material.brand_id}</td>
-                      <td className="p-3 text-right">
-                      ₱{Number(material.default_unit_cost).toFixed(2)}
-                      </td>
-                      <td className="p-3 text-center">{material.stocks}</td>
-                    </tr>
+                      <tr key={id} className="border-b hover:bg-gray-50">
+                        <td className="p-3 border-r">
+                          <input
+                            type="checkbox"
+                            checked={selectedMaterials.some(m => m.item_id === id)}
+                            onChange={() => toggleMaterial(material)}
+                            className="w-4 h-4"
+                          />
+                        </td>
+                        <td className="p-3 border-r">{material.material_name}</td>
+                        <td className="p-3 border-r">{material.unitName || material.unitId}</td>
+                        <td className="p-3 border-r">{material.brand_name || material.brand_id}</td>
+                        <td className="p-3 border-r text-right">
+                          ₱{Number(material.default_unit_cost).toFixed(2)}
+                        </td>
+                        <td className="p-3 text-center">{material.stocks}</td>
+                      </tr>
                     );
-                })
+                  })
               ) : (
                 <tr>
                   <td colSpan="6" className="text-center p-4 text-gray-500">
@@ -503,6 +542,7 @@ const RequestMaterial = () => {
     </>
   );
 };
+
 
 
 export default RequestMaterial;
