@@ -1,12 +1,16 @@
+// router.js
+
 const express = require("express");
 const router = express.Router();
 const {
     getAllResources,
-    addResource,
-    updateResource,
-    deleteResource,
     getBrands,
-    getUnits
+    getUnits,
+    getRequestMaterialItems,
+    createRequestedMaterials,
+    getRequestedMaterialsHistory,
+    approveRequest,
+    rejectRequest
 } = require("../../controllers/Resource/requestMaterialController");
 
 // Route to get a list of all resources with optional pagination and search
@@ -27,22 +31,34 @@ router.get("/units", (req, res, next) => {
     next();
 }, getUnits);
 
-// Route to add a new resource
-router.post("/", (req, res, next) => {
-    console.log("POST /api/resources/ requested");
+// Route to get a list of materials for a new request
+router.get("/request-materials", (req, res, next) => {
+    console.log("GET /api/resources/request-materials requested");
     next();
-}, addResource);
+}, getRequestMaterialItems);
 
-// Route to update an existing resource by its ID
-router.put("/:id", (req, res, next) => {
-    console.log(`PUT /api/resources/${req.params.id} requested`);
+// Route to create a new materials request
+router.post("/request-materials", (req, res, next) => {
+    console.log("POST /api/resources/request-materials requested");
     next();
-}, updateResource);
+}, createRequestedMaterials);
 
-// Route to soft delete a resource by its ID
-router.delete("/:id", (req, res, next) => {
-    console.log(`DELETE /api/resources/${req.params.id} requested`);
+// Route to get the history of all requested materials
+router.get("/request-materials/history", (req, res, next) => {
+    console.log("GET /api/resources/request-materials/history requested");
     next();
-}, deleteResource);
+}, getRequestedMaterialsHistory);
+
+// Route to approve a specific materials request by ID
+router.put("/request-materials/:requestId/approve", (req, res, next) => {
+    console.log(`PUT /api/resources/request-materials/approve/${req.params.requestId} requested`);
+    next();
+}, approveRequest);
+
+// Route to reject a specific materials request by ID
+router.put("/request-materials/reject/:requestId", (req, res, next) => {
+    console.log(`PUT /api/resources/request-materials/reject/${req.params.requestId} requested`);
+    next();
+}, rejectRequest);
 
 module.exports = router;

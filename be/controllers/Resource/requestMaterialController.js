@@ -1,3 +1,5 @@
+// requestMaterialController.js
+
 const db = require("../../config/db");
 const moment = require("moment");
 
@@ -89,105 +91,6 @@ const getAllResources = (req, res) => {
 };
 
 /**
- * @description Adds a new resource to the database.
- * @param {object} req - The request object containing resource data.
- * @param {object} res - The response object.
- */
-const addResource = (req, res) => {
-    const { material_name, default_unit_cost, stocks, reorder_level, brand_id, unitId } = req.body;
-
-    // Validate required fields
-    if (!material_name || !default_unit_cost || !stocks || !reorder_level || !brand_id || !unitId) {
-        return res.status(400).json({ error: "Missing required fields." });
-    }
-
-    const newResource = {
-        material_name,
-        default_unit_cost,
-        stocks,
-        reorder_level,
-        brand_id,
-        unitId,
-        status: stocks < reorder_level ? 'Low Stock' : 'In Stock'
-    };
-
-    db.query("INSERT INTO resource SET ?", newResource, (err, results) => {
-        if (err) {
-            console.error("❌ Error adding resource:", err);
-            return res.status(500).json({ error: "Server error while adding resource." });
-        }
-        console.log("✅ Resource added successfully:", results);
-        res.status(201).json({ message: "Resource added successfully.", resourceId: results.insertId });
-    });
-};
-
-/**
- * @description Updates an existing resource in the database.
- * @param {object} req - The request object with resource data and ID.
- * @param {object} res - The response object.
- */
-const updateResource = (req, res) => {
-    const { id } = req.params;
-    const { material_name, default_unit_cost, stocks, reorder_level, brand_id, unitId } = req.body;
-
-    // Validate required fields and resource ID
-    if (!id || !material_name || !default_unit_cost || !stocks || !reorder_level || !brand_id || !unitId) {
-        return res.status(400).json({ error: "Missing required fields." });
-    }
-
-    const updatedResource = {
-        material_name,
-        default_unit_cost,
-        stocks,
-        reorder_level,
-        brand_id,
-        unitId,
-        status: stocks < reorder_level ? 'Low Stock' : 'In Stock'
-    };
-
-    db.query("UPDATE resource SET ? WHERE resource_id = ?", [updatedResource, id], (err, results) => {
-        if (err) {
-            console.error("❌ Error updating resource:", err);
-            return res.status(500).json({ error: "Server error while updating resource." });
-        }
-
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ error: "Resource not found." });
-        }
-
-        console.log("✅ Resource updated successfully:", results);
-        res.json({ message: "Resource updated successfully." });
-    });
-};
-
-/**
- * @description "Soft deletes" a resource by setting the isDeleted flag.
- * @param {object} req - The request object with the resource ID.
- * @param {object} res - The response object.
- */
-const deleteResource = (req, res) => {
-    const { id } = req.params;
-
-    if (!id) {
-        return res.status(400).json({ error: "Resource ID is required." });
-    }
-
-    db.query("UPDATE resource SET isDeleted = 1 WHERE resource_id = ?", [id], (err, results) => {
-        if (err) {
-            console.error("❌ Error deleting resource:", err);
-            return res.status(500).json({ error: "Server error while deleting resource." });
-        }
-
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ error: "Resource not found." });
-        }
-
-        console.log("✅ Resource deleted successfully:", results);
-        res.json({ message: "Resource deleted successfully." });
-    });
-};
-
-/**
  * @description Fetches all available resource brands.
  * @param {object} req - The request object.
  * @param {object} res - The response object.
@@ -219,12 +122,337 @@ const getUnits = (req, res) => {
     });
 };
 
+/**
+ * @description Retrieves a list of materials for a new request.
+ * @param {object} req - The request object.
+ * @param {object} res - The response object.
+ */
+const getRequestMaterialItems = (req, res) => {
+    db.query(
+        "SELECT resource_id, material_name FROM resource WHERE isDeleted = 0",
+        (err, results) => {
+            if (err) {
+                console.error("❌ Error fetching request material items:", err);
+                return res
+                    .status(500)
+                    .json({ error: "Server error while fetching request material items" });
+            }
+            if (!results || results.length === 0) {
+                console.warn("⚠️ No request material items found.");
+                return res
+                    .status(404)
+                    .json({ message: "No request material items found." });
+            }
+            console.log("📌 Sending Request Material Items Data:", results);
+            return res.json(results);
+        }
+    );
+};
+
+
+const createRequestedMaterials = (req, res) => {
+    const { selectedProject, urgency, notes, selectedMaterials } = req.body;
+
+    console.log("Received request to create materials:", req.body); // Debugging log
+
+    if (!selectedProject || !urgency || !selectedMaterials || selectedMaterials.length === 0) {
+        return res.status(400).json({ error: "Missing required fields." });
+    }
+
+    // Input validation for selectedMaterials
+    if (!Array.isArray(selectedMaterials) || selectedMaterials.some(item => !item.item_id || !item.request_quantity)) {
+        return res.status(400).json({ error: "Invalid selectedMaterials format." });
+    }
+
+    db.beginTransaction((err) => {
+        if (err) {
+            console.error("Database transaction error:", err); // Debugging Log
+            return res.status(500).json({ error: "Database transaction error." });
+        }
+
+        db.query(
+            "INSERT INTO requested_materials (project_name, urgency, notes) VALUES (?, ?, ?)",
+            [selectedProject, urgency, notes],
+            (err, requestResults) => {
+                if (err) {
+                    console.error("❌ Error inserting requested materials:", err);
+                    return db.rollback(() => {
+                        return res.status(500).json({ error: "Error creating request." });
+                    });
+                }
+
+                const request_id = requestResults.insertId;
+                console.log("Inserted requested materials, request ID:", request_id); // Debugging log
+
+                const values = selectedMaterials.map((item) => [
+                    request_id,
+                    item.item_id,
+                    item.request_quantity,
+                ]);
+
+                db.query(
+                    "INSERT INTO requested_material_items (request_id, item_id, request_quantity) VALUES ?",
+                    [values],
+                    (err) => {
+                        if (err) {
+                            console.error("❌ Error inserting requested material items:", err);
+                            return db.rollback(() => {
+                                return res.status(500).json({ error: "Error adding items to request." });
+                            });
+                        }
+
+                        console.log("Inserted requested material items"); // Debugging log
+
+                        db.commit((err) => {
+                            if (err) {
+                                console.error("❌ Error committing transaction:", err);
+                                return db.rollback(() => {
+                                    return res.status(500).json({ error: "Error completing request." });
+                                });
+                            }
+                            console.log("✅ Request created successfully.");
+                            return res.status(201).json({ message: "Request created successfully." });
+                        });
+                    }
+                );
+            }
+        );
+    });
+};
+
+
+const getRequestedMaterialsHistory = (req, res) => {
+    db.query(
+        `SELECT 
+            rm.request_id, 
+            rm.project_name, 
+            rm.urgency, 
+            rm.notes, 
+            rm.is_approved, 
+            rm.request_date,
+            rm.approved_at, 
+            rmi.item_id, 
+            r.material_name AS item_name, 
+            rmi.request_quantity 
+        FROM requested_materials rm
+        JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
+        JOIN resource r ON rmi.item_id = r.resource_id
+        ORDER BY rm.request_id`,
+        (err, results) => {
+            if (err) {
+                console.error("❌ Error fetching requested materials history:", err);
+                return res.status(500).json({ error: "Server error while fetching history" });
+            }
+
+            if (!results || results.length === 0) {
+                console.warn("⚠️ No requested materials history found.");
+                return res.status(404).json({ message: "No requested materials history found." });
+            }
+
+            const formattedResults = results.reduce((acc, row) => {
+                const existingRequest = acc.find(item => item.request_id === row.request_id);
+                if (existingRequest) {
+                    existingRequest.items.push({
+                        item_id: row.item_id,
+                        item_name: row.item_name,
+                        request_quantity: row.request_quantity,
+                    });
+                } else {
+                    acc.push({
+                        request_id: row.request_id,
+                        project_name: row.project_name,
+                        urgency: row.urgency,
+                        notes: row.notes,
+                        status:
+                            row.is_approved === 1
+                                ? 'approved'
+                                : row.is_approved === 2
+                                    ? 'rejected'
+                                    : 'pending',
+                        request_date: row.request_date,
+                        approved_at: row.approved_at,
+                        items: [{
+                            item_id: row.item_id,
+                            item_name: row.item_name,
+                            request_quantity: row.request_quantity,
+                        }],
+                    });
+                }
+                return acc;
+            }, []);
+
+            console.log("📌 Sending Requested Materials History Data:", formattedResults);
+            return res.json(formattedResults);
+        }
+    );
+};
+
+const approveRequest = (req, res) => {
+    const requestId = req.params.requestId;
+    const approvedBy = 'Admin'; 
+    const approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    // NEW LOG: Log the start of the approval process
+    console.log(`🚀 Starting approval process for Request ID: ${requestId}`);
+
+    // Start a database transaction
+    db.beginTransaction((err) => {
+        if (err) {
+            console.error('❌ Database transaction error:', err);
+            return res.status(500).json({ error: 'Database transaction error.' });
+        }
+
+        // First query: Update the status of the request
+        db.query(
+            'UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?',
+            [approvedBy, approvedAt, requestId],
+            (err, results) => {
+                if (err) {
+                    console.error('❌ Database error during request update:', err);
+                    return db.rollback(() => {
+                        return res.status(500).json({ error: 'Failed to approve request' });
+                    });
+                }
+                
+                // NEW LOG: Log the affected rows from the initial update
+                console.log(`✅ Initial request update successful. Affected rows: ${results.affectedRows}`);
+
+                if (results.affectedRows === 0) {
+                    console.warn(`⚠️ Request ID ${requestId} not found for approval. Rollback initiated.`);
+                    return db.rollback(() => {
+                        return res.status(404).json({ error: 'Request not found' });
+                    });
+                }
+                
+                // Second query: Get the list of items associated with the request
+                db.query(
+                    'SELECT item_id, request_quantity FROM requested_material_items WHERE request_id = ?',
+                    [requestId],
+                    (err, itemsResults) => {
+                        if (err) {
+                            console.error('❌ Database error during item fetch:', err);
+                            return db.rollback(() => {
+                                return res.status(500).json({ error: 'Failed to fetch items for stock update' });
+                            });
+                        }
+                        
+                        console.log(`🔎 Found ${itemsResults.length} items for request ID ${requestId}. Items:`, itemsResults);
+
+                        if (!itemsResults || itemsResults.length === 0) {
+                            console.warn(`⚠️ No items found for request ID ${requestId}. Committing approval without stock update.`);
+                            db.commit((err) => {
+                                if (err) {
+                                    console.error('❌ Error committing transaction (no items):', err);
+                                    return db.rollback(() => {
+                                        return res.status(500).json({ error: 'Error completing transaction.' });
+                                    });
+                                }
+                                return res.json({ message: 'Request approved successfully (no items to update).' });
+                            });
+                            return;
+                        }
+
+                        const updateStockPromises = itemsResults.map(item => {
+                            return new Promise((resolve, reject) => {
+                                console.log(`🔄 Attempting to update stock for resource_id: ${item.item_id}, quantity: ${item.request_quantity}`);
+                                db.query(
+                                    'UPDATE resource SET stocks = stocks - ? WHERE resource_id = ?',
+                                    [item.request_quantity, item.item_id],
+                                    (err, updateResults) => {
+                                        if (err) {
+                                            console.error(`❌ Error updating stock for item ${item.item_id}:`, err);
+                                            reject(err);
+                                        } else {
+                                            if (updateResults.affectedRows === 0) {
+                                                console.warn(`⚠️ Stock update for item ${item.item_id} failed: No matching resource_id found.`);
+                                            } else {
+                                                console.log(`✅ Stock updated for item ${item.item_id}. Affected rows: ${updateResults.affectedRows}`);
+                                            }
+                                            resolve(updateResults);
+                                        }
+                                    }
+                                );
+                            });
+                        });
+
+                        Promise.all(updateStockPromises)
+                            .then(() => {
+                                db.commit((err) => {
+                                    if (err) {
+                                        console.error('❌ Error committing transaction after stock update:', err);
+                                        return db.rollback(() => {
+                                            return res.status(500).json({ error: 'Error completing transaction.' });
+                                        });
+                                    }
+                                    console.log('✅ Request approved and all stocks updated successfully.');
+                                    res.json({ message: 'Request approved and stock updated successfully' });
+                                });
+                            })
+                            .catch(err => {
+                                console.error('❌ One or more stock updates failed. Rolling back transaction.', err);
+                                return db.rollback(() => {
+                                    return res.status(500).json({ error: 'Failed to update stock. Transaction rolled back.' });
+                                });
+                            });
+                    }
+                );
+            }
+        );
+    });
+};
+
+
+
+const rejectRequest = (req, res) => {
+    const requestId = req.params.requestId;
+    const rejectedAt = moment().format('YYYY-MM-DD HH:mm:ss');
+
+    db.beginTransaction((err) => {
+        if (err) {
+            console.error('❌ Database transaction error:', err);
+            return res.status(500).json({ error: 'Database transaction error.' });
+        }
+        
+        db.query(
+            'UPDATE requested_materials SET is_approved = 2, approved_at = ? WHERE request_id = ?',
+            [rejectedAt, requestId],
+            (err, results) => {
+                if (err) {
+                    console.error('❌ Database error:', err);
+                    return db.rollback(() => {
+                        return res.status(500).json({ error: 'Failed to reject request' });
+                    });
+                }
+                if (results.affectedRows === 0) {
+                    console.warn(`⚠️ Request ID ${requestId} not found for rejection.`);
+                    return db.rollback(() => {
+                        return res.status(404).json({ error: 'Request not found' });
+                    });
+                }
+                
+                db.commit((err) => {
+                    if (err) {
+                        console.error('❌ Error committing rejection transaction:', err);
+                        return db.rollback(() => {
+                            return res.status(500).json({ error: 'Error completing transaction.' });
+                        });
+                    }
+                    console.log(`✅ Request ID ${requestId} rejected successfully.`);
+                    res.json({ message: 'Request rejected successfully' });
+                });
+            }
+        );
+    });
+};
+
 
 module.exports = {
     getAllResources,
-    addResource,
-    updateResource,
-    deleteResource,
     getBrands,
-    getUnits
+    getUnits,
+    getRequestMaterialItems,
+    createRequestedMaterials,
+    getRequestedMaterialsHistory,
+    approveRequest,
+    rejectRequest
 };

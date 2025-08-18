@@ -4,6 +4,7 @@ import axios from 'axios';
 
 const RESOURCES_API_URL = "http://localhost:5000/api/resources";
 const BRANDS_API_URL = "http://localhost:5000/api/resource/brands";
+const PROJECTS_API_URL = "http://localhost:5000/api/projects";
 
 const RequestMaterial = () => {
   const [selectedMaterials, setSelectedMaterials] = useState([]);
@@ -23,26 +24,7 @@ const RequestMaterial = () => {
   const [requestError, setRequestError] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [brandOptions, setBrandOptions] = useState([]);
-
-
-  const projects = [
-    {
-      project_name: 'Manila Bridge Construction',
-      project_location: '123 Roxas Blvd, Manila, Philippines',
-    },
-    {
-      project_name: 'Cebu High-Rise Building',
-      project_location: '456 Osmeña Blvd, Cebu City, Philippines',
-    },
-    {
-      project_name: 'Davao Coastal Road',
-      project_location: '789 Diversion Road, Davao City, Philippines',
-    },
-    {
-      project_name: 'Clark Smart City',
-      project_location: '101 Clark Ave, Pampanga, Philippines',
-    },
-  ];
+  const [projects, setProjects] = useState([]);
 
 
   // Fetch brand options for filter dropdown
@@ -56,6 +38,21 @@ const RequestMaterial = () => {
       }
     };
     fetchBrands();
+  }, []);
+
+
+  // Fetch projects for dropdown
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch(PROJECTS_API_URL);
+        const data = await response.json();
+        setProjects(Array.isArray(data) ? data : []);
+      } catch {
+        setProjects([]);
+      }
+    };
+    fetchProjects();
   }, []);
 
 
@@ -418,8 +415,6 @@ const RequestMaterial = () => {
         {/* Section for project details and request submission */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-semibold mb-4">Project Details</h3>
-
-
           <div className="mb-4">
             <label className="block font-semibold">Select Project:</label>
             <select
@@ -429,22 +424,18 @@ const RequestMaterial = () => {
             >
               <option value="">-- Select Project --</option>
               {projects.map((project, index) => (
-                <option key={index} value={project.project_name}>
+                <option key={project.project_id || index} value={project.project_name}>
                   {project.project_name}
                 </option>
               ))}
             </select>
           </div>
-
-
           {selectedProject && (
             <p className="text-gray-700 mb-4">
               <strong>Location:</strong>{' '}
               {projects.find(p => p.project_name === selectedProject)?.project_location}
             </p>
           )}
-
-
           <div className="mb-4">
             <label className="block font-semibold">Select Urgency:</label>
             <select
@@ -542,6 +533,9 @@ const RequestMaterial = () => {
     </>
   );
 };
+
+
+
 
 
 
