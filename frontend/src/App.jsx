@@ -30,7 +30,7 @@ import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
 
 // safety
-import SafetyReport from "./roles/SafetyEngineer/Safety Reports/SafetyReport.jsx";
+import SafetyReport from "./roles/SafetyEngineer/Safety Reports/DailySafetyReport.jsx";
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 import IncidentReport from "./roles/SafetyEngineer/Incident Report/IncidentReport.jsx";
 import ViewHistoryIncidentReport from "./roles/SafetyEngineer/Incident Report/ViewHistoryIncidentReport.jsx";

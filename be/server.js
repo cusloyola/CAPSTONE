@@ -28,6 +28,8 @@ app.use((req, res, next) => {
 const sowWorkTypesRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowWorkTypesRoutes');
 const sowproposalRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowproposalRoutes')
 
+const safetyReportRoutes = require("./routes/safetyReportRoutes");
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const inventoryRoutes = require("./routes/inventoryRoutes");
@@ -107,6 +109,7 @@ if (!fs.existsSync(uploadDir)) {
 
 app.use('/api/work-types', sowWorkTypesRoutes);
 
+app.use("/api/safetyReports", safetyReportRoutes);
 
 app.use("/api", employeeManagementRoutes);
 app.use("/api/request-materials", requestMaterialRoutes);
