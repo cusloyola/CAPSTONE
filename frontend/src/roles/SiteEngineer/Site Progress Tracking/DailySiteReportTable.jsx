@@ -1,5 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaEllipsisV } from "react-icons/fa";
+import html2pdf from "html2pdf.js";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+
+import DailySiteReportPDF from "./Printables/DailySiteReportPDF";
+import MonthlySiteReportPDF from "./Printables/MonthlySiteReportPDF";
+
+import exportDailyReport from "./Printables/exportDailyReport";
+import exportMonthlyReport from "./Printables/exportMonthlyReport";
 
 const DailySiteReportTable = ({
   reports,
@@ -26,8 +36,10 @@ const DailySiteReportTable = ({
   const [filterMonth, setFilterMonth] = useState("");
   const [filterYear, setFilterYear] = useState("");
 
+  const [openExportMenu, setOpenExportMenu] = useState(false);
 
-
+  const dailyRef = useRef();
+  const monthlyRef = useRef();
 
 
   useEffect(() => {
@@ -42,37 +54,31 @@ const DailySiteReportTable = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [openMenuId]);
 
- 
   const filteredReports = reports
-  .filter((r) => {
-    const reportDate = new Date(r.report_date);
+    .filter((r) => {
+      const reportDate = new Date(r.report_date);
 
-    const matchQuery = r.project_name
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase());
+      const matchQuery = r.project_name
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
 
-    const matchStatus =
-      filterStatus === "all" || r.status === filterStatus;
+      const matchStatus =
+        filterStatus === "all" || r.status === filterStatus;
 
-    const matchMonth =
-      filterMonth === "" ||
-      reportDate.getMonth() === Number(filterMonth);
+      const matchMonth =
+        filterMonth === "" ||
+        reportDate.getMonth() === Number(filterMonth);
 
-    const matchYear =
-      filterYear === "" ||
-      reportDate.getFullYear() === Number(filterYear);
-
-    
-
-    return (
-      matchQuery && matchStatus && matchMonth && matchYear 
+      const matchYear =
+        filterYear === "" ||
+        reportDate.getFullYear() === Number(filterYear);
+      return (
+        matchQuery && matchStatus && matchMonth && matchYear
+      );
+    })
+    .sort(
+      (a, b) => new Date(b.report_date) - new Date(a.report_date)
     );
-  })
-  .sort(
-    (a, b) => new Date(b.report_date) - new Date(a.report_date)
-  );
-
-
 
   const indexOfLast = currentPage * entriesPerPage;
   const indexOfFirst = indexOfLast - entriesPerPage;
@@ -115,19 +121,32 @@ const DailySiteReportTable = ({
     setSelectAll(!selectAll);
   };
 
+
+  const exportDailyReport = (elementRef) => {
+    if (!elementRef.current) return;
+
+    const opt = {
+      margin: 10,
+      filename: "Daily_Report.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf().from(elementRef.current).set(opt).save();
+  };
+
+
   return (
     <div className="min-h-screen p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
 
         <div>
           <h1 className="text-3xl font-bold mb-10">Daily Site Report</h1>
-
-
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
             <div className="bg-gradient-to-l from-blue-500 to-blue-800 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl dark:bg-gray-800">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-plus-icon lucide-clipboard-plus"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14h6"/><path d="M12 17v-6"/></svg>
+              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard-plus-icon lucide-clipboard-plus"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="M9 14h6" /><path d="M12 17v-6" /></svg>
               </div>
 
               <p className="text-md text-white font-semibold">Total Proposals</p>
@@ -137,10 +156,10 @@ const DailySiteReportTable = ({
             </div>
 
             <div className="bg-gradient-to-l from-yellow-500 to-yellow-600 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-               <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock-fading-icon lucide-clock-fading"><path d="M12 2a10 10 0 0 1 7.38 16.75"/><path d="M12 6v6l4 2"/><path d="M2.5 8.875a10 10 0 0 0-.5 3"/><path d="M2.83 16a10 10 0 0 0 2.43 3.4"/><path d="M4.636 5.235a10 10 0 0 1 .891-.857"/><path d="M8.644 21.42a10 10 0 0 0 7.631-.38"/></svg>
+              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock-fading-icon lucide-clock-fading"><path d="M12 2a10 10 0 0 1 7.38 16.75" /><path d="M12 6v6l4 2" /><path d="M2.5 8.875a10 10 0 0 0-.5 3" /><path d="M2.83 16a10 10 0 0 0 2.43 3.4" /><path d="M4.636 5.235a10 10 0 0 1 .891-.857" /><path d="M8.644 21.42a10 10 0 0 0 7.631-.38" /></svg>
               </div>
-              
+
               <p className="text-md text-white font-semibold">Pending Proposals</p>
               <div className="flex items-center gap-4">
                 <h2 className="text-4xl font-bold text-white">42</h2>
@@ -150,9 +169,9 @@ const DailySiteReportTable = ({
             </div>
 
             <div className="bg-gradient-to-l from-green-500 to-green-600 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-               <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-check-icon lucide-file-check"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>              </div>
-              
+              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-check-icon lucide-file-check"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m9 15 2 2 4-4" /></svg>              </div>
+
               <p className="text-md text-white font-semibold">Approved Proposals</p>
               <div className="flex items-center gap-4">
                 <h2 className="text-4xl font-bold text-white">67</h2>
@@ -162,7 +181,7 @@ const DailySiteReportTable = ({
             </div>
 
             <div className="bg-gradient-to-l from-purple-500 to-purple-800 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
                 <svg className="text-gray-800 w-6 h-6 dark:text-white/90" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                   <circle cx="9" cy="7" r="4"></circle>
@@ -170,7 +189,7 @@ const DailySiteReportTable = ({
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
               </div>
-              
+
               <p className="text-md text-white font-semibold">Approved Proposals</p>
               <div className="flex items-center gap-4">
                 <h2 className="text-4xl font-bold text-white">67</h2>
@@ -264,16 +283,62 @@ const DailySiteReportTable = ({
             </div>
 
 
-            <input
-              type="text"
-              placeholder="Search reports..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border p-2 rounded w-64 h-10"
-            />
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder="Search reports..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border p-2 rounded w-64 h-10"
+              />
 
+
+              {/* Export buttons */}
+              <div className="relative">
+                <button
+                  onClick={() => setOpenExportMenu(!openExportMenu)}
+                  className="px-4 py-2 border border-black bg-gray-500 text-white rounded hover:bg-white hover:text-black"
+                >
+                  Export to PDF
+                </button>
+
+                {openExportMenu && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
+                    <button
+                      onClick={() => {
+                        exportDailyReport(dailyRef);
+                        setOpenExportMenu(false);
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                    >
+                      Daily Report
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const selectedData = filteredReports.filter(r =>
+                          selectedReports.includes(r.report_id)
+                        );
+                        exportMonthlyReport(selectedData);
+                        setOpenExportMenu(false);
+                      }}
+                      className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                    >
+                      Monthly Report
+                    </button>
+
+                  </div>
+                )}
+              </div>
+              <div className="hidden">
+                <DailySiteReportPDF
+                  ref={dailyRef}
+                  reports={reports.filter(r => selectedReports.includes(r.report_id))}
+                />
+              </div>
+
+            </div>
           </div>
-
 
           <div className="overflow-x-auto shadow-md rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">

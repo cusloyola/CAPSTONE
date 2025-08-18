@@ -668,3 +668,16 @@ span.flatpickr-weekday,
 }
 
 
+@media print {
+  @page {
+    size: landscape;
+  }
+}
+
+
+
+.no-break {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
