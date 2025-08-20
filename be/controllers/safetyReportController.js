@@ -7,8 +7,8 @@ const createSafetyReport = (req, res) => {
     console.log("📦 Request body:", req.body);
 
     const { project_id, report_date, description } = req.body;
-    const image1 = req.files?.image1 ? `/uploads/${req.files.image1[0].filename}` : null;
-    const image2 = req.files?.image2 ? `/uploads/${req.files.image2[0].filename}` : null;
+    const image1 = req.files?.image1 ? `/uploads/weeklySafetyReports/${req.files.image1[0].filename}` : null;
+    const image2 = req.files?.image2 ? `/uploads/weeklySafetyReports/${req.files.image2[0].filename}` : null;
 
     db.query(
       `INSERT INTO weekly_safety_report 

@@ -30,7 +30,7 @@ import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
 
 // safety
-import SafetyReport from "./roles/SafetyEngineer/Safety Reports/DailySafetyReport.jsx";
+import DailySafetyReport from "./roles/SafetyEngineer/Safety Reports/DailySafetyReport.jsx";
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
 import IncidentReport from "./roles/SafetyEngineer/Incident Report/IncidentReport.jsx";
 import ViewHistoryIncidentReport from "./roles/SafetyEngineer/Incident Report/ViewHistoryIncidentReport.jsx";
@@ -114,6 +114,8 @@ import AdminDailySiteReport from "./roles/Admin/Site Report/Admin Daily Site Rep
 
 import WeeklySafetyReport from "./roles/Admin/Safety Report/Weekly Safety Report/WeeklySafetyReport.jsx";
 import MonthlySafetyReport from "./roles/Admin/Safety Report/Monthly Safety Report/MonthlySafetyReport.jsx";
+import SafetyInspectionChecklist from "./roles/Admin/Safety Report/Safety Inspection Checklist/SafetyInspectionChecklist.jsx";
+
 
 import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
@@ -203,10 +205,11 @@ export default function App() {
 
 
                   <Route path="site-reports/daily" element={<AdminDailySiteReport />} />
-                  <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
-
+                   
                   <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
                   <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
+                  <Route path="safety-reports/inspection-checklist" element={<SafetyInspectionChecklist />} />
+
                 </Route>
               </Route>
 
@@ -244,7 +247,7 @@ export default function App() {
             {/* Safety Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["safety engineer"]} />}>
               <Route path="/SafetyEngineerDashboard" element={<SafetyEngineerDashboard />} />
-              <Route path="/SafetyReport" element={<SafetyReport />} />
+              <Route path="/SafetyReport" element={<DailySafetyReport />} />
               <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
 
               <Route path="/IncidentReport" element={<IncidentReport />} />

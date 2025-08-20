@@ -38,8 +38,6 @@ const ProjectProfile = () => {
                             <Link to="materials" className={linkClass("materials")}>
                                 <span>Material Request</span>
                             </Link>
-
-                            {/* Billing Section */}
                             <div
                                 className="relative"
                                 onMouseEnter={() => setHovered("billing")}
@@ -124,6 +122,9 @@ const ProjectProfile = () => {
                                         </Link>
                                         <Link to="safety-reports/monthly-safety" className="flex items-center justify-between px-4 py-4 hover:bg-gray-100">
                                             Monthly Safety Report
+                                        </Link>
+                                         <Link to="safety-reports/inspection-checklist" className="flex items-center justify-between px-4 py-4 hover:bg-gray-100">
+                                           Inspection Checklist
                                         </Link>
                                     </div>
                                 )}

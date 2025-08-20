@@ -5,7 +5,7 @@ const router = express.Router();
 const progressBillingController = require('../../controllers/ProgressBilling/progressBillingController');
 
 router.post(`/add/:proposal_id`, progressBillingController.addProgressBillList);
-router.get('/fetch/:proposal_id', progressBillingController.getProgressBillList);
+router.get('/fetch/:project_id', progressBillingController.getProgressBillList);
 
 router.get("/approved-proposal/:project_id", progressBillingController.getApprovedProposalByProject);
 router.post('/copy/:billing_id', progressBillingController.copyProgressBilling);
