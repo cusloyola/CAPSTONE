@@ -7,58 +7,53 @@ const DailySafetyReport = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const reportRefs = useRef({});
   const [selectedReports, setSelectedReports] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user")); // currently logged-in user
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  // ✅ Load all reports from backend
-const loadReports = async () => {
-  try {
-    const res = await fetch("http://localhost:5000/api/safetyReports");
-    const data = await res.json();
-
-    // Since API returns an array directly
-    if (Array.isArray(data)) {
-      setReports(data);
-    } else {
-      setReports([]);
+  // Load all reports
+  const loadReports = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/safetyReports");
+      const data = await res.json();
+      setReports(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load safety reports", err);
     }
-  } catch (err) {
-    console.error("Failed to load safety reports", err);
-  }
-};
-
+  };
 
   useEffect(() => {
     loadReports();
   }, []);
 
-  // ✅ Handle modal close & table refresh
+  // Handle modal close & table refresh
   const closeModals = (shouldRefresh = false, newReport = null) => {
     setShowAddModal(false);
 
     if (shouldRefresh && newReport) {
-      // Add new report to the list instantly
       setReports((prev) => [newReport, ...prev]);
+      setCurrentPage(1);
     }
 
     if (shouldRefresh && !newReport) {
-      // Reload from DB if no newReport is passed
       loadReports();
     }
   };
 
   const dailySafetyColumns = [
-    { label: "Project", key: "project_name" },
+    { label: "Project", key: "project_name" }, // now project_name is directly in report
     {
       label: "Report Date",
       key: "report_date",
       format: (value) => new Date(value).toLocaleDateString(),
     },
     { label: "Safety Notes", key: "description" },
+    { label: "Status", key: "status" },
+
     { label: "Prepared By", key: "full_name" },
   ];
 
@@ -84,7 +79,7 @@ const loadReports = async () => {
       {showAddModal && (
         <AddSafetyReportModal
           onClose={closeModals}
-          currentUser={user} // pass logged-in user to modal
+          currentUser={user}
         />
       )}
     </div>

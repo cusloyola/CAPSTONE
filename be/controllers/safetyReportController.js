@@ -55,6 +55,7 @@ const getSafetyReports = (req, res) => {
        wsr.image1,
        wsr.image2,
        wsr.user_id,
+       wsr.status,
        u.full_name     -- 👈 from users
      FROM weekly_safety_report wsr
      JOIN projects p ON wsr.project_id = p.project_id
@@ -85,6 +86,7 @@ const getSafetyReportById = (req, res) => {
        p.project_name,
        wsr.report_date,
        wsr.description,
+       wsr.status,
        wsr.image1,
        wsr.image2,
        wsr.user_id,

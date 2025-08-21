@@ -217,6 +217,35 @@ JOIN project_categories pc ON p.category_id = pc.category_id
   });
 };
 
+const getInProgressProjects = (req, res, next) => {
+  const query = `
+    SELECT 
+      p.project_id,
+      p.project_name,
+      pc.project_type AS projectCategory,
+      p.projectManager,
+      p.location,
+      p.priority,
+      p.status,
+      c.client_id,
+      c.client_name,
+      c.phone_number AS client_contact
+    FROM projects p
+    JOIN clients c ON p.client_id = c.client_id
+    JOIN project_categories pc ON p.category_id = pc.category_id
+    WHERE p.status = 'in progress'
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      return next(err);
+    }
+
+    res.json(results);
+  });
+};
+
+
 
 
 const getProjectFloors = (req, res) => {
@@ -265,6 +294,7 @@ const getprojectCategories = (req,res) => {
 
 module.exports = {
   getAllProjects,
+  getInProgressProjects,
   createProject,
   updateProject,
   deleteProject,

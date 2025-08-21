@@ -5,6 +5,7 @@ const AddSafetyReportModalUI = ({
   formData,
   previewImages,
   projectList,
+  loadingProjects,
   handleChange,
   handleProjectSelect,
   handleFileChange,
@@ -19,24 +20,29 @@ const AddSafetyReportModalUI = ({
           Add Safety Report
         </h2>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form
+          onSubmit={handleSubmit}
+    className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[80vh] overflow-y-auto"
+        >
           {/* Project Selection */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Project
             </label>
             <select
-              id="project"
-              name="project_id"
-              value={formData.project_id}
+              value={formData.project_id || ""}
               onChange={handleProjectSelect}
+              disabled={loadingProjects || projectList.length === 0}
+              className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
+              required
             >
-              <option value="">Select Project</option>
-              {projectList.map((project) => (
-                <option key={project.project_id} value={project.project_id}>
-                  {project.project_name}
+              <option value="">-- Select Project --</option>
+              {projectList.map((p, idx) => (
+                <option key={`${p.project_id}-${idx}`} value={p.project_id}>
+                  {p.project_name}
                 </option>
               ))}
+
             </select>
           </div>
 
@@ -48,7 +54,7 @@ const AddSafetyReportModalUI = ({
             <input
               type="date"
               name="report_date"
-              value={formData.report_date}
+              value={formData.report_date || ""}
               onChange={handleChange}
               className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500"
               required
@@ -62,7 +68,7 @@ const AddSafetyReportModalUI = ({
             </label>
             <textarea
               name="description"
-              value={formData.description}
+              value={formData.description || ""}
               onChange={handleChange}
               rows={4}
               placeholder="Write a short description of safety observations..."

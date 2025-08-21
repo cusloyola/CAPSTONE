@@ -3,57 +3,71 @@ import { useState, useEffect } from "react";
 
 const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
 
-const useSafetyReportHandlers = (callback) => {
+const useSafetyReportHandlers = () => {
   const [formData, setFormData] = useState({
-    project_id: "",     // use project_id instead of project_name since backend expects this
-    report_date: today, // <-- Set to current date
+    project_id: "",
+    project_name: "",
+    report_date: today,
     description: "",
+    status: "",
     image1: null,
     image2: null,
-    user_id: ""         // <-- add this
-
+    user_id: "",
   });
+
   const [previewImages, setPreviewImages] = useState({
     image1: null,
     image2: null,
   });
-  const [projectList, setProjectList] = useState([]);
 
-  // Load projects once (you can also move to parent if needed)
+  const [projectList, setProjectList] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  // Fetch projects once
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/projects");
+        const res = await fetch("http://localhost:5000/api/projects/inProgress");
         const data = await res.json();
         setProjectList(data);
       } catch (err) {
         console.error("Failed to fetch projects", err);
         toast.error("Unable to load projects");
+      } finally {
+        setLoadingProjects(false);
       }
     };
     fetchProjects();
   }, []);
 
+  // Load user_id from localStorage
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser?.id) {   // 👈 change this to match your real key
+    if (storedUser?.id) {
       setFormData((prev) => ({ ...prev, user_id: storedUser.id }));
     } else {
-      console.warn("⚠️ No user_id found in localStorage object:", storedUser);
+      console.warn("⚠️ No user_id found in localStorage:", storedUser);
     }
   }, []);
 
-
-
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle project selection
   const handleProjectSelect = (e) => {
-    setFormData((prev) => ({ ...prev, project_id: e.target.value }));
+    const selectedId = e.target.value;
+    const project = projectList.find((p) => p.id === selectedId);
+    setFormData((prev) => ({
+      ...prev,
+      project_id: selectedId,
+      project_name: project ? project.project_name : "",
+    }));
   };
 
+  // Handle file uploads
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     if (files && files[0]) {
@@ -65,6 +79,7 @@ const useSafetyReportHandlers = (callback) => {
     }
   };
 
+  // Remove uploaded image
   const handleRemoveImage = (key) => {
     setFormData((prev) => ({ ...prev, [key]: null }));
     setPreviewImages((prev) => ({ ...prev, [key]: null }));
@@ -96,7 +111,7 @@ const useSafetyReportHandlers = (callback) => {
 
       if (res.ok) {
         toast.success("Safety report submitted successfully!");
-        return data; // ✅ return inserted data
+        return data;
       } else {
         toast.error(data.error || "Failed to submit report.");
         return null;
@@ -108,13 +123,12 @@ const useSafetyReportHandlers = (callback) => {
     }
   };
 
-
-
-
   return {
     formData,
+    setFormData,
     previewImages,
     projectList,
+    loadingProjects,
     handleChange,
     handleProjectSelect,
     handleFileChange,

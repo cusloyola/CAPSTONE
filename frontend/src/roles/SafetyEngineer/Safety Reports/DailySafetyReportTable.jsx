@@ -71,6 +71,7 @@ const DailySafetyReportTable = ({
     { key: "report_date", label: "Date", format: formatDate },
     { key: "project_name", label: "Project" },
     { key: "description", label: "Description" },
+    { key: "status", label: "Status" },
     { key: "full_name", label: "Prepared By" },
   ];
 
