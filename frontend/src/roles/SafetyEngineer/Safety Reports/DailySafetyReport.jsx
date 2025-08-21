@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import DailySafetyReportTable from "./DailySafetyReportTable";
 import AddSafetyReportModal from "./AddSafetyReportModal";
-import { StatusBadge } from "../../Admin/Site Report/dsrButtons";
 
 const DailySafetyReport = () => {
   const [reports, setReports] = useState([]);
@@ -13,79 +12,54 @@ const DailySafetyReport = () => {
   const [selectedReports, setSelectedReports] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
 
-  const loadReports = () => {
-    fetch("http://localhost:5000/api/safetyReports")
-      .then((res) => res.json())
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setReports(res.data);
-        } else if (res.data) {
-          setReports([res.data]);
-        } else {
-          setReports([]);
-        }
-      })
-      .catch((err) => console.error("Failed to load safety reports", err));
-  };
+  const user = JSON.parse(localStorage.getItem("user")); // currently logged-in user
+
+  // ✅ Load all reports from backend
+const loadReports = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/safetyReports");
+    const data = await res.json();
+
+    // Since API returns an array directly
+    if (Array.isArray(data)) {
+      setReports(data);
+    } else {
+      setReports([]);
+    }
+  } catch (err) {
+    console.error("Failed to load safety reports", err);
+  }
+};
+
 
   useEffect(() => {
     loadReports();
   }, []);
 
+  // ✅ Handle modal close & table refresh
   const closeModals = (shouldRefresh = false, newReport = null) => {
+    setShowAddModal(false);
+
     if (shouldRefresh && newReport) {
-      // ✅ Optimistically add new report at the top of the list
+      // Add new report to the list instantly
       setReports((prev) => [newReport, ...prev]);
-    } else if (shouldRefresh) {
-      // ✅ fallback if no newReport returned
+    }
+
+    if (shouldRefresh && !newReport) {
+      // Reload from DB if no newReport is passed
       loadReports();
     }
-
-    setShowAddModal(false);
-  };
-
-
-  const handleSelectReport = (reportId) => {
-    if (selectedReports.includes(reportId)) {
-      setSelectedReports(selectedReports.filter((id) => id !== reportId));
-    } else {
-      setSelectedReports([...selectedReports, reportId]);
-    }
-  };
-
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedReports([]); // deselect all
-    } else {
-      const allIds = filteredReports.map((r) => r.report_id); // only current filtered reports
-      setSelectedReports(allIds); // select all
-    }
-    setSelectAll(!selectAll);
   };
 
   const dailySafetyColumns = [
-    {
-      label: "Project",
-      key: "project_name",
-    },
+    { label: "Project", key: "project_name" },
     {
       label: "Report Date",
       key: "report_date",
       format: (value) => new Date(value).toLocaleDateString(),
     },
-    {
-      label: "Safety Notes",
-      key: "safety_notes",
-    },
-    {
-      label: "Prepared By",
-      key: "full_name",
-    },
-    {
-      label: "Status",
-      key: "status",
-      customRender: (report) => <StatusBadge status={report.status} />,
-    },
+    { label: "Safety Notes", key: "description" },
+    { label: "Prepared By", key: "full_name" },
   ];
 
   return (
@@ -94,7 +68,7 @@ const DailySafetyReport = () => {
         title="Daily Safety Report"
         reports={reports}
         columns={dailySafetyColumns}
-        userRole="site_engineer"
+        userRole="safety_engineer"
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         filterStatus={filterStatus}
@@ -107,7 +81,12 @@ const DailySafetyReport = () => {
         setSelectAll={setSelectAll}
       />
 
-      {showAddModal && <AddSafetyReportModal onClose={closeModals} />}
+      {showAddModal && (
+        <AddSafetyReportModal
+          onClose={closeModals}
+          currentUser={user} // pass logged-in user to modal
+        />
+      )}
     </div>
   );
 };

@@ -1,51 +1,35 @@
-import React, { useEffect, useRef, useState } from "react";
-import { FaEllipsisV } from "react-icons/fa";
+import React, { useRef, useState } from "react";
 
-const DailySafetyReportTable = ({ onAdd }) => {
-  const [reports, setReports] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [selectedReports, setSelectedReports] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
-
+const DailySafetyReportTable = ({
+  reports,              // ✅ coming from parent
+  searchQuery,
+  setSearchQuery,
+  filterStatus,
+  setFilterStatus,
+  selectedReports,
+  setSelectedReports,
+  selectAll,
+  setSelectAll,
+  onAdd
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
-
   const [filterMonth, setFilterMonth] = useState("");
   const [filterYear, setFilterYear] = useState("");
 
   const reportRefs = useRef({});
+
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
-    const d = new Date(dateStr.replace(" ", "T")); // Fix MySQL datetime
-    return isNaN(d) ? "Invalid Date" : d.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    const d = new Date(dateStr.replace(" ", "T"));
+    return isNaN(d)
+      ? "Invalid Date"
+      : d.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
   };
-
-  const fetchReports = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/safetyReports");
-      const data = await res.json();
-      setReports(data);
-    } catch (err) {
-      console.error("Error fetching reports:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  // ✅ Columns definition
-  const columns = [
-    { key: "report_date", label: "Date", format: formatDate },
-    { key: "project_name", label: "Project" },
-    { key: "description", label: "Description" },
-    { key: "status", label: "Status" },
-  ];
 
   // ✅ Filtering
   const filteredReports = reports
@@ -82,6 +66,13 @@ const DailySafetyReportTable = ({ onAdd }) => {
 
   const handlePrevious = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+
+  const columns = [
+    { key: "report_date", label: "Date", format: formatDate },
+    { key: "project_name", label: "Project" },
+    { key: "description", label: "Description" },
+    { key: "full_name", label: "Prepared By" },
+  ];
 
   return (
     <div className="min-h-screen p-6 md:p-8">
@@ -127,8 +118,6 @@ const DailySafetyReportTable = ({ onAdd }) => {
               + Add Report
             </button>
           </div>
-
-          {/* 🔎 Filters, search, pagination already work the same... */}
 
           {/* Table */}
           <div className="overflow-x-auto shadow-md rounded-lg">

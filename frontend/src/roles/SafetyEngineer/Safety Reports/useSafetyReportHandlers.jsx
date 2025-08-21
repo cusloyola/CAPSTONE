@@ -1,23 +1,25 @@
+import { toast } from "react-toastify";
 import { useState, useEffect } from "react";
 
-const useSafetyReportHandlers = (onClose) => {
+const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+const useSafetyReportHandlers = (callback) => {
   const [formData, setFormData] = useState({
-    project_id: "",
-    project_name: "",
-    report_date: new Date(),
+    project_id: "",     // use project_id instead of project_name since backend expects this
+    report_date: today, // <-- Set to current date
     description: "",
     image1: null,
     image2: null,
-  });
+    user_id: ""         // <-- add this
 
+  });
   const [previewImages, setPreviewImages] = useState({
     image1: null,
     image2: null,
   });
-
   const [projectList, setProjectList] = useState([]);
 
-  // Fetch projects dynamically
+  // Load projects once (you can also move to parent if needed)
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -25,34 +27,33 @@ const useSafetyReportHandlers = (onClose) => {
         const data = await res.json();
         setProjectList(data);
       } catch (err) {
-        console.error("❌ Error fetching projects:", err);
+        console.error("Failed to fetch projects", err);
+        toast.error("Unable to load projects");
       }
     };
     fetchProjects();
   }, []);
 
-  // Handle text/date changes
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser?.id) {   // 👈 change this to match your real key
+      setFormData((prev) => ({ ...prev, user_id: storedUser.id }));
+    } else {
+      console.warn("⚠️ No user_id found in localStorage object:", storedUser);
+    }
+  }, []);
+
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle project selection
   const handleProjectSelect = (e) => {
-    const selectedName = e.target.value;
-    const selectedProject = projectList.find(
-      (p) => p.project_name === selectedName
-    );
-    if (selectedProject) {
-      setFormData((prev) => ({
-        ...prev,
-        project_name: selectedProject.project_name,
-        project_id: selectedProject.project_id,
-      }));
-    }
+    setFormData((prev) => ({ ...prev, project_id: e.target.value }));
   };
 
-  // Handle image uploads + previews
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     if (files && files[0]) {
@@ -64,43 +65,51 @@ const useSafetyReportHandlers = (onClose) => {
     }
   };
 
-  // Remove image
-  const handleRemoveImage = (field) => {
-    setFormData((prev) => ({ ...prev, [field]: null }));
-    setPreviewImages((prev) => ({ ...prev, [field]: null }));
+  const handleRemoveImage = (key) => {
+    setFormData((prev) => ({ ...prev, [key]: null }));
+    setPreviewImages((prev) => ({ ...prev, [key]: null }));
   };
 
-  // Submit to backend
-  const submitSafetyReport = async () => {
+  // Submit handler
+  const submitSafetyReport = async (payload) => {
     try {
-      const payload = new FormData();
-      payload.append("project_id", formData.project_id);
-      payload.append("report_date", formData.report_date);
-      payload.append("description", formData.description);
+      const formPayload = new FormData();
 
-      if (formData.image1) payload.append("image1", formData.image1);
-      if (formData.image2) payload.append("image2", formData.image2);
-
-      const response = await fetch("http://localhost:5000/api/safetyReports", {
-        method: "POST",
-        body: payload,
+      Object.keys(payload).forEach((key) => {
+        if (payload[key] !== null) {
+          if (key === "report_date") {
+            const date = new Date(payload[key]);
+            const formattedDate = date.toISOString().split("T")[0];
+            formPayload.append(key, formattedDate);
+          } else {
+            formPayload.append(key, payload[key]);
+          }
+        }
       });
 
-      const data = await response.json();
+      const res = await fetch("http://localhost:5000/api/safetyReports", {
+        method: "POST",
+        body: formPayload,
+      });
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to submit safety report");
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Safety report submitted successfully!");
+        return data; // ✅ return inserted data
+      } else {
+        toast.error(data.error || "Failed to submit report.");
+        return null;
       }
-
-      console.log("✅ Safety Report submitted:", data);
-
-      // ✅ send new report to parent
-      onClose?.(true, data);
-
     } catch (err) {
-      console.error("❌ Submit failed:", err.message);
+      console.error(err);
+      toast.error("Error submitting report.");
+      return null;
     }
   };
+
+
+
 
   return {
     formData,

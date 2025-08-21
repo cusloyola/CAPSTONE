@@ -6,15 +6,15 @@ const createSafetyReport = (req, res) => {
     console.log("📥 POST /api/safetyReports hit!");
     console.log("📦 Request body:", req.body);
 
-    const { project_id, report_date, description } = req.body;
+    const { project_id, report_date, description, user_id } = req.body;
     const image1 = req.files?.image1 ? `/uploads/weeklySafetyReports/${req.files.image1[0].filename}` : null;
     const image2 = req.files?.image2 ? `/uploads/weeklySafetyReports/${req.files.image2[0].filename}` : null;
 
     db.query(
       `INSERT INTO weekly_safety_report 
-       (project_id, report_date, description, image1, image2) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [project_id, report_date, description, image1, image2],
+       (project_id, report_date, description, image1, image2, user_id) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [project_id, report_date, description, image1, image2, user_id],
       (err, result) => {
         if (err) {
           console.error("❌ SQL Error (createSafetyReport):", err);
@@ -33,6 +33,7 @@ const createSafetyReport = (req, res) => {
           description,
           image1,
           image2,
+          user_id
         });
       }
     );
@@ -44,12 +45,21 @@ const createSafetyReport = (req, res) => {
 
 // 📌 Get All Reports
 const getSafetyReports = (req, res) => {
-
   db.query(
-    `SELECT wsr.*, p.project_name 
+    `SELECT 
+       wsr.safety_report_id,
+       wsr.project_id,
+       p.project_name,
+       wsr.report_date,
+       wsr.description,
+       wsr.image1,
+       wsr.image2,
+       wsr.user_id,
+       u.full_name     -- 👈 from users
      FROM weekly_safety_report wsr
      JOIN projects p ON wsr.project_id = p.project_id
-     ORDER BY report_date DESC`,
+     JOIN users u ON wsr.user_id = u.user_id
+     ORDER BY wsr.report_date DESC`,
     (err, rows) => {
       if (err) {
         console.error("❌ SQL Error (getSafetyReports):", err);
@@ -61,13 +71,28 @@ const getSafetyReports = (req, res) => {
   );
 };
 
+
+
 // 📌 Get Report by ID
 const getSafetyReportById = (req, res) => {
   const { id } = req.params;
   console.log(`📥 GET /api/safetyReports/${id} hit!`);
 
   db.query(
-    `SELECT * FROM weekly_safety_report WHERE safety_report_id = ?`,
+    `SELECT 
+       wsr.safety_report_id,
+       wsr.project_id,
+       p.project_name,
+       wsr.report_date,
+       wsr.description,
+       wsr.image1,
+       wsr.image2,
+       wsr.user_id,
+       u.full_name
+     FROM weekly_safety_report wsr
+     JOIN projects p ON wsr.project_id = p.project_id
+     JOIN users u ON wsr.user_id = u.user_id
+     WHERE wsr.safety_report_id = ?`,
     [id],
     (err, rows) => {
       if (err) {
@@ -85,6 +110,7 @@ const getSafetyReportById = (req, res) => {
     }
   );
 };
+
 
 module.exports = {
   createSafetyReport,
