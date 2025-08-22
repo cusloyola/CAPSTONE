@@ -74,6 +74,7 @@ const DailySafetyReport = () => {
         setSelectedReports={setSelectedReports}
         selectAll={selectAll}
         setSelectAll={setSelectAll}
+        fetchReports={loadReports}
       />
 
       {showAddModal && (

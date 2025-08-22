@@ -1,4 +1,7 @@
 const db = require("../config/db"); // ✅ CommonJS import
+const fs = require("fs");
+const path = require("path");
+
 
 // 📌 Create Safety Report
 const createSafetyReport = (req, res) => {
@@ -113,9 +116,129 @@ const getSafetyReportById = (req, res) => {
   );
 };
 
+// 📌 Delete Report by ID (with image cleanup)
+const deleteSafetyReport = (req, res) => {
+  const { id } = req.params;
+  console.log(`📥 DELETE /api/safetyReports/${id} hit!`);
+
+  // 1️⃣ Fetch the report first to know its images
+  db.query(
+    `SELECT image1, image2 FROM weekly_safety_report WHERE safety_report_id = ?`,
+    [id],
+    (err, rows) => {
+      if (err) {
+        console.error("❌ SQL Error (fetch before delete):", err);
+        return res.status(500).json({ error: "Server error while checking report" });
+      }
+
+      if (rows.length === 0) {
+        console.warn(`⚠️ Report not found for deletion: ID ${id}`);
+        return res.status(404).json({ error: "Report not found" });
+      }
+
+      const { image1, image2 } = rows[0];
+
+      // 2️⃣ Delete the record
+      db.query(
+        `DELETE FROM weekly_safety_report WHERE safety_report_id = ?`,
+        [id],
+        (err, result) => {
+          if (err) {
+            console.error("❌ SQL Error (deleteSafetyReport):", err);
+            return res.status(500).json({ error: "Server error while deleting report" });
+          }
+
+          if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Report not found" });
+          }
+
+          console.log(`✅ Report deleted: ID ${id}`);
+
+          // 3️⃣ Delete the images from filesystem if they exist
+          [image1, image2].forEach((imgPath) => {
+            if (imgPath) {
+              const fullPath = path.join(__dirname, "..", imgPath); // adjust if needed
+              fs.unlink(fullPath, (err) => {
+                if (err) {
+                  console.warn(`⚠️ Could not delete file ${fullPath}:`, err.message);
+                } else {
+                  console.log(`🗑️ Deleted file: ${fullPath}`);
+                }
+              });
+            }
+          });
+
+          res.json({ message: "Report and images deleted successfully", deletedId: id });
+        }
+      );
+    }
+  );
+};
+
+const bulkDeleteSafetyReports = (req, res) => {
+  const { ids } = req.body; // expecting an array of IDs
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: "No report IDs provided" });
+  }
+
+  // 1️⃣ Fetch reports first to get image paths
+  db.query(
+    `SELECT image1, image2 FROM weekly_safety_report WHERE safety_report_id IN (?)`,
+    [ids],
+    (err, rows) => {
+      if (err) {
+        console.error("❌ SQL Error (fetch before bulk delete):", err);
+        return res.status(500).json({ error: "Server error while checking reports" });
+      }
+
+      // 2️⃣ Delete reports from DB
+      db.query(
+        `DELETE FROM weekly_safety_report WHERE safety_report_id IN (?)`,
+        [ids],
+        (err, result) => {
+          if (err) {
+            console.error("❌ SQL Error (bulkDeleteSafetyReports):", err);
+            return res.status(500).json({ error: "Server error while deleting reports" });
+          }
+
+          console.log(`✅ Bulk deleted ${result.affectedRows} reports`);
+
+          // 3️⃣ Delete images from filesystem (safe cleanup)
+          rows.forEach(({ image1, image2 }) => {
+            [image1, image2].forEach((imgPath) => {
+              if (imgPath) {
+                try {
+                  const fullPath = path.join(__dirname, "..", imgPath);
+                  fs.unlink(fullPath, (err) => {
+                    if (err) {
+                      console.warn(`⚠️ Could not delete file ${fullPath}:`, err.message);
+                    } else {
+                      console.log(`🗑️ Deleted file: ${fullPath}`);
+                    }
+                  });
+                } catch (e) {
+                  console.warn(`⚠️ Error resolving path for ${imgPath}:`, e.message);
+                }
+              }
+            });
+          });
+
+          // 4️⃣ Respond to frontend
+          res.json({
+            message: `Deleted ${result.affectedRows} report(s) successfully`,
+            deletedIds: ids,
+          });
+        }
+      );
+    }
+  );
+};
 
 module.exports = {
   createSafetyReport,
   getSafetyReports,
   getSafetyReportById,
+  deleteSafetyReport,
+  bulkDeleteSafetyReports
 };

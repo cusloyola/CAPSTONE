@@ -1,7 +1,9 @@
 import React, { useRef, useState } from "react";
+import { FaTrash } from "react-icons/fa";
+import { StatusBadge } from "../../Admin/Site Report/dsrButtons";
 
 const DailySafetyReportTable = ({
-  reports,              // ✅ coming from parent
+  reports,
   searchQuery,
   setSearchQuery,
   filterStatus,
@@ -10,26 +12,43 @@ const DailySafetyReportTable = ({
   setSelectedReports,
   selectAll,
   setSelectAll,
-  onAdd
+  onAdd,
+  fetchReports,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [filterMonth, setFilterMonth] = useState("");
   const [filterYear, setFilterYear] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false); // ✅ modal state
 
   const reportRefs = useRef({});
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    const d = new Date(dateStr.replace(" ", "T"));
-    return isNaN(d)
-      ? "Invalid Date"
-      : d.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        });
-  };
+  // ✅ Column definitions INSIDE the component
+  const columns = [
+    {
+      key: "report_date",
+      label: "Date",
+      format: (value) => {
+        if (!value) return "N/A";
+        const d = new Date(value);
+        return isNaN(d)
+          ? "Invalid Date"
+          : d.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+      },
+    },
+    { key: "project_name", label: "Project" },
+    { key: "description", label: "Description" },
+    {
+      key: "status",
+      label: "Status",
+      customRender: (report) => <StatusBadge status={report.status} />,
+    },
+    { key: "full_name", label: "Prepared By" },
+  ];
 
   // ✅ Filtering
   const filteredReports = reports
@@ -58,23 +77,66 @@ const DailySafetyReportTable = ({
   const indexOfFirst = indexOfLast - entriesPerPage;
   const currentReports = filteredReports.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredReports.length / entriesPerPage);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const handleEntriesChange = (e) => {
     setEntriesPerPage(Number(e.target.value));
     setCurrentPage(1);
   };
 
-  const handlePrevious = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
-  const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const handlePrevious = () =>
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const handleNext = () =>
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
-  const columns = [
-    { key: "report_date", label: "Date", format: formatDate },
-    { key: "project_name", label: "Project" },
-    { key: "description", label: "Description" },
-    { key: "status", label: "Status" },
-    { key: "full_name", label: "Prepared By" },
-  ];
+  const handleBulkDelete = () => {
+    if (selectedReports.length === 0) {
+      alert("Please select at least one report to delete.");
+      return;
+    }
+    setShowConfirm(true);
+  };
 
+  // ✅ actual deletion
+  const confirmDelete = async () => {
+    setLoadingDelete(true);
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/safetyReports/bulk-delete",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: selectedReports }),
+        }
+      );
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        alert(data?.error || "Failed to delete reports");
+        return;
+      }
+
+      await fetchReports();
+
+      setSelectedReports([]);
+      setSelectAll(false);
+      setShowConfirm(false);
+
+    } catch (error) {
+      console.error("❌ Bulk delete error:", error);
+      alert("Error deleting reports");
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
+
+  // ✅ JSX stays inside component
   return (
     <div className="min-h-screen p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -84,7 +146,9 @@ const DailySafetyReportTable = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
           <div className="bg-gradient-to-l from-blue-500 to-blue-800 p-5 rounded-2xl shadow space-y-2">
             <p className="text-md text-white font-semibold">Total Reports</p>
-            <h2 className="text-4xl font-bold text-white">{reports.length}</h2>
+            <h2 className="text-4xl font-bold text-white">
+              {reports.length}
+            </h2>
           </div>
           <div className="bg-gradient-to-l from-yellow-500 to-yellow-600 p-5 rounded-2xl shadow space-y-2">
             <p className="text-md text-white font-semibold">Pending Reports</p>
@@ -112,12 +176,21 @@ const DailySafetyReportTable = ({
             <h2 className="text-2xl font-semibold text-gray-900">
               Safety Reports Overview
             </h2>
-            <button
-              onClick={onAdd}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-            >
-              + Add Report
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleBulkDelete}
+                className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm flex items-center gap-2 disabled:opacity-50"
+                disabled={selectedReports.length === 0}
+              >
+                <FaTrash />
+              </button>
+              <button
+                onClick={onAdd}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+              >
+                + Add Report
+              </button>
+            </div>
           </div>
 
           {/* Table */}
@@ -133,11 +206,15 @@ const DailySafetyReportTable = ({
                         currentReports.length > 0
                       }
                       onChange={() => {
-                        if (selectedReports.length === currentReports.length) {
+                        if (
+                          selectedReports.length === currentReports.length
+                        ) {
                           setSelectedReports([]);
                           setSelectAll(false);
                         } else {
-                          setSelectedReports(currentReports.map((r) => r.safety_report_id));
+                          setSelectedReports(
+                            currentReports.map((r) => r.safety_report_id)
+                          );
                           setSelectAll(true);
                         }
                       }}
@@ -159,21 +236,33 @@ const DailySafetyReportTable = ({
                   <tr
                     key={report.safety_report_id}
                     ref={(el) =>
-                      (reportRefs.current[`table-${report.safety_report_id}`] = el)
+                    (reportRefs.current[`table-${report.safety_report_id}`] =
+                      el)
                     }
                     className="hover:bg-gray-50"
                   >
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
-                        checked={selectedReports.includes(report.safety_report_id)}
+                        checked={selectedReports.includes(
+                          report.safety_report_id
+                        )}
                         onChange={() => {
-                          if (selectedReports.includes(report.safety_report_id)) {
+                          if (
+                            selectedReports.includes(
+                              report.safety_report_id
+                            )
+                          ) {
                             setSelectedReports(
-                              selectedReports.filter((id) => id !== report.safety_report_id)
+                              selectedReports.filter(
+                                (id) => id !== report.safety_report_id
+                              )
                             );
                           } else {
-                            setSelectedReports([...selectedReports, report.safety_report_id]);
+                            setSelectedReports([
+                              ...selectedReports,
+                              report.safety_report_id,
+                            ]);
                           }
                         }}
                       />
@@ -184,9 +273,11 @@ const DailySafetyReportTable = ({
                         key={i}
                         className="px-6 py-4 text-sm text-gray-700 whitespace-pre-wrap"
                       >
-                        {col.format
-                          ? col.format(report[col.key])
-                          : report[col.key]}
+                        {col.customRender
+                          ? col.customRender(report)
+                          : col.format
+                            ? col.format(report[col.key])
+                            : report[col.key]}
                       </td>
                     ))}
                   </tr>
@@ -196,6 +287,36 @@ const DailySafetyReportTable = ({
           </div>
         </div>
       </div>
+      {showConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Confirm Deletion
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-bold">{selectedReports.length}</span>{" "}
+              report(s)? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                disabled={loadingDelete}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                disabled={loadingDelete}
+              >
+                {loadingDelete ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
