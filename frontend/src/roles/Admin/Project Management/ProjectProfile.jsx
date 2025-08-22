@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Outlet, Link, useLocation, useOutletContext } from "react-router-dom";
 
 const ProjectProfile = () => {
-    const { project } = useOutletContext(); // Must include billing_id in project
+    const { project } = useOutletContext(); 
     const location = useLocation();
     const isInProgress = location.pathname.includes("/InProgressProjectTable");
     const [hovered, setHovered] = useState("");
@@ -35,8 +35,8 @@ const ProjectProfile = () => {
                             {/* <Link to="calendar" className={linkClass("calendar")}>
                                 <span>Project Calendar</span>
                             </Link> */}
-                            <Link to="materials" className={linkClass("materials")}>
-                                <span>Material Request</span>
+                            <Link to="ganttChart" className={linkClass("ganttChart")}>
+                                <span>Gantt Chart</span>
                             </Link>
                             <div
                                 className="relative"

@@ -68,32 +68,30 @@ const addProgressBillList = async (req, res) => {
     }
   );
 };
-
-
-// ✅ fetch billings by project_id instead of proposal_id
 const getProgressBillList = async (req, res) => {
   const { project_id } = req.params;
 
   const sql = `
-        SELECT 
-            pb.billing_id,
-            pb.subject,
-            pb.billing_date,
-            pb.notes,
-            pb.billing_no,
-            pb.status,
-            pb.proposal_id,
-            u.full_name AS evaluated_by,
-            p.proposal_title,
-            pr.project_name
-        FROM progress_billing pb
-        JOIN users u ON pb.user_id = u.user_id
-        JOIN final_estimation_summary fes ON pb.proposal_id = fes.proposal_id
-        JOIN proposals p ON fes.proposal_id = p.proposal_id
-        JOIN projects pr ON p.project_id = pr.project_id
-        WHERE pr.project_id = ?
-        ORDER BY pb.billing_date ASC
-    `;
+    SELECT 
+        pb.billing_id,
+        pb.subject,
+        pb.billing_date,
+        pb.notes,
+        pb.billing_no,
+        pb.status,
+        pb.proposal_id,
+        u.full_name AS evaluated_by,
+        p.proposal_title,
+        pr.project_name
+    FROM progress_billing pb
+    JOIN users u ON pb.user_id = u.user_id
+    JOIN final_estimation_summary fes ON pb.proposal_id = fes.proposal_id
+    JOIN proposals p ON fes.proposal_id = p.proposal_id
+    JOIN projects pr ON p.project_id = pr.project_id
+    WHERE pr.project_id = ?
+      AND p.status = 'approved'
+    ORDER BY pb.billing_date ASC
+  `;
 
   db.query(sql, [project_id], (err, results) => {
     if (err) {
@@ -351,6 +349,63 @@ const addAccompLogs = (req, res) => {
 };
 
 
+const getBillingAccomplishment = async (req, res) => {
+    const { billing_id } = req.params;
+
+    try {
+        const query = `
+            SELECT 
+                pb.billing_id,
+                pb.billing_no,
+                pb.billing_date,
+                ROUND(SUM(
+                    COALESCE(pa.percent_present, 0) 
+                    * (fed.amount / totals.total_amount)
+                ), 2) AS wt_accomp
+            FROM progress_billing pb
+            JOIN proposals p ON pb.proposal_id = p.proposal_id
+            JOIN sow_proposal sp ON sp.proposal_id = pb.proposal_id
+            JOIN final_estimation_details fed ON fed.sow_proposal_id = sp.sow_proposal_id
+
+            -- total contract amount
+            JOIN (
+                SELECT 
+                    sp.proposal_id,
+                    SUM(fed.amount) AS total_amount
+                FROM sow_proposal sp
+                JOIN final_estimation_details fed 
+                  ON fed.sow_proposal_id = sp.sow_proposal_id
+                GROUP BY sp.proposal_id
+            ) AS totals ON totals.proposal_id = pb.proposal_id
+
+            LEFT JOIN progress_accomplishments pa 
+              ON pa.billing_id IN (
+                  SELECT billing_id 
+                  FROM progress_billing 
+                  WHERE proposal_id = pb.proposal_id
+                  AND billing_no <= pb.billing_no   -- cumulative up to current billing
+              )
+              AND pa.sow_proposal_id = sp.sow_proposal_id
+
+            WHERE pb.billing_id = ?
+            GROUP BY pb.billing_id, pb.billing_no, pb.billing_date
+        `;
+
+        const results = await db.query(query, [billing_id]);
+
+        if (!results || results.length === 0) {
+            return res.status(404).json({
+                message: "No weighted accomplishment found for this billing_id",
+                wt_accomp: 0
+            });
+        }
+
+        res.json(results[0]);
+    } catch (error) {
+        console.error("Error fetching weighted accomplishment:", error);
+        res.status(500).json({ message: "Server error fetching accomplishment" });
+    }
+};
 
 
 
@@ -364,5 +419,6 @@ module.exports = {
 
 
   getProgressAccomp,
-  addAccompLogs
+  addAccompLogs,
+  getBillingAccomplishment
 }

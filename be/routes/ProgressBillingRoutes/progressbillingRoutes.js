@@ -17,4 +17,7 @@ router.get('/accomp/:billing_id', progressBillingController.getProgressAccomp);
 
 router.post('/accomp/log', progressBillingController.addAccompLogs);
 
+
+router.get('/wtaccomp/:billing_id', progressBillingController.getBillingAccomplishment);
+
 module.exports = router;

@@ -103,6 +103,7 @@ import ProgressBillingPage from "./roles/Admin/Progress Billing/ProgressBillingP
 import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
 
+import GanttChart from "./roles/Admin/Project Gantt Chart/GanttChart.jsx";
 
 //Admin Site Report
 import AdminDailySiteReport from "./roles/Admin/Site Report/Admin Daily Site Report/AdminDailySiteReport.jsx";
@@ -202,6 +203,9 @@ export default function App() {
                     <Route path="table" element={<ProgressBillingActual />} /> {/* ← Replace with your actual component */}
                     <Route path="chart" element={<ProgressCharts />} />
                   </Route>
+
+
+                  <Route path="ganttChart" element={<GanttChart />} />
 
 
                   <Route path="site-reports/daily" element={<AdminDailySiteReport />} />
