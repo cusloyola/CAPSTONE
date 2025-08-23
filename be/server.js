@@ -81,7 +81,7 @@ const finalcostestimationRoutes = require('./routes/FinalCostEstimationRoutes/fi
 const inspectionReportRoutes = require('./routes/inspectionRoutes');
 
 const progressbillingRoutes = require('./routes/ProgressBillingRoutes/progressbillingRoutes');
-
+const adminGanttChartRoutes = require('./routes/GanttChartRoutes/adminGanttChartRoutes');
 
 const dashboardRoutes = require('./routes/DashboardRoutes/dashboardRoutes');
 
@@ -164,6 +164,9 @@ app.use('/api/mto', materialtakeoffRoutes);
 app.use('/api/cost-estimation', finalcostestimationRoutes);
 
 app.use('/api/progress-billing',progressbillingRoutes );
+app.use('/api/gantt-chart', adminGanttChartRoutes);
+
+
 
 app.use('/api/dashboard', dashboardRoutes);
 

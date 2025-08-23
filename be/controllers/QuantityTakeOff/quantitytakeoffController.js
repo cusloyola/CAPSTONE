@@ -1,3 +1,4 @@
+// const { use } = require('react');
 const db = require('../../config/db');
 
 const addQtoEntries = async (req, res) => {
@@ -358,7 +359,40 @@ const addAllowanceToQtoParent = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+const getQtoParentTotals = (req, res) => {
+  const { project_id } = req.params;
 
+  const sql = `
+    SELECT
+      swi.work_item_id,
+      swi.item_title,
+      CASE
+        WHEN qpt.total_with_allowance IS NOT NULL AND qpt.total_with_allowance <> 0
+        THEN qpt.total_with_allowance
+        ELSE qpt.total_value
+      END AS total
+    FROM proposals AS pr
+    INNER JOIN projects AS p 
+      ON pr.project_id = p.project_id
+    INNER JOIN sow_proposal AS sp 
+      ON pr.proposal_id = sp.proposal_id
+    INNER JOIN sow_work_items AS swi 
+      ON sp.work_item_id = swi.work_item_id
+    LEFT JOIN qto_parent_totals AS qpt
+      ON sp.work_item_id = qpt.work_item_id
+     AND sp.sow_proposal_id = qpt.sow_proposal_id
+    WHERE pr.status = 'Approved'
+      AND p.project_id = ?;
+  `;
+
+  db.query(sql, [project_id], (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
+    }
+    res.json({ success: true, data: results });
+  });
+};
 
 
 module.exports = {
@@ -368,6 +402,8 @@ module.exports = {
   getQtoDimensions,
   UpdateQtoDimension,
   deleteQtoDimension,
-  addAllowanceToQtoParent
+  addAllowanceToQtoParent,
+
+  getQtoParentTotals
 
 };

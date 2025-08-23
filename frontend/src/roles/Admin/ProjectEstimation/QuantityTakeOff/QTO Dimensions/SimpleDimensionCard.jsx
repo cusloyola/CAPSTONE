@@ -144,7 +144,7 @@ const isInvalid = (val) => val !== '' && isNaN(parseFloat(val));
 
 
     return (
-        <div className="space-y-8 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md max-h-[450px] overflow-y-auto custom-scrollable-box">
+        <div className="space-y-8 p-4 bg-white dark:bg-gray-800  max-h-[450px] overflow-y-auto custom-scrollable-box">
             <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Simple Item Dimensions</h3>
 
             {selectedItems.length === 0 ? (
