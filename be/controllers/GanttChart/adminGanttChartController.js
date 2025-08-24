@@ -1,5 +1,73 @@
 const db = require("../../config/db");
 
+
+const createNewGanttChart = (req, res) => {
+    const { proposal_id, notes, title, approved_by, created_by } = req.body;
+
+    if (!proposal_id || !approved_by || created_by) {
+        return res.status(400).json({ error: "Proposal and approved_by are required." });
+    }
+
+    const sql = `
+        INSERT INTO gantt_charts (proposal_id, title, notes, approved_by, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+    `;
+
+    db.query(sql, [proposal_id, title, notes, approved_by, created_by], (err, result) => {
+        if (err) {
+            console.error("Error inserting Gantt Chart:", err);
+            return res.status(500).json({ error: "Failed to create Gantt Chart." });
+        }
+
+        return res.status(201).json({ message: "Gantt Chart created successfully", gantt_id: result.insertId });
+    });
+};
+
+
+const getAllGanttCharts = (req, res) => {
+  const { project_id } = req.params;
+
+  const sql = `
+    SELECT gc.*,
+    u.full_name
+    FROM gantt_charts gc
+    JOIN proposals p ON gc.proposal_id = p.proposal_id
+    JOIN users u ON gc.approved_by = u.user_id
+    WHERE p.project_id = ?
+  `;
+
+  db.query(sql, [project_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching Gantt Charts", err);
+      return res.status(500).json({ message: "Failed to fetch Gantt Charts" });
+    }
+
+    return res.status(200).json({
+      message: "Gantt Charts fetched successfully",
+      data: results
+    });
+  });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const getFinalEstimationDetails = (req, res) => {
   const { project_id } = req.query;
 
@@ -45,4 +113,6 @@ const getFinalEstimationDetails = (req, res) => {
 
 module.exports = {
   getFinalEstimationDetails,
+  createNewGanttChart,
+  getAllGanttCharts
 };

@@ -6,5 +6,8 @@ const adminGanttChartController = require('../../controllers/GanttChart/adminGan
 
 router.get('/work-details', adminGanttChartController.getFinalEstimationDetails);
 
+router.get('/:project_id', adminGanttChartController.getAllGanttCharts);
+router.post('/', adminGanttChartController.createNewGanttChart);
+
 
 module.exports = router;

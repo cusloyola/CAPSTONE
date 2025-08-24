@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { getProposalsByProject } from "../../../../api/proposalApi";
+import { createGanttChart } from "../../../../api/ganttChartApi"
+import { toast } from "react-toastify";
+
 
 const AddGanttChartModal = ({ isOpen, onClose, projectId }) => {
     const [proposals, setProposals] = useState([]);
@@ -9,6 +12,7 @@ const AddGanttChartModal = ({ isOpen, onClose, projectId }) => {
 
     const [loading, setLoading] = useState(true);
     const user = JSON.parse(localStorage.getItem("user"));
+    const user_id = user?.id;
 
     // Fetch proposals
     useEffect(() => {
@@ -38,6 +42,37 @@ const AddGanttChartModal = ({ isOpen, onClose, projectId }) => {
         setSelectedProposal(proposal || null);
         if (proposal) setTitle(`Gantt Chart - ${proposal.proposal_title}`);
     };
+
+    const handleSave = async () => {
+        if (!selectedProposal) {
+            toast.error("Please select a proposal.");
+            return;
+        }
+
+        try {
+            const result = await createGanttChart({
+                proposal_id: selectedProposal.proposal_id,
+                title: `Gantt Chart - ${selectedProposal.proposal_title}`,
+                notes,
+                approved_by: user?.id,
+                created_by: user?.id,
+            });
+
+            toast.success("Gantt Chart created successfully!");
+            console.log("Gantt chart created:", result);
+
+            setNotes("");
+            setTitle("");
+            setSelectedProposal(proposals[0] || null);
+
+            onClose(); 
+        } catch (err) {
+            console.error("❌ Gantt creation error:", err);
+            toast.error(err.message || "Failed to create Gantt Chart");
+        }
+    };
+
+
 
     if (!isOpen) return null;
 
@@ -134,9 +169,13 @@ const AddGanttChartModal = ({ isOpen, onClose, projectId }) => {
                     >
                         Cancel
                     </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    <button
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        onClick={handleSave}
+                    >
                         Save
                     </button>
+
                 </div>
             </div>
         </div>

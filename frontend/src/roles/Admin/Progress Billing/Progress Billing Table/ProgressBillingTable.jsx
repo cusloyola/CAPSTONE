@@ -23,48 +23,48 @@ const ProgressBillingTable = () => {
 
 
   useEffect(() => {
-  if (!project_id) return;
+    if (!project_id) return;
 
-  const fetchBillings = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // 1️⃣ Fetch existing progress billings
-      const res = await fetch(`${PROGRESSBILL_API_URL}/fetch/${project_id}`);
-      const result = await res.json();
-      const uniqueData = Array.isArray(result.data) ? deduplicate(result.data) : [];
-      setBillingList(uniqueData);
+    const fetchBillings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // 1️⃣ Fetch existing progress billings
+        const res = await fetch(`${PROGRESSBILL_API_URL}/fetch/${project_id}`);
+        const result = await res.json();
+        const uniqueData = Array.isArray(result.data) ? deduplicate(result.data) : [];
+        setBillingList(uniqueData);
 
-      if (uniqueData.length > 0) {
-        // Existing billing found
-        const first = uniqueData[0];
-        setSelectedProposal({
-          proposal_id: first.proposal_id,
-          proposal_name: first.proposal_title,
-          project_name: first.project_name,
-        });
-      } else {
-        // 2️⃣ No billing yet → fetch approved proposal
-        const proposalRes = await fetch(`${PROGRESSBILL_API_URL}/approved-proposal/${project_id}`);
-        if (!proposalRes.ok) throw new Error("Failed to fetch approved proposal");
-        const proposalData = await proposalRes.json();
-        setSelectedProposal({
-          proposal_id: proposalData.data.proposal_id,
-          proposal_name: proposalData.data.proposal_title,
-          project_name: proposalData.data.project_name,
-        });
+        if (uniqueData.length > 0) {
+          // Existing billing found
+          const first = uniqueData[0];
+          setSelectedProposal({
+            proposal_id: first.proposal_id,
+            proposal_name: first.proposal_title,
+            project_name: first.project_name,
+          });
+        } else {
+          // 2️⃣ No billing yet → fetch approved proposal
+          const proposalRes = await fetch(`${PROGRESSBILL_API_URL}/approved-proposal/${project_id}`);
+          if (!proposalRes.ok) throw new Error("Failed to fetch approved proposal");
+          const proposalData = await proposalRes.json();
+          setSelectedProposal({
+            proposal_id: proposalData.data.proposal_id,
+            proposal_name: proposalData.data.proposal_title,
+            project_name: proposalData.data.project_name,
+          });
+        }
+      } catch (err) {
+        console.error("Billing fetch failed:", err);
+        setError("Unable to load progress billings.");
+        setBillingList([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Billing fetch failed:", err);
-      setError("Unable to load progress billings.");
-      setBillingList([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchBillings();
-}, [project_id]);
+    fetchBillings();
+  }, [project_id]);
 
 
   // Add progress billing
@@ -133,11 +133,28 @@ const ProgressBillingTable = () => {
 
       {/* Billing Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
-        <div className="bg-gray-50 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-          <p className="text-sm text-gray-500">Total Proposals</p>
+        <div className="bg-[#508afd] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+          <p className="text-md text-white font-semibold">Total Progress Billing</p>
+          <h2 className="text-4xl font-bold text-white">{billingList.length}</h2>
+          <p className="text-white text-sm">All billings</p>
+
+        </div>
+
+        <div className="bg-[#ffc256] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+          <p className="text-md text-white font-semibold">Pending Billings</p>
           <div className="flex items-center gap-4">
-            <h2 className="text-3xl font-bold text-gray-800">{billingList.length}</h2>
+            <h2 className="text-4xl font-bold text-white">32</h2>
+            {/* SVG icon for pending proposals */}
           </div>
+          <p className="text-white text-sm">Still under review</p>
+        </div>
+        <div className="bg-[#5bc8b2] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+          <p className="text-md text-white font-semibold">Approved Billings</p>
+          <div className="flex items-center gap-4">
+            <h2 className="text-4xl font-bold text-white">12</h2>
+            {/* SVG icon for approved proposals */}
+          </div>
+          <p className="text-white text-sm">Approved & completed</p>
         </div>
       </div>
 
