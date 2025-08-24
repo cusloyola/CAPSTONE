@@ -1,5 +1,5 @@
-import React, { useRef, useState } from "react";
-import { FaTrash } from "react-icons/fa";
+import React, { useRef, useState, useEffect } from "react";
+import { FaTrash, FaEllipsisV } from "react-icons/fa";
 import { StatusBadge } from "../../Admin/Site Report/dsrButtons";
 
 const DailySafetyReportTable = ({
@@ -14,16 +14,39 @@ const DailySafetyReportTable = ({
   setSelectAll,
   onAdd,
   fetchReports,
+  onAction, // view/edit handler
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [filterMonth, setFilterMonth] = useState("");
   const [filterYear, setFilterYear] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false); // ✅ modal state
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [openExportMenu, setOpenExportMenu] = useState(false);
+  const menuRefs = useRef({});
   const reportRefs = useRef({});
+  const dailyRef = useRef();
 
-  // ✅ Column definitions INSIDE the component
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Check if the currently open menu exists
+      if (!openMenuId) return;
+
+      const menuEl = menuRefs.current[openMenuId];
+      if (menuEl && !menuEl.contains(event.target)) {
+        setOpenMenuId(null); // close the menu if clicked outside
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenuId]);
+
   const columns = [
     {
       key: "report_date",
@@ -50,42 +73,31 @@ const DailySafetyReportTable = ({
     { key: "full_name", label: "Prepared By" },
   ];
 
-  // ✅ Filtering
   const filteredReports = reports
     .filter((r) => {
       const reportDate = new Date(r.report_date);
-
       const matchQuery = r.project_name
         ?.toLowerCase()
         .includes(searchQuery.toLowerCase());
-
-      const matchStatus =
-        filterStatus === "all" || r.status === filterStatus;
-
+      const matchStatus = filterStatus === "all" || r.status === filterStatus;
       const matchMonth =
         filterMonth === "" || reportDate.getMonth() === Number(filterMonth);
-
       const matchYear =
         filterYear === "" || reportDate.getFullYear() === Number(filterYear);
-
       return matchQuery && matchStatus && matchMonth && matchYear;
     })
     .sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
 
-  // ✅ Pagination
   const indexOfLast = currentPage * entriesPerPage;
   const indexOfFirst = indexOfLast - entriesPerPage;
   const currentReports = filteredReports.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filteredReports.length / entriesPerPage);
-  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const handleEntriesChange = (e) => {
     setEntriesPerPage(Number(e.target.value));
     setCurrentPage(1);
   };
-
-  const handlePrevious = () =>
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const handlePrevious = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () =>
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
@@ -97,7 +109,6 @@ const DailySafetyReportTable = ({
     setShowConfirm(true);
   };
 
-  // ✅ actual deletion
   const confirmDelete = async () => {
     setLoadingDelete(true);
     try {
@@ -109,25 +120,20 @@ const DailySafetyReportTable = ({
           body: JSON.stringify({ ids: selectedReports }),
         }
       );
-
       let data;
       try {
         data = await res.json();
       } catch {
         data = null;
       }
-
       if (!res.ok) {
         alert(data?.error || "Failed to delete reports");
         return;
       }
-
       await fetchReports();
-
       setSelectedReports([]);
       setSelectAll(false);
       setShowConfirm(false);
-
     } catch (error) {
       console.error("❌ Bulk delete error:", error);
       alert("Error deleting reports");
@@ -136,7 +142,29 @@ const DailySafetyReportTable = ({
     }
   };
 
-  // ✅ JSX stays inside component
+  const handleClick = (report, type) => {
+    onAction(report, type);
+    setOpenMenuId(null);
+  };
+
+  const handleSelectReport = (reportId) => {
+    if (selectedReports.includes(reportId)) {
+      setSelectedReports(selectedReports.filter((id) => id !== reportId));
+    } else {
+      setSelectedReports([...selectedReports, reportId]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedReports([]);
+    } else {
+      const allIds = filteredReports.map((r) => r.safety_report_id);
+      setSelectedReports(allIds);
+    }
+    setSelectAll(!selectAll);
+  };
+
   return (
     <div className="min-h-screen p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -146,9 +174,7 @@ const DailySafetyReportTable = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
           <div className="bg-gradient-to-l from-blue-500 to-blue-800 p-5 rounded-2xl shadow space-y-2">
             <p className="text-md text-white font-semibold">Total Reports</p>
-            <h2 className="text-4xl font-bold text-white">
-              {reports.length}
-            </h2>
+            <h2 className="text-4xl font-bold text-white">{reports.length}</h2>
           </div>
           <div className="bg-gradient-to-l from-yellow-500 to-yellow-600 p-5 rounded-2xl shadow space-y-2">
             <p className="text-md text-white font-semibold">Pending Reports</p>
@@ -168,6 +194,69 @@ const DailySafetyReportTable = ({
               {reports.filter((r) => r.status === "rejected").length}
             </h2>
           </div>
+        </div>
+
+        {/* Filters & Controls */}
+        <div className="flex flex-wrap gap-4 mt-6">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border p-2 rounded w-48"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+
+          <select
+            className="border p-2 rounded w-48"
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+          >
+            <option value="">All Months</option>
+            {[
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ].map((m, i) => (
+              <option key={i} value={i}>
+                {m}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="border p-2 rounded w-48"
+            value={filterYear}
+            onChange={(e) => setFilterYear(e.target.value)}
+          >
+            <option value="">All Years</option>
+            {[...new Set(reports.map((r) => new Date(r.report_date).getFullYear()))]
+              .sort((a, b) => b - a)
+              .map((y, i) => (
+                <option key={i} value={y}>
+                  {y}
+                </option>
+              ))}
+          </select>
+
+          <input
+            type="text"
+            placeholder="Search reports..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="border p-2 rounded w-64 h-10"
+          />
         </div>
 
         {/* Reports Table */}
@@ -193,8 +282,7 @@ const DailySafetyReportTable = ({
             </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto shadow-md rounded-lg">
+          <div className="overflow-visible shadow-md rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -205,19 +293,7 @@ const DailySafetyReportTable = ({
                         selectedReports.length === currentReports.length &&
                         currentReports.length > 0
                       }
-                      onChange={() => {
-                        if (
-                          selectedReports.length === currentReports.length
-                        ) {
-                          setSelectedReports([]);
-                          setSelectAll(false);
-                        } else {
-                          setSelectedReports(
-                            currentReports.map((r) => r.safety_report_id)
-                          );
-                          setSelectAll(true);
-                        }
-                      }}
+                      onChange={handleSelectAll}
                     />
                   </th>
                   {columns.map((col, i) => (
@@ -228,6 +304,9 @@ const DailySafetyReportTable = ({
                       {col.label}
                     </th>
                   ))}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -236,8 +315,7 @@ const DailySafetyReportTable = ({
                   <tr
                     key={report.safety_report_id}
                     ref={(el) =>
-                    (reportRefs.current[`table-${report.safety_report_id}`] =
-                      el)
+                      (reportRefs.current[`table-${report.safety_report_id}`] = el)
                     }
                     className="hover:bg-gray-50"
                   >
@@ -247,24 +325,9 @@ const DailySafetyReportTable = ({
                         checked={selectedReports.includes(
                           report.safety_report_id
                         )}
-                        onChange={() => {
-                          if (
-                            selectedReports.includes(
-                              report.safety_report_id
-                            )
-                          ) {
-                            setSelectedReports(
-                              selectedReports.filter(
-                                (id) => id !== report.safety_report_id
-                              )
-                            );
-                          } else {
-                            setSelectedReports([
-                              ...selectedReports,
-                              report.safety_report_id,
-                            ]);
-                          }
-                        }}
+                        onChange={() =>
+                          handleSelectReport(report.safety_report_id)
+                        }
                       />
                     </td>
 
@@ -280,43 +343,126 @@ const DailySafetyReportTable = ({
                             : report[col.key]}
                       </td>
                     ))}
+
+                    <td className="px-6 py-4 text-sm relative">
+                      <div
+                        className="relative inline-block text-left overflow-visible"
+                        ref={(el) =>
+                          (menuRefs.current[report.safety_report_id] = el)
+                        }
+                      >
+                        <button
+                          onClick={() =>
+                            setOpenMenuId(
+                              openMenuId === report.safety_report_id
+                                ? null
+                                : report.safety_report_id
+                            )
+                          }
+                          className="text-gray-600 hover:text-gray-900 focus:outline-none"
+                        >
+                          <FaEllipsisV />
+                        </button>
+
+                        {openMenuId === report.safety_report_id && (
+                          <div className="absolute right-0 z-50 mt-2 w-36 origin-top-right rounded-md bg-white border border-gray-200 shadow-lg">
+                            <div className="py-1">
+                              <button
+                                onClick={() => handleClick(report, "view")}
+                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                              >
+                                View
+                              </button>
+                              {["pending", "draft", "open"].includes(
+                                report.status?.toLowerCase()
+                              ) && (
+                                  <button
+                                    onClick={() => handleClick(report, "edit")}
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-      {showConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Confirm Deletion
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete{" "}
-              <span className="font-bold">{selectedReports.length}</span>{" "}
-              report(s)? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
-                disabled={loadingDelete}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-                disabled={loadingDelete}
-              >
-                {loadingDelete ? "Deleting..." : "Delete"}
-              </button>
+
+            {/* Pagination */}
+            <div className="flex flex-col md:flex-row justify-between items-center mt-4 space-y-2 md:space-y-0 px-4 pb-4">
+              <div className="text-sm text-gray-600">
+                Showing{" "}
+                {filteredReports.length === 0
+                  ? "0"
+                  : `${indexOfFirst + 1} to ${Math.min(
+                    indexOfLast,
+                    filteredReports.length
+                  )}`}{" "}
+                of {filteredReports.length} entries
+              </div>
+              <div className="space-x-2">
+                <button
+                  onClick={handlePrevious}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 border rounded ${currentPage === 1
+                      ? "bg-gray-200 text-gray-400"
+                      : "bg-white hover:bg-gray-100"
+                    }`}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className={`px-3 py-1 border rounded ${currentPage === totalPages || totalPages === 0
+                      ? "bg-gray-200 text-gray-400"
+                      : "bg-white hover:bg-gray-100"
+                    }`}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Confirm Modal */}
+        {showConfirm && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+            <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                Confirm Deletion
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete{" "}
+                <span className="font-bold">{selectedReports.length}</span> report(s)? This
+                action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                  disabled={loadingDelete}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                  disabled={loadingDelete}
+                >
+                  {loadingDelete ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
