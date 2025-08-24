@@ -103,7 +103,10 @@ import ProgressBillingPage from "./roles/Admin/Progress Billing/ProgressBillingP
 import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
 
+import GanttChartTable from "./roles/Admin/Project Gantt Chart/Gantt Chart Table/GanttChartTable.jsx";
 import GanttChart from "./roles/Admin/Project Gantt Chart/GanttChart.jsx";
+
+
 
 //Admin Site Report
 import AdminDailySiteReport from "./roles/Admin/Site Report/Admin Daily Site Report/AdminDailySiteReport.jsx";
@@ -181,8 +184,7 @@ export default function App() {
 
 
               <Route path="/InProgressProjectTable/:project_id/profile" element={<ProjectLayout />}>
-                <Route element={<ProjectProfile />}>
-
+                <Route path="" element={<ProjectProfile />}>
                   <Route index element={<ProjectInfo />} />
                   <Route path="info" element={<ProjectInfo />} />
 
@@ -197,25 +199,21 @@ export default function App() {
                   </Route>
 
                   <Route path="billing" element={<ProgressBillingPage />} />
-
                   <Route path="billing/:billing_id" element={<BillingDetails />}>
-                    <Route index element={<Navigate to="table" replace />} />  {/* 👈 Default tab */}
-                    <Route path="table" element={<ProgressBillingActual />} /> {/* ← Replace with your actual component */}
+                    <Route index element={<Navigate to="table" replace />} />
+                    <Route path="table" element={<ProgressBillingActual />} />
                     <Route path="chart" element={<ProgressCharts />} />
                   </Route>
 
-
-                  <Route path="ganttChart" element={<GanttChart />} />
-
+                  <Route path="ganttChart" element={<GanttChartTable />} />
 
                   <Route path="site-reports/daily" element={<AdminDailySiteReport />} />
-                   
                   <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
                   <Route path="safety-reports/monthly-safety" element={<MonthlySafetyReport />} />
                   <Route path="safety-reports/inspection-checklist" element={<SafetyInspectionChecklist />} />
-
                 </Route>
               </Route>
+
 
 
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work" element={<ScopeOfWorks />} />

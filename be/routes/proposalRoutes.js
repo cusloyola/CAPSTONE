@@ -8,4 +8,7 @@ router.post('/:project_id', proposalController.addProposalByProject);
 router.delete('/:project_id/:proposal_id', proposalController.deleteProposalByProject);
 router.put('/:project_id/:proposal_id', proposalController.editProposalByProject);
 
+
+router.get("/approved/:project_id",proposalController.getApprovedProposalsByProject);
+
 module.exports = router;

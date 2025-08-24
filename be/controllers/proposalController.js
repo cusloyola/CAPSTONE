@@ -101,9 +101,34 @@ const editProposalByProject = (req, res) => {
 };
 
 
+const getApprovedProposalsByProject = (req, res) => {
+    const { project_id } = req.params;
+
+    const sql = `
+        SELECT p.*, pr.project_name
+        FROM proposals p
+        JOIN projects pr ON p.project_id = pr.project_id
+        WHERE p.project_id = ? AND p.status = 'approved';
+    `;
+
+    db.query(sql, [project_id], (err, results) => {
+        if (err) {
+            console.error("Error fetching approved proposals:", err);
+            return res.status(500).json({ error: "Failed to fetch approved proposals" });
+        }
+
+        return res.status(200).json(results);
+    });
+};
+
+
+
 module.exports = {
     getProposalByProject,
     addProposalByProject,
     deleteProposalByProject,
-    editProposalByProject
+    editProposalByProject,
+
+
+    getApprovedProposalsByProject
 };

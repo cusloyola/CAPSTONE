@@ -23,11 +23,21 @@ const navItems = [
     name: "Dashboard",
     path: "/SiteEngineerDashboard",
   },
+   {
+    icon: <PageIcon />,
+    name: "Projects",
+    subItems: [{ name: "Project info", path: "/DailySiteReport", pro: false },
+    ],
+
+  },
  
   {
     icon: <PageIcon />,
-    name: "Site Progress",
-    subItems: [{ name: "Daily Site Report", path: "/DailySiteReport", pro: false }],
+    name: "Site Report",
+    subItems: [{ name: "Gantt Chart", path: "/DailySiteReport", pro: false },
+            { name: "Daily Site", path: "/DailySiteReport", pro: false }
+
+    ],
   },
   // {
   //   icon: <GridIcon />,

@@ -338,15 +338,19 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
 
     return (
         <>
-                    {/* <div className="p-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-8"> */}
 
-            <div className="p-6  rounded-2xl dark:border-gray-800 lg:p-8">
+            <div className="p-6 min-h-screen space-y-6 ">
                 <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+                    {/* Header Section */}
                     <div>
-                        <h6 className="text-2xl font-bold text-gray-800 dark:text-white/90 lg:mb-8 uppercase">
-                                Project Information
-                            {/* {projectData.project_name} */}
-                        </h6>
+                        <div className="flex items-center gap-2 mb-10">
+                            <div className="bg-blue-100 p-2 rounded-full">
+                                <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M4 4h16v2H4zm0 4h16v2H4zm0 4h10v2H4zm0 4h10v2H4z" />
+                                </svg>
+                            </div>
+                            <h1 className="text-2xl font-bold text-gray-800">Project Information</h1>
+                        </div>
 
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 2xl:gap-x-36">
                             {/* Display only requested fields */}
@@ -565,9 +569,9 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
                                     </div>
                                     {/* Actual Cost and Progress Percent are not in the editable modal, but if they were, they'd follow the same pattern */}
                                     <div className="lg:col-span-3"> {/* Floor labels should span all three columns in the modal */}
-                                        <Label htmlFor="editFloorLabels" className="text-base">Floor Labels 
+                                        <Label htmlFor="editFloorLabels" className="text-base">Floor Labels
                                             {/* (Comma-separated) */}
-                                            </Label>
+                                        </Label>
                                         <textarea
                                             id="editFloorLabels"
                                             rows="4"
@@ -584,24 +588,24 @@ export default function ProjectInfoDetailedCard({ project_id, onProjectUpdate })
                                 </div>
                             </div>
                         </div>
-                      <div className="flex items-center gap-4 px-2 mt-8 lg:justify-end">
-  <Button
-    type="button"
-    onClick={closeModal}
-    variant="outline"
-    className="px-6 py-3 text-lg"
-  >
-    Close
-  </Button>
-  <Button
-    type="submit"
-    onClick={handleSave}
-    disabled={isSaving}
-    className="px-6 py-3 text-lg"
-  >
-    {isSaving ? 'Saving...' : 'Save Changes'}
-  </Button>
-</div>
+                        <div className="flex items-center gap-4 px-2 mt-8 lg:justify-end">
+                            <Button
+                                type="button"
+                                onClick={closeModal}
+                                variant="outline"
+                                className="px-6 py-3 text-lg"
+                            >
+                                Close
+                            </Button>
+                            <Button
+                                type="submit"
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                className="px-6 py-3 text-lg"
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                        </div>
 
                     </form>
                 </div>
