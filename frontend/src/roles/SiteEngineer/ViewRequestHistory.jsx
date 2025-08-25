@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaEllipsisV } from "react-icons/fa";
+import ViewMaterialRequestModal from "./Material Request/ViewMaterialRequestModal";
 
 const COLUMNS = [
   { key: "project_name", label: "Project Name" },
@@ -39,6 +40,10 @@ const ViewRequestHistory = () => {
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
 
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [requestedMaterials, setRequestedMaterials] = useState([]);
+
   // Close the action menu if a user clicks outside of it
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -53,8 +58,29 @@ const ViewRequestHistory = () => {
   }, [openMenuId]);
 
   // Handle actions like "view" or "edit" for a specific request
-  const handleAction = (request, type) => {
-    console.log(`Action: ${type} on request ${request.request_id}`);
+  const handleAction = async (request, type) => {
+    if (type === "view") {
+      setSelectedRequest(request);
+      // Use items from request if present, otherwise fetch
+      if (request.items && Array.isArray(request.items)) {
+        setRequestedMaterials(request.items);
+      } else {
+        try {
+          const res = await fetch(
+            `http://localhost:5000/api/resources/request-materials/items/${request.request_id}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setRequestedMaterials(Array.isArray(data) ? data : []);
+          } else {
+            setRequestedMaterials([]);
+          }
+        } catch {
+          setRequestedMaterials([]);
+        }
+      }
+      setShowModal(true);
+    }
     setOpenMenuId(null);
     // Add logic here to navigate to a new page, open a modal, etc.
   };
@@ -399,6 +425,14 @@ const ViewRequestHistory = () => {
           </div>
         </div>
       </div>
+      {/* Modal for viewing material request */}
+      {showModal && (
+        <ViewMaterialRequestModal
+          report={selectedRequest}
+          materials={requestedMaterials}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </div>
   );
 };
