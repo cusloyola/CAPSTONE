@@ -202,7 +202,7 @@ export default function App() {
                   </Route>
 
                   <Route path="ganttChart" element={<GanttChartTable />} />
-                  <Route path="ganttChart/:gantt_id/setup" element={<GanttChartSetup />} />
+                  <Route path="ganttChart/:gantt_chart_id/setup" element={<GanttChartSetup />} />
 
                   <Route path="site-reports/daily" element={<AdminDailySiteReport />} />
                   <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />

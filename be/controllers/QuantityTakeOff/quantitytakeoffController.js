@@ -359,6 +359,8 @@ const addAllowanceToQtoParent = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
 const getQtoParentTotals = (req, res) => {
   const { project_id } = req.params;
 

@@ -2,25 +2,25 @@ const db = require("../../config/db");
 
 
 const createNewGanttChart = (req, res) => {
-    const { proposal_id, notes, title, approved_by, created_by } = req.body;
+  const { proposal_id, notes, title, approved_by, created_by } = req.body;
 
-    if (!proposal_id || !approved_by || created_by) {
-        return res.status(400).json({ error: "Proposal and approved_by are required." });
-    }
+  if (!proposal_id || !approved_by || created_by) {
+    return res.status(400).json({ error: "Proposal and approved_by are required." });
+  }
 
-    const sql = `
+  const sql = `
         INSERT INTO gantt_charts (proposal_id, title, notes, approved_by, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, NOW())
     `;
 
-    db.query(sql, [proposal_id, title, notes, approved_by, created_by], (err, result) => {
-        if (err) {
-            console.error("Error inserting Gantt Chart:", err);
-            return res.status(500).json({ error: "Failed to create Gantt Chart." });
-        }
+  db.query(sql, [proposal_id, title, notes, approved_by, created_by], (err, result) => {
+    if (err) {
+      console.error("Error inserting Gantt Chart:", err);
+      return res.status(500).json({ error: "Failed to create Gantt Chart." });
+    }
 
-        return res.status(201).json({ message: "Gantt Chart created successfully", gantt_id: result.insertId });
-    });
+    return res.status(201).json({ message: "Gantt Chart created successfully", gantt_chart_id: result.insertId });
+  });
 };
 
 
@@ -66,8 +66,6 @@ const getAllGanttCharts = (req, res) => {
 
 
 
-
-
 const getFinalEstimationDetails = (req, res) => {
   const { project_id } = req.query;
 
@@ -82,20 +80,27 @@ const getFinalEstimationDetails = (req, res) => {
 
   try {
     const query = `
-      SELECT 
-        sp.sow_proposal_id,
-        swi.item_title,
-        IFNULL(fed.amount, 0) AS amount,
-        swt.work_type_id,
-        swi.work_item_id
+    SELECT 
+      sp.sow_proposal_id,
+      swi.item_title,
+      IFNULL(fed.amount, 0) AS amount,
+      swt.type_name,
+      swt.work_type_id,
+      swi.work_item_id,
+      IFNULL(rt.rebar_overall_weight, 0) AS rebar_overall_weight,
+      pr.start_date,
+      pr.end_date 
+    FROM sow_proposal AS sp
+    JOIN sow_work_items AS swi ON sp.work_item_id = swi.work_item_id
+    LEFT JOIN final_estimation_details AS fed ON fed.sow_proposal_id = sp.sow_proposal_id
+    LEFT JOIN rebar_totals AS rt ON rt.sow_proposal_id = sp.sow_proposal_id
+    JOIN sow_work_types AS swt ON swi.work_type_id = swt.work_type_id
+    JOIN proposals AS p ON sp.proposal_id = p.proposal_id
+    JOIN projects AS pr ON p.project_id = pr.project_id
+    WHERE p.project_id = ? AND p.status = 'approved'
+    ORDER BY swt.work_type_id, sp.sow_proposal_id
 
-      FROM sow_proposal AS sp
-      JOIN sow_work_items AS swi ON sp.work_item_id = swi.work_item_id
-      LEFT JOIN final_estimation_details AS fed ON fed.sow_proposal_id = sp.sow_proposal_id
-      JOIN sow_work_types AS swt ON swi.work_type_id = swt.work_type_id
-      JOIN proposals AS p ON sp.proposal_id = p.proposal_id
-      WHERE p.project_id = ? AND p.status = 'approved'
-      ORDER BY swt.work_type_id, sp.sow_proposal_id
+
     `;
 
     db.query(query, [projId], (err, rows) => {
@@ -110,6 +115,7 @@ const getFinalEstimationDetails = (req, res) => {
     res.status(500).json({ message: "Server exception" });
   }
 };
+
 
 module.exports = {
   getFinalEstimationDetails,

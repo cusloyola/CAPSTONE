@@ -11,4 +11,8 @@ router.delete('/:project_id', projectController.deleteProject);
 router.get('/floors' , projectController.getProjectFloors);
 router.get('/project-categories' , projectController.getprojectCategories);
 
+
+router.get('/:project_id', projectController.getProjectById);
+
+
 module.exports = router;

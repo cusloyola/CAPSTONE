@@ -1,4 +1,3 @@
-// src/api/proposalApi.js
 import { API_URL } from "./api";
 
 export const getProposalsByProject = async (projectId) => {

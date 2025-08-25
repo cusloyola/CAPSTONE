@@ -1,25 +1,6 @@
 const db = require('../config/db');
 
-// Get all projects (joined with client info)
-// const getAllProjects = (req, res) => {
-//   const query = `
-//     SELECT 
-//       p.*,
-//       c.client_name AS owner_name,
-//       c.email AS owner_email
-//     FROM projects p
-//     JOIN clients c ON p.client_id = c.client_id
-//     ORDER BY p.start_date
-//   `;
 
-//   db.query(query, (err, results) => {
-//     if (err) {
-//       console.error('❌ Error fetching projects:', err);
-//       return res.status(500).json({ error: 'Database error' });
-//     }
-//     res.json(results);
-//   });
-// };
 
 const createProject = (req, res) => {
   const {
@@ -42,7 +23,7 @@ const createProject = (req, res) => {
   // Check required fields
   if (
     project_name == null ||
-       category_id == null ||
+    category_id == null ||
     location == null ||
     locationArea == null ||
     priority == null ||
@@ -116,7 +97,7 @@ const createProject = (req, res) => {
 
 
 const updateProject = (req, res) => {
-  const { project_id } = req.params; // The project ID from the URL (e.g., /projects/:id)
+  const { project_id } = req.params; 
   const {
     project_name,
     category_id,
@@ -127,7 +108,7 @@ const updateProject = (req, res) => {
     start_date,
     end_date,
     client_id
-  } = req.body; // The project details sent in the body of the request
+  } = req.body; 
 
 
 
@@ -199,6 +180,8 @@ const getAllProjects = (req, res, next) => {
   p.projectManager,
   p.location,
   p.priority,
+  p.start_date,
+  p.end_date,
   p.status,
   c.client_id,
   c.client_name,
@@ -292,6 +275,21 @@ const getprojectCategories = (req,res) => {
   })
 };
 
+
+const getProjectById = (req, res) => {
+  const { project_id } = req.params;
+  const sql = `SELECT * FROM projects WHERE project_id = ?;`;
+
+  db.query(sql, [project_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching project per Id", err);
+      return res.status(500).json({ message: "Failed to fetch project" });
+    }
+    return res.status(200).json(results[0] || null); 
+  });
+};
+
+
 module.exports = {
   getAllProjects,
   getInProgressProjects,
@@ -299,5 +297,9 @@ module.exports = {
   updateProject,
   deleteProject,
   getProjectFloors,
-  getprojectCategories
+  getprojectCategories,
+
+  getProjectById
+
+  
 };

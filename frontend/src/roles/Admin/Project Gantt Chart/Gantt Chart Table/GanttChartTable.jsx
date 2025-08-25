@@ -35,7 +35,7 @@ const GanttChartTable = () => {
 
     const closeAddModal = () => {
         setShowAddModal(false);
-        fetchGanttCharts(); // Refresh table after adding new chart
+        fetchGanttCharts(); 
     };
 
     const total = ganttCharts.length;
@@ -110,11 +110,11 @@ const GanttChartTable = () => {
                             </tr>
                         ) : (
                             ganttCharts.map((g) => (
-                                <tr key={g.gantt_id}>
+                                <tr key={g.gantt_chart_id}>
 
                                     <td className="border px-4 py-2">
                                         <Link
-                                            to={`/InProgressProjectTable/${project_id}/profile/ganttChart/${g.gantt_id}/setup`}
+                                            to={`/InProgressProjectTable/${project_id}/profile/ganttChart/${g.gantt_chart_id}/setup`}
                                             className="text-blue-600 hover:underline"
 
                                         >
