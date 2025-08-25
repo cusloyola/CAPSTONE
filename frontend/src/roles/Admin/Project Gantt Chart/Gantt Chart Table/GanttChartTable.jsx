@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 import AddGanttChartModal from "./AddGanttChartModal";
 import { getGanttCharts } from "../../../../api/ganttChartApi";
@@ -110,8 +110,19 @@ const GanttChartTable = () => {
                             </tr>
                         ) : (
                             ganttCharts.map((g) => (
-                                <tr key={g.id}>
-                                    <td className="border px-4 py-2">{g.title}</td>
+                                <tr key={g.gantt_id}>
+
+                                    <td className="border px-4 py-2">
+                                        <Link
+                                            to={`/InProgressProjectTable/${project_id}/profile/ganttChart/${g.gantt_id}/setup`}
+                                            className="text-blue-600 hover:underline"
+
+                                        >
+                                            {g.title}
+                                        </Link>
+                                    </td>
+
+
                                     <td className="border px-4 py-2">{g.notes}</td>
                                     <td className="border px-4 py-2">{g.full_name}</td>
                                     <td className="border px-4 py-2">

@@ -12,8 +12,7 @@ import SignUp from "./pages/AuthPages/SignUp";
 
 // admin
 import AdminDashboard from "./roles/Admin/AdminDashboard.jsx";
-import AdminBOM from "./roles/Admin/AdminBOM.jsx";
-import AdminBOQ from "./roles/Admin/AdminBOQ.jsx";
+
 import InventortManagement from "./roles/Admin/InventoryManagement.jsx"
 import AdminReports from "./roles/Admin/Reports.jsx";
 import MaterialRequestManagement from "./roles/Admin/MaterialRequestManagemet.jsx";
@@ -69,7 +68,6 @@ import BasicTables from "./pages/Tables/BasicTables";
 import FormElements from "./pages/Forms/FormElements";
 import LeaveContract from "./roles/Admin/Contract Management/LeaveContract.jsx";
 import EmploymentContract from "./roles/Admin/Contract Management/EmploymentContract.jsx";
-import BOMTable from "./roles/Admin/Estimation/BOMTable.jsx";
 
 // Projects CRUD
 import ProjectsCRUD from "./roles/Admin/Project Management/ProjectsCRUD.jsx";
@@ -104,7 +102,7 @@ import BillingDetails from "./roles/Admin/Progress Billing/BillingDetails.jsx";
 
 
 import GanttChartTable from "./roles/Admin/Project Gantt Chart/Gantt Chart Table/GanttChartTable.jsx";
-import GanttChart from "./roles/Admin/Project Gantt Chart/GanttChart.jsx";
+import GanttChartSetup from "./roles/Admin/Project Gantt Chart/Gantt Chart Setup/GanttChartSetup.jsx";
 
 
 
@@ -121,7 +119,6 @@ import MonthlySafetyReport from "./roles/Admin/Safety Report/Monthly Safety Repo
 import SafetyInspectionChecklist from "./roles/Admin/Safety Report/Safety Inspection Checklist/SafetyInspectionChecklist.jsx";
 
 
-import AdminSiteReport from "./roles/Admin/AdminSiteReports.jsx";
 import AdminFileManagement from "./roles/Admin/AdminFileManagement.jsx";
 import ClientManagement from "./roles/Admin/ClientManagement.jsx";
 import FilePage from "./roles/Admin/File Management/FilePage.jsx";
@@ -152,8 +149,7 @@ export default function App() {
             {/* Admin Protected */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
               <Route path="/AdminDashboard" element={<AdminDashboard />} />
-              <Route path="/AdminBOM" element={<AdminBOM />} />
-              <Route path="/AdminBOQ" element={<AdminBOQ />} />
+
               <Route path="/InventoryManagement" element={<InventortManagement />} />
               <Route path="/InventoryMonitoring" element={<LowStockInventory />} />
               <Route path="/LeaveContract" element={<LeaveContract />} />
@@ -206,6 +202,7 @@ export default function App() {
                   </Route>
 
                   <Route path="ganttChart" element={<GanttChartTable />} />
+                  <Route path="ganttChart/:gantt_id/setup" element={<GanttChartSetup />} />
 
                   <Route path="site-reports/daily" element={<AdminDailySiteReport />} />
                   <Route path="safety-reports/weekly-safety" element={<WeeklySafetyReport />} />
@@ -221,12 +218,10 @@ export default function App() {
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowItems" element={<SowItems />} />
               <Route path="/AllPendingProjects/:project_id/estimation/scope-of-work/tables/sowTypes" element={<SowTypes />} />
 
-              <Route path="/Estimation/BOMTable/:bomId" element={<BOMTable />} />
               <Route path="/Reports" element={<AdminReports />} />
               <Route path="/MaterialRequestManagement" element={<MaterialRequestManagement />} />
               <Route path="/EmployeeManagement" element={<EmployeeManagement />} />
 
-              <Route path="/AdminSiteReports" element={<AdminSiteReport />} />
               <Route path="/AdminFileManagement" element={<AdminFileManagement />} />
               <Route path="/ClientManagement" element={<ClientManagement />} />
 
