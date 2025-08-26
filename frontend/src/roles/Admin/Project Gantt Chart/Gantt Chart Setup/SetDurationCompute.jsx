@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
+
 import { useQTO } from "../../../../hooks/useQto";
 import { calculateRowTotal } from "../../../../utils/workUtils";
 import { toast } from "react-toastify";
 import { saveTask } from "../../../../api/ganttChartApi";
 
-const SetDurationCompute = ({ isOpen, onClose, task, tasks, setTasks, projectId }) => {
+const SetDurationCompute = ({ isOpen, onClose, task, tasks, setTasks, projectId, gantt_chart_id }) => {
+
   const [duration, setDuration] = useState(task?.duration || 0);
   const { rows, setRows, isLoading, fetchError } = useQTO(isOpen, projectId, task);
 
@@ -19,10 +22,11 @@ const SetDurationCompute = ({ isOpen, onClose, task, tasks, setTasks, projectId 
     setDuration(calculateRowTotal(updatedRow));
   };
 
- const handleSave = async () => {
+const handleSave = async () => {
   try {
     const payload = {
-      sow_proposal_id: task.itemId, 
+      gantt_chart_id,          // 👈 add this
+      sow_proposal_id: task.itemId,
       work_quantity: row.quantity,
       production_rate: row.rate,
     };
@@ -48,11 +52,9 @@ const SetDurationCompute = ({ isOpen, onClose, task, tasks, setTasks, projectId 
     }
 
     toast.error("Failed to save task!", { autoClose: 3000 });
-
-    // ❗ Optional: close even on failure
-    // onClose();
   }
 };
+
 
 
   return (

@@ -4,7 +4,7 @@ import { useWorkDetails } from "../../../../hooks/useSOW";
 import { filterWorkItems } from "../../../../utils/workUtils";
 
 
-const SetDurationModal = ({ isOpen, onClose, tasks, setTasks, project_id }) => {
+const SetDurationModal = ({ isOpen, onClose, tasks, setTasks, project_id, gantt_chart_id    }) => {
     const { workItems, loading, error } = useWorkDetails(isOpen, project_id);
 
     const [selectedTask, setSelectedTask] = useState(null);
@@ -29,13 +29,15 @@ const SetDurationModal = ({ isOpen, onClose, tasks, setTasks, project_id }) => {
                 onClose={() => {
                     setShowCompute(false);
                     setSelectedTask(null);
-                    onClose(); 
+                    onClose();
                 }}
                 task={selectedTask}
                 tasks={tasks}
                 setTasks={setTasks}
                 projectId={project_id}
+                gantt_chart_id={gantt_chart_id}
             />
+
         );
     }
 

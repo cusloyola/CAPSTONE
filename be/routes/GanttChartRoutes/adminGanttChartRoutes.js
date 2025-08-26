@@ -15,4 +15,5 @@ router.post('/', adminGanttChartController.createNewGanttChart);
 
 router.post('/save-duration', adminGanttTaskController.saveDuration);
 
+
 module.exports = router;

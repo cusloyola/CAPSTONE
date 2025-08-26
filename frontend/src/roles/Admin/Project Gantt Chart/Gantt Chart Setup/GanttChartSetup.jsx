@@ -7,18 +7,18 @@ import { fetchGanttTasks } from "../../../../api/ganttChartApi";
 
 import { calculateTotalAmount, calculateWeeklyTotals, mapApiTasks } from "../../../../utils/ganttHelpers";
 import { useGanttTasks, useGanttTimeline } from "../../../../hooks/useGanttTasks";
-import {fetchProjectInfo} from "../../../../api/projectApi";
+import { fetchProjectInfo } from "../../../../api/projectApi";
 
 const GanttTable = () => {
-  const { project_id } = useParams();
-const [project, setProject] = useState(null);
+  const { project_id, gantt_chart_id } = useParams();
+  const [project, setProject] = useState(null);
 
   const [isDurationOpen, setIsDurationOpen] = useState(false);
 
   const [isWeekDurationOpen, setIsWeekDurationOpen] = useState(false);
 
   const [tasks, setTasks] = useGanttTasks(project_id);
-const { months, weeks, setWeeks } = useGanttTimeline(project?.start_date, project?.end_date);
+  const { months, weeks, setWeeks } = useGanttTimeline(project?.start_date, project?.end_date);
 
 
   const totalAmount = calculateTotalAmount(tasks);
@@ -41,13 +41,13 @@ const { months, weeks, setWeeks } = useGanttTimeline(project?.start_date, projec
   };
 
 
-useEffect(() => {
-  const loadProject = async () => {
-    const data = await fetchProjectInfo(project_id);
-    setProject(data);
-  };
-  loadProject();
-}, [project_id]);
+  useEffect(() => {
+    const loadProject = async () => {
+      const data = await fetchProjectInfo(project_id);
+      setProject(data);
+    };
+    loadProject();
+  }, [project_id]);
 
 
   return (
@@ -129,7 +129,9 @@ useEffect(() => {
                   <td className="border px-2 py-1 text-center">{weightPercent}%</td>
                   <td className="border px-2 py-1 text-center">W{task.startWeek}</td>
                   <td className="border px-2 py-1 text-center">W{task.finishWeek}</td>
-                  <td className="border px-2 py-1 text-center">{task.duration} wks</td>
+                  <td className="border px-2 py-1 text-center">
+                    {task.duration != null ? `${Math.round(task.duration)} wks` : ""}
+                  </td>
                   {weeks.map((w) => {
                     const isActive = w.weekIndex >= task.startWeek && w.weekIndex <= task.finishWeek;
                     return (
@@ -172,7 +174,14 @@ useEffect(() => {
 
       </table>
 
-      <SetDuratioModal isOpen={isDurationOpen} onClose={() => setIsDurationOpen(false)} tasks={tasks} setTasks={setTasks} project_id={project_id} />
+      <SetDuratioModal
+        isOpen={isDurationOpen}
+        onClose={() => setIsDurationOpen(false)}
+        tasks={tasks}
+        setTasks={setTasks}
+        gantt_chart_id={gantt_chart_id}
+        project_id={project_id}
+      />
       <SetWeekDuration isOpen={isWeekDurationOpen} onClose={() => setIsWeekDurationOpen(false)} weeks={weeks} setWeeks={setWeeks} />
     </div>
   );

@@ -11,10 +11,10 @@ const createSafetyReport = (req, res) => {
 
     // Save image paths if uploaded
     const image1 = req.files?.image1
-      ? `/uploads/weeklySafetyReports/${req.files.image1[0].filename}`
+      ? `uploads/weeklySafetyReports/${req.files.image1[0].filename}`
       : null;
     const image2 = req.files?.image2
-      ? `/uploads/weeklySafetyReports/${req.files.image2[0].filename}`
+      ? `uploads/weeklySafetyReports/${req.files.image2[0].filename}`
       : null;
 
     // Insert into DB

@@ -80,25 +80,38 @@ const getFinalEstimationDetails = (req, res) => {
 
   try {
     const query = `
-    SELECT 
-      sp.sow_proposal_id,
-      swi.item_title,
-      IFNULL(fed.amount, 0) AS amount,
-      swt.type_name,
-      swt.work_type_id,
-      swi.work_item_id,
-      IFNULL(rt.rebar_overall_weight, 0) AS rebar_overall_weight,
-      pr.start_date,
-      pr.end_date 
-    FROM sow_proposal AS sp
-    JOIN sow_work_items AS swi ON sp.work_item_id = swi.work_item_id
-    LEFT JOIN final_estimation_details AS fed ON fed.sow_proposal_id = sp.sow_proposal_id
-    LEFT JOIN rebar_totals AS rt ON rt.sow_proposal_id = sp.sow_proposal_id
-    JOIN sow_work_types AS swt ON swi.work_type_id = swt.work_type_id
-    JOIN proposals AS p ON sp.proposal_id = p.proposal_id
-    JOIN projects AS pr ON p.project_id = pr.project_id
-    WHERE p.project_id = ? AND p.status = 'approved'
-    ORDER BY swt.work_type_id, sp.sow_proposal_id
+   SELECT 
+  sp.sow_proposal_id,
+  swi.item_title,
+  IFNULL(fed.amount, 0) AS amount,
+  swt.type_name,
+  swt.work_type_id,
+  swi.work_item_id,
+  IFNULL(rt.rebar_overall_weight, 0) AS rebar_overall_weight,
+  pr.start_date,
+  pr.end_date,
+  gt.work_quantity,
+  gt.production_rate,
+  gt.start_date AS start_week,
+  gt.finish_date AS finish_week,
+  
+  CASE
+  WHEN gt.work_quantity IS NOT NULL AND gt.production_rate IS NOT NULL
+  THEN gt.work_quantity / gt.production_rate
+  ELSE NULL
+END AS duration
+
+FROM sow_proposal AS sp
+JOIN sow_work_items AS swi ON sp.work_item_id = swi.work_item_id
+LEFT JOIN final_estimation_details AS fed ON fed.sow_proposal_id = sp.sow_proposal_id
+LEFT JOIN rebar_totals AS rt ON rt.sow_proposal_id = sp.sow_proposal_id
+LEFT JOIN gantt_tasks AS gt ON gt.sow_proposal_id = sp.sow_proposal_id
+JOIN sow_work_types AS swt ON swi.work_type_id = swt.work_type_id
+JOIN proposals AS p ON sp.proposal_id = p.proposal_id
+JOIN projects AS pr ON p.project_id = pr.project_id
+WHERE p.project_id = ? AND p.status = 'approved'
+ORDER BY swt.work_type_id, sp.sow_proposal_id;
+
 
 
     `;

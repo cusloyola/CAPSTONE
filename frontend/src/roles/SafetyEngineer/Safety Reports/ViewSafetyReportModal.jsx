@@ -1,7 +1,9 @@
 import React from "react";
+import { FILE_URL } from "../../../api/api";
 
 const ViewSafetyReportModal = ({ report, onClose }) => {
   if (!report) return null;
+
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
@@ -32,22 +34,22 @@ const ViewSafetyReportModal = ({ report, onClose }) => {
             </p>
           </div>
 
-          {/* Show images if available */}
           <div className="mt-4 flex gap-4 justify-center">
             {report.image1 && (
               <div className="flex flex-col items-center">
                 <img
-                  src={report.image1}
+                  src={`${FILE_URL}/${report.image1}?t=${Date.now()}`}
                   alt="Report Image 1"
                   className="w-48 h-48 object-cover rounded-lg shadow-md"
                 />
+
                 <p className="mt-2 text-sm text-gray-600 text-center">Image 1</p>
               </div>
             )}
             {report.image2 && (
               <div className="flex flex-col items-center">
                 <img
-                  src={report.image2}
+                  src={`${FILE_URL}/${report.image2}?t=${Date.now()}`}
                   alt="Report Image 2"
                   className="w-48 h-48 object-cover rounded-lg shadow-md"
                 />
