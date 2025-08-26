@@ -105,6 +105,7 @@ const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir); // Create uploads folder if it doesn't exist
 }
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 app.use('/api/work-types', sowWorkTypesRoutes);

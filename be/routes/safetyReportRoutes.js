@@ -4,8 +4,9 @@ const {
   createSafetyReport,
   getSafetyReports,
   getSafetyReportById,
-  deleteSafetyReport,  
-  bulkDeleteSafetyReports
+  deleteSafetyReport,
+  bulkDeleteSafetyReports,
+  updateSafetyReport,
 } = require("../controllers/safetyReportController");
 const upload = require("../middleware/upload"); // <-- this must be multer instance
 
@@ -24,5 +25,10 @@ router.get("/:id", getSafetyReportById);
 router.post("/bulk-delete", bulkDeleteSafetyReports); // ✅ new bulk delete
 
 router.delete("/:id", deleteSafetyReport); // ✅ new route
+router.put(
+  '/:id',
+  upload.fields([{ name: 'image1' }, { name: 'image2' }]),
+  updateSafetyReport
+);
 
 module.exports = router;

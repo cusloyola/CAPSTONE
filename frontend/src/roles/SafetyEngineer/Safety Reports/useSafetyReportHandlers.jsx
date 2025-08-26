@@ -123,10 +123,55 @@ const useSafetyReportHandlers = () => {
     }
   };
 
+  // ------------------------
+// Update Existing Safety Report
+// ------------------------
+const submitSafetyReportUpdate = async (payload) => {
+  try {
+    const formPayload = new FormData();
+
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] !== null && payload[key] !== undefined) {
+        if (key === "report_date") {
+          const date = new Date(payload[key]);
+          const formattedDate = date.toISOString().split("T")[0];
+          formPayload.append(key, formattedDate);
+        } else {
+          formPayload.append(key, payload[key]);
+        }
+      }
+    });
+
+    const res = await fetch(
+      `http://localhost:5000/api/safetyReports/${payload.safety_report_id}`,
+      {
+        method: "PUT", // Ensure your backend supports PUT for updates
+        body: formPayload,
+      }
+    );
+
+    const data = await res.json();
+
+    if (res.ok) {
+      toast.success("Safety report updated successfully!");
+      return data;
+    } else {
+      toast.error(data.error || "Failed to update report.");
+      return null;
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Error updating report.");
+    return null;
+  }
+};
+
+
   return {
     formData,
     setFormData,
     previewImages,
+    setPreviewImages,
     projectList,
     loadingProjects,
     handleChange,
@@ -134,6 +179,7 @@ const useSafetyReportHandlers = () => {
     handleFileChange,
     handleRemoveImage,
     submitSafetyReport,
+    submitSafetyReportUpdate
   };
 };
 

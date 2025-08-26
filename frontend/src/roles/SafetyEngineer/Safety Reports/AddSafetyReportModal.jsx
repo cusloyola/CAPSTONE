@@ -26,12 +26,8 @@ const AddSafetyReportModal = ({ onClose, currentUser }) => {
       return;
     }
 
-    console.log("🚀 formData at submit:", formData);
-
     const payload = { ...formData, user_id: currentUser.id };
     const newReport = await submitSafetyReport(payload);
-
-    console.log("currentUser at mount:", currentUser);
 
     if (newReport) {
       const project = projectList.find(
@@ -39,26 +35,25 @@ const AddSafetyReportModal = ({ onClose, currentUser }) => {
       );
       const userFullName = currentUser?.name || "Unknown User";
 
-      console.log("🔍 matched project:", project);
+      const normalizePath = (path) =>
+        path ? (path.startsWith("http") ? path : `http://localhost:5000${path}`) : null;
 
       const reportForTable = {
         safety_report_id: newReport.safety_report_id || newReport.insertId,
         project_name: project ? project.project_name : "Unknown Project",
         description: newReport.description,
-
         full_name: userFullName,
         report_date: newReport.report_date,
         status: "pending",
+        // ✅ Always normalized
+        image1: normalizePath(newReport.image1),
+        image2: normalizePath(newReport.image2),
       };
-
-      console.log("📝 reportForTable to send to table:", reportForTable);
 
       setIsModalOpen(false);
       if (typeof onClose === "function") onClose(true, reportForTable);
     }
   };
-
-
 
   if (!isModalOpen) return null;
 
