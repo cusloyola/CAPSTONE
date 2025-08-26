@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaEllipsisV } from "react-icons/fa";
 import ViewMaterialRequestModal from "./Material Request/ViewMaterialRequestModal";
+import MaterialRequestPDF from "./Material Request/MaterialRequestPDF";
+import exportMaterialRequestPDF from "./Material Request/exportMaterialRequest";
 
 const COLUMNS = [
   { key: "project_name", label: "Project Name" },
@@ -43,6 +45,9 @@ const ViewRequestHistory = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [requestedMaterials, setRequestedMaterials] = useState([]);
+
+  const [openExportMenu, setOpenExportMenu] = useState(false);
+  const pdfRef = useRef();
 
   // Close the action menu if a user clicks outside of it
   useEffect(() => {
@@ -107,8 +112,18 @@ const ViewRequestHistory = () => {
       const matchQuery =
         r.project_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.notes?.toLowerCase().includes(searchQuery.toLowerCase());
-      // You can add more filters if needed
-      return matchQuery;
+      // Status filter
+      const matchStatus =
+        filterStatus === "all" || r.status === filterStatus;
+      // Month filter
+      const matchMonth =
+        filterMonth === "" ||
+        requestDate.getMonth() === Number(filterMonth);
+      // Year filter
+      const matchYear =
+        filterYear === "" ||
+        requestDate.getFullYear() === Number(filterYear);
+      return matchQuery && matchStatus && matchMonth && matchYear;
     })
     .sort((a, b) => new Date(b.request_date) - new Date(a.request_date));
 
@@ -193,6 +208,37 @@ const ViewRequestHistory = () => {
             <h2 className="text-2xl font-semibold text-gray-900">
               Request Overview
             </h2>
+            {/* Export Button */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenExportMenu(!openExportMenu)}
+                className="px-4 py-2 border border-black bg-gray-500 text-white rounded hover:bg-white hover:text-black"
+              >
+                Export to PDF
+              </button>
+              {openExportMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
+                  <button
+                    onClick={() => {
+                      exportMaterialRequestPDF(pdfRef);
+                      setOpenExportMenu(false);
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                  >
+                    Export Selected
+                  </button>
+                </div>
+              )}
+              {/* Hidden PDF component */}
+              <div className="hidden">
+                <MaterialRequestPDF
+                  ref={pdfRef}
+                  requests={filteredRequests.filter(r =>
+                    selectedRequests.includes(r.request_id)
+                  )}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Filters and Search Bar */}
