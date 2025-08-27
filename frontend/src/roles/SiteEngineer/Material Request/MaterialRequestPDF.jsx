@@ -1,46 +1,19 @@
-import React, { forwardRef, useEffect, useState } from "react";
-import axios from "axios";
-
-const RESOURCES_API_URL = "http://localhost:5000/api/resources";
+import React, { forwardRef } from "react";
 
 const MaterialRequestPDF = forwardRef(({ requests }, ref) => {
-    const [resourceMap, setResourceMap] = useState({});
-
-    // Fetch all resources once for lookup
-    useEffect(() => {
-        const fetchResources = async () => {
-            try {
-                const res = await axios.get(RESOURCES_API_URL);
-                let items = [];
-                if (Array.isArray(res.data.items)) {
-                    items = res.data.items;
-                } else if (Array.isArray(res.data)) {
-                    items = res.data;
-                }
-                // Build a map: resource_id -> resource object
-                const map = {};
-                items.forEach(r => {
-                    map[r.resource_id] = r;
-                });
-                setResourceMap(map);
-            } catch {
-                setResourceMap({});
-            }
-        };
-        fetchResources();
-    }, []);
-
     // Helper to sum totals
     const getTotals = (items) => {
         let totalQty = 0;
         let totalCost = 0;
-        items.forEach(item => {
-            const qty = Number(item.request_quantity) || 0;
-            const resource = resourceMap[item.resource_id || item.item_id];
-            const unitCost = resource ? Number(resource.default_unit_cost) : 0;
-            totalQty += qty;
-            totalCost += qty * unitCost;
-        });
+        if (Array.isArray(items)) {
+            items.forEach(item => {
+                const qty = Number(item.request_quantity) || 0;
+                // Use the unit cost directly from the item object
+                const unitCost = Number(item.default_unit_cost) || 0;
+                totalQty += qty;
+                totalCost += qty * unitCost;
+            });
+        }
         return { totalQty, totalCost };
     };
 
@@ -152,13 +125,12 @@ const MaterialRequestPDF = forwardRef(({ requests }, ref) => {
                                         <tbody>
                                             {items.map((item, idx) => {
                                                 const qty = Number(item.request_quantity) || 0;
-                                                const resource = resourceMap[item.resource_id || item.item_id] || {};
-                                                const unitCost = Number(resource.default_unit_cost) || 0;
+                                                const unitCost = Number(item.default_unit_cost) || 0;
                                                 return (
                                                     <tr key={item.resource_id || item.item_id || idx}>
-                                                        <td className="border px-4 py-2">{resource.material_name || item.material_name || item.item_name}</td>
-                                                        <td className="border px-4 py-2">{resource.brand_name || "-"}</td>
-                                                        <td className="border px-4 py-2">{resource.unitName || resource.unitId || "-"}</td>
+                                                        <td className="border px-4 py-2">{item.material_name}</td>
+                                                        <td className="border px-4 py-2">{item.brand_name || "-"}</td>
+                                                        <td className="border px-4 py-2">{item.unitName || "-"}</td>
                                                         <td className="border px-4 py-2 text-right">{formatPrice(unitCost)}</td>
                                                         <td className="border px-4 py-2 text-right">{qty}</td>
                                                         <td className="border px-4 py-2 text-right">{formatPrice(qty * unitCost)}</td>

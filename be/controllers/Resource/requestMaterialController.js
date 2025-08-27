@@ -220,71 +220,54 @@ const createRequestedMaterials = (req, res) => {
     });
 };
 
-
 const getRequestedMaterialsHistory = (req, res) => {
-    db.query(
-        `SELECT 
-            rm.request_id, 
-            rm.project_name, 
-            rm.urgency, 
-            rm.notes, 
-            rm.is_approved, 
-            rm.request_date,
-            rm.approved_at, 
-            rmi.item_id, 
-            r.material_name AS item_name, 
-            rmi.request_quantity 
-        FROM requested_materials rm
-        JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
-        JOIN resource r ON rmi.item_id = r.resource_id
-        ORDER BY rm.request_id`,
-        (err, results) => {
-            if (err) {
-                console.error("❌ Error fetching requested materials history:", err);
-                return res.status(500).json({ error: "Server error while fetching history" });
-            }
+    const query = `
+  SELECT
+    rm.request_id,
+    rm.project_name,
+    rm.urgency,
+    rm.notes,
+    rm.is_approved,
+    rm.request_date,
+    rm.approved_at,
+    CONCAT(
+        '[',
+        GROUP_CONCAT(
+            JSON_OBJECT(
+                'item_request_id', rmi.item_request_id,
+                'item_id', rmi.item_id,
+                'request_quantity', rmi.request_quantity,
+                'material_name', r.material_name,
+                'brand_name', rb.brand_name,
+                'unitName', u.unitName,
+                'default_unit_cost', r.default_unit_cost
+            )
+        ),
+        ']'
+    ) AS items
+FROM requested_materials rm
+LEFT JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
+LEFT JOIN resource r ON rmi.item_id = r.resource_id
+LEFT JOIN resource_brand rb ON r.brand_id = rb.brand_id
+LEFT JOIN unit_of_measure u ON r.unitId = u.unitId
+GROUP BY rm.request_id
+ORDER BY rm.request_id DESC;
+    `;
 
-            if (!results || results.length === 0) {
-                console.warn("⚠️ No requested materials history found.");
-                return res.status(404).json({ message: "No requested materials history found." });
-            }
-
-            const formattedResults = results.reduce((acc, row) => {
-                const existingRequest = acc.find(item => item.request_id === row.request_id);
-                if (existingRequest) {
-                    existingRequest.items.push({
-                        item_id: row.item_id,
-                        item_name: row.item_name,
-                        request_quantity: row.request_quantity,
-                    });
-                } else {
-                    acc.push({
-                        request_id: row.request_id,
-                        project_name: row.project_name,
-                        urgency: row.urgency,
-                        notes: row.notes,
-                        status:
-                            row.is_approved === 1
-                                ? 'approved'
-                                : row.is_approved === 2
-                                    ? 'rejected'
-                                    : 'pending',
-                        request_date: row.request_date,
-                        approved_at: row.approved_at,
-                        items: [{
-                            item_id: row.item_id,
-                            item_name: row.item_name,
-                            request_quantity: row.request_quantity,
-                        }],
-                    });
-                }
-                return acc;
-            }, []);
-
-            console.log("📌 Sending Requested Materials History Data:", formattedResults);
-            return res.json(formattedResults);
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching requested materials history:", err);
+            return res.status(500).json({ error: "Server error while fetching history" });
         }
-    );
+
+        if (!results || results.length === 0) {
+            console.warn("⚠️ No requested materials history found.");
+            return res.status(404).json({ message: "No requested materials history found." });
+        }
+
+        console.log("📌 Sending Requested Materials History Data:", results);
+        return res.json(results);
+    });
 };
 
 const approveRequest = (req, res) => {
