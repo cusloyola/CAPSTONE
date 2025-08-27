@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import useSafetyReportHandlers from "./useSafetyReportHandlers";
 import EditSafetyReportModalUI from "./EditSafetyReportModalUI";
+import { FILE_URL } from "../../../api/api";
+
 
 const EditSafetyReportModal = ({ report, onClose, onUpdateSuccess }) => {
     const [isModalOpen, setIsModalOpen] = useState(true);
@@ -36,8 +38,12 @@ const EditSafetyReportModal = ({ report, onClose, onUpdateSuccess }) => {
             });
 
             setPreviewImages({
-                image1: report.image1 ? `http://localhost:5000${report.image1}` : null,
-                image2: report.image2 ? `http://localhost:5000${report.image2}` : null,
+                image1: report.image1
+                    ? { src: `${FILE_URL}/${report.image1}`, file: null }
+                    : null,
+                image2: report.image2
+                    ? { src: `${FILE_URL}/${report.image2}`, file: null }
+                    : null,
             });
         }
     }, [report, setFormData, setPreviewImages]);

@@ -21,11 +21,11 @@ const ProjectProfile = () => {
     <div className="flex flex-col h-screen">
       {/* Header */}
       <div className="bg-white shadow px-6 py-4">
-        <h1 className="text-xl font-semibold">{project?.name || "Project"}</h1>
+        <h1 className="text-xl font-semibold">Overview</h1>
       </div>
 
       {/* Horizontal Tabs */}
-      <div className="bg-gray-50 border-b flex gap-6 px-6">
+      <div className="bg-white border-b flex gap-6 px-6 align-items justify-center">
         <div>
           <Link to="info" className={tabClass("info")}>
             Project Info

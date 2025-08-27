@@ -111,7 +111,7 @@ duration: item.duration != null ? Math.ceil(item.duration) : null,
 //SetDurationCompute - saveDuration
 export const saveTask = async (taskData) => {
   try {
-    const response = await fetch(`${API_URL}/gantt-chart/save-duration`, {
+    const response = await fetch(`${API_URL}/gantt-chart/save-gantt-task`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(taskData), // ✅ includes gantt_chart_id now

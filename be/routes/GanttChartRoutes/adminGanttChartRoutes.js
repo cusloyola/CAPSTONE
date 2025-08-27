@@ -13,7 +13,7 @@ router.post('/', adminGanttChartController.createNewGanttChart);
 
 
 
-router.post('/save-duration', adminGanttTaskController.saveDuration);
+router.post('/save-gantt-task', adminGanttTaskController.saveGanttTask);
 
 
 module.exports = router;

@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
-
 import { useQTO } from "../../../../hooks/useQto";
 import { calculateRowTotal } from "../../../../utils/workUtils";
 import { toast } from "react-toastify";
@@ -13,49 +11,54 @@ const SetDurationCompute = ({ isOpen, onClose, task, tasks, setTasks, projectId,
 
   if (!isOpen) return null;
 
-  // Default: first row
-  const row = rows[0] || { id: 1, quantity: 0, rate: 0 };
+  const row = rows[0] || { id: 1, quantity: 0, rate: 1 };
 
-  const handleChange = (field, value) => {
-    const updatedRow = { ...row, [field]: Number(value) };
+  const handleRateChange = (value) => {
+    // Allow numbers and decimals
+    let sanitized = value.replace(/[^0-9.]/g, ""); // keep digits and dot
+    if (sanitized === "" || sanitized === ".") sanitized = "0"; // default to 0
+
+    let rate = parseFloat(sanitized);
+
+    // Clamp between 0 and 100
+    if (isNaN(rate)) rate = 0;
+    rate = Math.min(Math.max(rate, 0), 500);
+
+    const updatedRow = { ...row, rate };
     setRows([updatedRow]);
     setDuration(calculateRowTotal(updatedRow));
   };
 
-const handleSave = async () => {
-  try {
-    const payload = {
-      gantt_chart_id,          // 👈 add this
-      sow_proposal_id: task.itemId,
-      work_quantity: row.quantity,
-      production_rate: row.rate,
-    };
 
-    console.log("Payload to backend:", payload);
+  const handleSave = async () => {
+    try {
+      const latestRow = rows[0]; // use current state
+      const updatedDuration = calculateRowTotal(latestRow);
 
-    const savedTask = await saveTask(payload);
-    console.log("Backend response:", savedTask);
+      // Optimistically update tasks
+      const updatedTasks = tasks.map((t) =>
+        t.itemNo === task.itemNo
+          ? { ...t, duration: updatedDuration, table: [latestRow] }
+          : t
+      );
+      setTasks(updatedTasks);
 
-    const updatedTask = { ...task, duration, table: rows };
-    const updatedTasks = tasks.map((t) =>
-      t.itemId === task.itemId ? updatedTask : t
-    );
-    setTasks(updatedTasks);
+      toast.success("Saved Successfully!", { autoClose: 3000 });
 
-    toast.success("Saved Successfully!", { autoClose: 3000 });
-    onClose(); 
-  } catch (error) {
-    console.error("Save Failed:", error);
+      // Send to backend
+      await saveTask({
+        gantt_chart_id,
+        sow_proposal_id: task.itemId,
+        work_quantity: latestRow.quantity,
+        production_rate: latestRow.rate,
+      });
 
-    if (error.response) {
-      console.error("Server response:", error.response);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save task!", { autoClose: 3000 });
     }
-
-    toast.error("Failed to save task!", { autoClose: 3000 });
-  }
-};
-
-
+  };
 
   return (
     <div
@@ -89,15 +92,18 @@ const handleSave = async () => {
                 <input
                   type="number"
                   min={0}
+                  max={100}
+                  step={0.01}   
                   value={row.rate}
-                  onChange={(e) => handleChange("rate", e.target.value)}
+                  onChange={(e) => handleRateChange(e.target.value)}
                   className="w-full p-2 border rounded"
                 />
+                <p className="text-gray-500 text-sm mt-1">Enter 1–100 only</p>
               </div>
             </div>
 
             {/* Total Duration */}
-            <div className="col-span-2">
+            <div className="col-span-2 mt-2">
               <label className="block mb-1 text-sm">Total Duration:</label>
               <span className="text-green-600 font-bold">
                 {duration.toFixed(2)} weeks
