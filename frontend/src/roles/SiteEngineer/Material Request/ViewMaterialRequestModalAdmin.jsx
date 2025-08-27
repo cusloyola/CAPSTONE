@@ -1,6 +1,6 @@
 import React from "react";
 
-const ViewMaterialRequestModal = ({ report, materials = [], onClose }) => {
+const ViewMaterialRequestModalAdmin = ({ report, materials = [], onClose }) => {
   if (!report) return null;
 
   // Calculate total quantity and total cost
@@ -25,6 +25,12 @@ const ViewMaterialRequestModal = ({ report, materials = [], onClose }) => {
     approvalLabel = "Date Rejected";
     approvalDate = new Date(report.approved_at).toLocaleDateString();
   }
+
+  // Capitalize first letter of status
+  const statusDisplay =
+    report.status && typeof report.status === "string"
+      ? report.status.charAt(0).toUpperCase() + report.status.slice(1).toLowerCase()
+      : report.status;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -71,7 +77,7 @@ const ViewMaterialRequestModal = ({ report, materials = [], onClose }) => {
                     : "bg-red-100 text-red-800"
                 }`}
               >
-                {report.status}
+                {statusDisplay}
               </span>
             </div>
             {/* Approval/Rejection Date */}
@@ -156,7 +162,7 @@ const ViewMaterialRequestModal = ({ report, materials = [], onClose }) => {
           {/* Prepared By */}
           <div>
             <p className="text-md font-bold text-gray-800 mb-1">Prepared By</p>
-            <p>{report.full_name || "n/a"}</p>
+            <p>Engr. Gino Herrera</p>
           </div>
         </div>
 
@@ -174,4 +180,4 @@ const ViewMaterialRequestModal = ({ report, materials = [], onClose }) => {
   );
 };
 
-export default ViewMaterialRequestModal;
+export default ViewMaterialRequestModalAdmin;
