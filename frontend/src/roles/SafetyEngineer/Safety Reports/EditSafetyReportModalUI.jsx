@@ -1,4 +1,5 @@
 import React from "react";
+import { FILE_URL } from "../../../api/api";
 
 const EditSafetyReportModalUI = ({
   formData,
@@ -74,45 +75,45 @@ const EditSafetyReportModalUI = ({
               required
             />
           </div>
+{/* Image Uploads */}
+{["image1", "image2"].map((imgKey) => (
+  <div key={imgKey}>
+    <label className="block text-sm font-semibold text-gray-700 mb-2">
+      {`Upload ${imgKey === "image1" ? "Image 1" : "Image 2"}`}
+    </label>
+    <div className="w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-gray-500 hover:border-blue-400 cursor-pointer">
+      <input
+        type="file"
+        name={imgKey}
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+        id={imgKey}
+      />
+      <label htmlFor={imgKey} className="cursor-pointer text-center">
+        📷 Click to upload or drag & drop
+      </label>
 
-          {/* Image Uploads */}
-          {["image1", "image2"].map((imgKey) => (
-            <div key={imgKey}>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                {`Upload ${imgKey === "image1" ? "Image 1" : "Image 2"}`}
-              </label>
-              <div className="w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-gray-500 hover:border-blue-400 cursor-pointer">
-                <input
-                  type="file"
-                  name={imgKey}
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id={imgKey}
-                />
-                <label htmlFor={imgKey} className="cursor-pointer text-center">
-                  📷 Click to upload or drag & drop
-                </label>
+      {previewImages[imgKey] && (
+        <div className="relative mt-3">
+          <img
+            src={previewImages[imgKey].src} // ✅ use .src here
+            alt={`Preview ${imgKey}`}
+            className="rounded-lg shadow max-h-40 object-cover"
+          />
+          <button
+            type="button"
+            onClick={() => handleRemoveImage(imgKey)}
+            className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full hover:bg-red-600"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+))}
 
-                {previewImages[imgKey] && (
-                  <div className="relative mt-3">
-                    <img
-                      src={previewImages[imgKey]}
-                      alt={`Preview ${imgKey}`}
-                      className="rounded-lg shadow max-h-40 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(imgKey)}
-                      className="absolute top-1 right-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full hover:bg-red-600"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
 
           {/* Buttons */}
           <div className="md:col-span-2 flex justify-end gap-4 mt-6">

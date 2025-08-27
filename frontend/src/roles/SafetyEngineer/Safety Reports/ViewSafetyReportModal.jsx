@@ -24,7 +24,7 @@ const ViewSafetyReportModal = ({ report, onClose }) => {
             <span className="font-semibold">Prepared By:</span> {report.full_name}
           </p>
           <p>
-            <span className="font-semibold">Status:</span> {report.status || "N/A"}
+            <span className="font-semibold">Status:</span> {report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : "N/A"}
           </p>
 
           <div>

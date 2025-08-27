@@ -109,7 +109,10 @@ LEFT JOIN gantt_tasks AS gt ON gt.sow_proposal_id = sp.sow_proposal_id
 JOIN sow_work_types AS swt ON swi.work_type_id = swt.work_type_id
 JOIN proposals AS p ON sp.proposal_id = p.proposal_id
 JOIN projects AS pr ON p.project_id = pr.project_id
-WHERE p.project_id = ? AND p.status = 'approved'
+WHERE p.project_id = ? 
+AND p.status = 'approved'
+AND swt.work_type_id <> 1
+
 ORDER BY swt.work_type_id, sp.sow_proposal_id;
 
 
