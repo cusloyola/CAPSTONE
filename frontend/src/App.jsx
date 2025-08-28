@@ -23,10 +23,17 @@ import ViewIncidentReportAdmin from "./roles/Admin/Incident Report/ViewIncidentR
 import ResoureManagement from "./roles/Admin/Resource Management/ResourceManagement.jsx";
 
 // site
+import SiteProjectInfo from "./roles/SiteEngineer/Site Project Info/SiteProjectInfo.jsx";
 import SiteEngineerDashboard from "./roles/SiteEngineer/Site Engineer Dashboard/SiteEngineerDashboard.jsx";
 import DailySiteReport from "./roles/SiteEngineer/Site Progress Tracking/DailySiteReport.jsx";
 import RequestMaterial from "./roles/SiteEngineer/RequestMaterial.jsx";
 import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
+
+
+import SiteWeeklyReport from "./roles/SiteEngineer/Site Weekly Report/SiteWeeklyReport.jsx";
+
+
+
 
 // safety
 import DailySafetyReport from "./roles/SafetyEngineer/Safety Reports/DailySafetyReport.jsx";
@@ -236,9 +243,12 @@ export default function App() {
             {/* Site Engineer Protected */}
             <Route element={<ProtectedRoute allowedRoles={["site engineer"]} />}>
               <Route path="/SiteEngineerDashboard" element={<SiteEngineerDashboard />} />
+              <Route path="/SiteProjectInfo" element={<SiteProjectInfo />} />
               <Route path="/DailySiteReport" element={<DailySiteReport />} />
               <Route path="/RequestMaterial" element={<RequestMaterial />} />
               <Route path="/ViewRequestHistory" element={<MaterialRequestHistory />} />
+              <Route path="/SiteWeeklyReport" element={<SiteWeeklyReport />} />
+
             </Route>
 
             {/* Safety Engineer Protected */}

@@ -254,7 +254,7 @@ const fetchHistory = async () => {
   return (
     <>
       <PageMeta title="Material Request Management" description="Manage all material requests submitted" />
-      <div className="min-h-screen p-6 md:p-8 bg-gray-100">
+      <div className="min-h-screen p-6 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div>
             <h1 className="text-3xl font-bold mb-10 text-gray-800">

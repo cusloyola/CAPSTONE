@@ -142,7 +142,7 @@ const DailySiteReportTable = ({
       <div className="max-w-7xl mx-auto">
 
         <div>
-          <h1 className="text-3xl font-bold mb-10">Daily Site Report</h1>
+          <h1 className="text-2xl font-bold mb-10">Daily Site Report</h1>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
             <div className="bg-gradient-to-l from-blue-500 to-blue-800 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
               <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">

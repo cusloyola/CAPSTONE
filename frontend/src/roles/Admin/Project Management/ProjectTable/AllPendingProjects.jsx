@@ -150,7 +150,11 @@ const AllPendingProjects = () => {
 
 
     return (
+        <>
+              <h2 className="text-2xl font-bold mb-10">Proposal Projects</h2>
+
         <div className="p-4 space-y-6 bg-white shadow rounded">
+
             <div className="bg-blue-600 text-white flex justify-between items-center p-4 rounded">
                 <h1 className="text-lg font-semibold">List of all projects proposals</h1>
                 <button className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100">
@@ -353,17 +357,18 @@ const AllPendingProjects = () => {
 
             {/* Modal */}
             {isModalOpen && (
-               <EditModal
-  isOpen={isModalOpen}
-  project={selectedProject}
-  onClose={handleCloseModal}
-  onSubmit={handleUpdateProject}
-  isEdit={editMode}
-/>
+                <EditModal
+                    isOpen={isModalOpen}
+                    project={selectedProject}
+                    onClose={handleCloseModal}
+                    onSubmit={handleUpdateProject}
+                    isEdit={editMode}
+                />
 
             )}
 
         </div>
+        </>
     );
 };
 

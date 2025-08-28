@@ -26,7 +26,7 @@ const navItems = [
    {
     icon: <PageIcon />,
     name: "Projects",
-    subItems: [{ name: "Project info", path: "/DailySiteReport", pro: false },
+    subItems: [{ name: "Project info", path: "/SiteProjectInfo", pro: false },
     ],
 
   },
@@ -34,7 +34,7 @@ const navItems = [
   {
     icon: <PageIcon />,
     name: "Site Report",
-    subItems: [{ name: "Gantt Chart", path: "/DailySiteReport", pro: false },
+    subItems: [{ name: "Gantt Chart", path: "/SiteWeeklyReport", pro: false },
             { name: "Daily Site", path: "/DailySiteReport", pro: false }
 
     ],

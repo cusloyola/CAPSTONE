@@ -20,8 +20,8 @@ const ProjectProfile = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="bg-white shadow px-6 py-4">
-        <h1 className="text-xl font-semibold">Overview</h1>
+      <div className="bg-white shadow px-4 py-1">
+        <h1 className="text-1xl font-semibold"></h1>
       </div>
 
       {/* Horizontal Tabs */}

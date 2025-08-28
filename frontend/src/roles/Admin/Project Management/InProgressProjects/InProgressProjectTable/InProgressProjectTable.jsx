@@ -313,6 +313,8 @@ const InProgressProjectTable = () => {
 
     return (
         <>
+              <h2 className="text-2xl font-bold mb-10">In Progress Projects</h2>
+
             <div className="p-4 space-y-6 bg-white shadow rounded">
 
                 {/* Section 1: Header */}

@@ -1,6 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
-import { FaTrash, FaEllipsisV } from "react-icons/fa";
+import { FaTrash, FaEllipsisV, FaPrint } from "react-icons/fa";
 import { StatusBadge } from "../../Admin/Site Report/dsrButtons";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const DailySafetyReportTable = ({
   reports,
@@ -165,6 +168,150 @@ const DailySafetyReportTable = ({
     setSelectAll(!selectAll);
   };
 
+  // Helper: Convert image URL → Base64
+  const getBase64Image = async (url) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const handlePrint = async () => {
+    if (selectedReports.length === 0) {
+      alert("Please select at least one report to print.");
+      return;
+    }
+
+    const reportsToPrint = reports.filter((r) =>
+      selectedReports.includes(r.safety_report_id)
+    );
+
+    const doc = new jsPDF();
+
+    for (let i = 0; i < reportsToPrint.length; i++) {
+      const report = reportsToPrint[i];
+      if (i > 0) doc.addPage();
+
+      // ✅ Load Header Image
+      const headerImg = new Image();
+      headerImg.src = "/images/assets/drl_construction_address.png"; // must be in public/
+
+      await new Promise((resolve) => {
+        headerImg.onload = () => {
+          doc.addImage(headerImg, "PNG", 15, 5, 180, 25); // banner across top
+          resolve();
+        };
+      });
+
+      // ✅ Title below image
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("Daily Safety Report", 105, 40, { align: "center" });
+
+      // ✅ Generated On (below title)
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 48, {
+        align: "center",
+      });
+
+
+      let yPos = doc.lastAutoTable.finalY + 15;
+
+      // ✅ Images Section
+      if (report.image1 || report.image2) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Attached Images", 14, yPos);
+        yPos += 8;
+
+        if (report.image1) {
+          try {
+            const img1 = await getBase64Image(
+              `http://localhost:5000/${report.image1}`
+            );
+            doc.addImage(img1, "JPEG", 14, yPos, 85, 65);
+          } catch (err) {
+            console.error("Error loading image1:", err);
+          }
+        }
+
+        if (report.image2) {
+          try {
+            const img2 = await getBase64Image(
+              `http://localhost:5000/${report.image2}`
+            );
+            doc.addImage(img2, "JPEG", 110, yPos, 85, 65);
+          } catch (err) {
+            console.error("Error loading image2:", err);
+          }
+        }
+
+        yPos += 75;
+      }
+
+      // ✅ Description Section (below images)
+      if (report.description) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Description:", 14, yPos);
+        yPos += 6;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        const splitDescription = doc.splitTextToSize(report.description, 180); // wrap long text
+        doc.text(splitDescription, 14, yPos);
+        yPos += splitDescription.length * 6;
+      }
+
+      // ✅ Report Info Table
+      autoTable(doc, {
+        startY: 60,
+        body: [
+          ["Date:", new Date(report.report_date).toLocaleDateString("en-US")],
+          ["Project:", report.project_name || "N/A"],
+          ["Prepared By:", report.full_name || "N/A"],
+        ],
+        theme: "grid",
+        headStyles: {
+          fillColor: [255, 255, 255], // white header
+          textColor: 0,               // black text
+          lineColor: 0,               // black borders
+          halign: "left",
+        },
+        styles: {
+          fontSize: 11,
+          cellPadding: 3,
+          textColor: 0, // black text
+          lineColor: 0, // black borders
+        },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 40 },
+          1: { cellWidth: 140 },
+        },
+
+      });
+
+
+      // ✅ Footer with page number
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(
+        `Page ${i + 1} of ${pageCount}`,
+        doc.internal.pageSize.getWidth() - 20,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "right" }
+      );
+    }
+
+    doc.save("safety-reports.pdf");
+  };
+
+
   return (
     <div className="min-h-screen p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -273,6 +420,15 @@ const DailySafetyReportTable = ({
               >
                 <FaTrash />
               </button>
+
+              <button
+                onClick={handlePrint}
+                className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm flex items-center gap-2 disabled:opacity-50"
+                disabled={selectedReports.length === 0}
+              >
+                <FaPrint />
+              </button>
+
               <button
                 onClick={onAdd}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
@@ -280,6 +436,7 @@ const DailySafetyReportTable = ({
                 + Add Report
               </button>
             </div>
+
           </div>
 
           <div className="overflow-visible shadow-md rounded-lg">
@@ -410,8 +567,8 @@ const DailySafetyReportTable = ({
                   onClick={handlePrevious}
                   disabled={currentPage === 1}
                   className={`px-3 py-1 border rounded ${currentPage === 1
-                      ? "bg-gray-200 text-gray-400"
-                      : "bg-white hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400"
+                    : "bg-white hover:bg-gray-100"
                     }`}
                 >
                   Previous
@@ -420,8 +577,8 @@ const DailySafetyReportTable = ({
                   onClick={handleNext}
                   disabled={currentPage === totalPages || totalPages === 0}
                   className={`px-3 py-1 border rounded ${currentPage === totalPages || totalPages === 0
-                      ? "bg-gray-200 text-gray-400"
-                      : "bg-white hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400"
+                    : "bg-white hover:bg-gray-100"
                     }`}
                 >
                   Next
