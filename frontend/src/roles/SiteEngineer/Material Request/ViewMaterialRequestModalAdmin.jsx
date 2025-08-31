@@ -69,13 +69,12 @@ const ViewMaterialRequestModalAdmin = ({ report, materials = [], onClose }) => {
             <div>
               <p className="text-md font-bold text-gray-800">Status</p>
               <span
-                className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                  report.status === "approved"
+                className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${report.status === "approved"
                     ? "bg-green-100 text-green-800"
                     : report.status === "pending"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                }`}
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
               >
                 {statusDisplay}
               </span>
@@ -98,7 +97,7 @@ const ViewMaterialRequestModalAdmin = ({ report, materials = [], onClose }) => {
               {report.notes || "n/a"}
             </div>
           </div>
-          
+
           <hr className="my-4" />
 
           {/* Requested Materials Section */}
@@ -108,49 +107,37 @@ const ViewMaterialRequestModalAdmin = ({ report, materials = [], onClose }) => {
             </p>
             <div className="bg-gray-50 p-3 rounded border border-gray-200">
               {materials && materials.length > 0 ? (
-                <table className="min-w-full text-sm">
-                  <thead>
+                <table className="min-w-full text-sm border-collapse border border-gray-300">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="text-left font-semibold pb-2">Material</th>
-                      <th className="text-left font-semibold pb-2">Brand</th>
-                      <th className="text-left font-semibold pb-2">Unit</th>
-                      <th className="text-left font-semibold pb-2">Quantity</th>
-                      <th className="text-left font-semibold pb-2">Unit Cost</th>
-                      <th className="text-left font-semibold pb-2">Cost</th>
+                      <th className="border border-gray-300 px-2  py-2 text-center font-semibold">Material</th>
+                      <th className="border border-gray-300 px-2 py-2   text-center font-semibold">Brand</th>
+                      <th className="border border-gray-300 px-2  py-2 text-ricente  font-semibold">Quantity</th>
+                      <th className="border border-gray-300 px-2  py-2  text-center font-semibold">Unit Cost</th>
+                      <th className="border border-gray-300 px-2  py-2  text-center font-semibold">Total Cost</th>
                     </tr>
                   </thead>
                   <tbody>
                     {materials.map((mat, idx) => (
-                      <tr key={idx}>
-                        <td className="py-1">{mat.material_name}</td>
-                        <td className="py-1">{mat.brand_name || "N/A"}</td>
-                        <td className="py-1">{mat.unitName}</td>
-                        <td className="py-1 text-right">
-                          {mat.request_quantity}
-                        </td>
-                        <td className="py-1 text-right">
-                          ₱{mat.default_unit_cost.toLocaleString()}
-                        </td>
-                        <td className="py-1 text-right">
-                          ₱{(
-                            mat.request_quantity * mat.default_unit_cost
-                          ).toLocaleString()}
-                        </td>
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-2 py-1 text-left">{mat.material_name}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-left">{mat.brand_name || "N/A"}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-right">{mat.request_quantity}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-right">₱{mat.default_unit_cost.toLocaleString()}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-right">₱{(mat.request_quantity * mat.default_unit_cost).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot>
-                    <tr className="border-t border-gray-300 font-bold">
-                      <td className="py-2 text-right" colSpan="3">
-                        Total:
-                      </td>
-                      <td className="py-2 text-right">{totalQuantity}</td>
-                      <td className="py-2 text-right" colSpan="2">
-                        ₱{totalCost.toLocaleString()}
-                      </td>
+                  <tfoot className="bg-gray-50 font-bold">
+                    <tr>
+                      <td className="border border-gray-300 px-2 py-2 text-right" colSpan="2">Total:</td>
+                      <td className="border border-gray-300 px-2 py-2 text-right">{totalQuantity}</td>
+                      <td className="border border-gray-300 px-2 py-2"></td>
+                      <td className="border border-gray-300 px-2 py-2 text-right">₱{totalCost.toLocaleString()}</td>
                     </tr>
                   </tfoot>
                 </table>
+
               ) : (
                 <p className="text-gray-500">No requested materials.</p>
               )}

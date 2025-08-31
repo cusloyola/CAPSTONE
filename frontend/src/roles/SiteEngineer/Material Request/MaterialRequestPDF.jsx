@@ -116,7 +116,6 @@ const MaterialRequestPDF = forwardRef(({ requests }, ref) => {
                                             <tr>
                                                 <th className="border px-4 py-2 text-left">Material Name</th>
                                                 <th className="border px-4 py-2 text-left">Brand</th>
-                                                <th className="border px-4 py-2 text-left">Unit</th>
                                                 <th className="border px-4 py-2 text-right">Unit Cost</th>
                                                 <th className="border px-4 py-2 text-right">Quantity</th>
                                                 <th className="border px-4 py-2 text-right">Total Cost</th>
@@ -130,7 +129,6 @@ const MaterialRequestPDF = forwardRef(({ requests }, ref) => {
                                                     <tr key={item.resource_id || item.item_id || idx}>
                                                         <td className="border px-4 py-2">{item.material_name}</td>
                                                         <td className="border px-4 py-2">{item.brand_name || "-"}</td>
-                                                        <td className="border px-4 py-2">{item.unitName || "-"}</td>
                                                         <td className="border px-4 py-2 text-right">{formatPrice(unitCost)}</td>
                                                         <td className="border px-4 py-2 text-right">{qty}</td>
                                                         <td className="border px-4 py-2 text-right">{formatPrice(qty * unitCost)}</td>

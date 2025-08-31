@@ -42,7 +42,6 @@ const dashboardLineGraph = (req, res) => {
         ORDER BY project_name, billing_month;
     `;
 
-    console.log("📤 Executing dashboard line chart query...");
 
     db.query(query, (err, results) => {
         if (err) {

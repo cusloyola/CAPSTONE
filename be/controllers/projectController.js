@@ -289,6 +289,40 @@ const getProjectById = (req, res) => {
   });
 };
 
+const getProjectsWithApprovedProposals = (req, res) => {
+  const sql = `
+    SELECT 
+      pr.project_id, 
+      pr.project_name, 
+      pr.location,
+      pr.projectManager,
+      pc.project_type,
+      c.client_name,
+      p.proposal_title
+    FROM projects pr
+    JOIN proposals p ON pr.project_id = p.project_id
+    JOIN clients c ON pr.client_id = c.client_id
+    JOIN project_categories pc ON pr.category_id = pc.category_id
+    WHERE p.status = 'approved' 
+      AND pr.status = 'in progress';
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching:", err);
+      return res.status(500).json({ error: "Failed to fetch" });
+    }
+
+    console.log("Type of results:", typeof results);
+    console.log("Is array?", Array.isArray(results));
+    console.log("Raw results:", results);
+
+    return res.status(200).json(results);
+  });
+};
+
+
+
 
 module.exports = {
   getAllProjects,
@@ -299,7 +333,8 @@ module.exports = {
   getProjectFloors,
   getprojectCategories,
 
-  getProjectById
+  getProjectById,
+  getProjectsWithApprovedProposals
 
   
 };

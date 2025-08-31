@@ -111,7 +111,7 @@ JOIN proposals AS p ON sp.proposal_id = p.proposal_id
 JOIN projects AS pr ON p.project_id = pr.project_id
 WHERE p.project_id = ? 
 AND p.status = 'approved'
-
+    
 ORDER BY swt.work_type_id, sp.sow_proposal_id;
 
 

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { FaFileExport } from "react-icons/fa";
 import AddModalFinalEntry from "./AddModalFinalEntry";
 import ViewModalFinalEntry from "./ViewModalFinalEntry";
+import { saveFinalEstimation } from "../../../../api/finalCostEstimateApi";
 
 const FinalCostEstimation = () => {
     const { proposal_id } = useParams();
@@ -102,16 +103,6 @@ const FinalCostEstimation = () => {
         fetchCostData();
     }, [proposal_id]);
 
-    const handleExportExcel = () => {
-        console.log("Exporting to Excel...");
-        setShowExport(false);
-    };
-
-    const handleExportPDF = () => {
-        console.log("Exporting to PDF...");
-        setShowExport(false);
-    };
-
     const formatNumber = (value) => {
         const num = parseFloat(value);
         if (!num) return "";
@@ -126,8 +117,6 @@ const FinalCostEstimation = () => {
     };
 
 
-
-
     const totalAmount = costData.reduce(
         (sum, row) => sum + (parseFloat(row.total_with_allowance ?? row.total_amount) || 0),
         0
@@ -137,32 +126,25 @@ const FinalCostEstimation = () => {
     const markupAmount = totalAmount * (markupPercent / 100);
     const grandTotal = totalAmount + markupAmount;
 
-    const handleSaveEstimation = async () => {
-        const details = costData.map(row => ({
-            sow_proposal_id: row.sow_proposal_id,
-            amount: parseFloat(row.total_with_allowance ?? row.total_amount) || 0
-        }));
-
-        try {
-            const res = await fetch(`http://localhost:5000/api/cost-estimation/${proposal_id}/save`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    details,
-                    total: totalAmount,
-                    markup_percent: markupPercent,
-                    markup_amount: markupAmount,
-                    grand_total: grandTotal
-                })
-            });
-
-            if (!res.ok) throw new Error("Failed to save final estimation");
-            alert("Final estimation saved successfully!");
-        } catch (err) {
-            console.error(err);
-            alert("Something went wrong while saving.");
-        }
-    };
+ const handleSaveEstimation = async () => {
+  try {
+    await saveFinalEstimation(
+      proposal_id,
+      costData,
+      totalAmount,
+      markupPercent,
+      markupAmount,
+      grandTotal
+    );
+    alert("Final estimation saved successfully!");
+  } catch (err) {
+    if (err.message.includes("already exists")) {
+      alert("Warning: Final estimation for this proposal already exists. Delete it first to save again.");
+    } else {
+      alert("Something went wrong while saving.");
+    }
+  }
+};
 
 
     let filteredData = costData;

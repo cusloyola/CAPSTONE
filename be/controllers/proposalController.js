@@ -1,44 +1,44 @@
 const db = require("../config/db");
 
 const getProposalByProject = (req, res) => {
-    const { project_id } = req.params; 
+  const { project_id } = req.params;
 
-    const sql = "SELECT * FROM proposals WHERE project_id = ?";
+  const sql = "SELECT * FROM proposals WHERE project_id = ?";
 
-    db.query(sql, [project_id], (err, results) => {
-        if(err){
-            console.error("Error fetching proposals:", err);
-            return res.status(500).json({error: "Failed to fetch proposals"});
-        }
+  db.query(sql, [project_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching proposals:", err);
+      return res.status(500).json({ error: "Failed to fetch proposals" });
+    }
 
-        return res.status(200).json(results);
-    });
+    return res.status(200).json(results);
+  });
 };
 
 
 
 const addProposalByProject = (req, res) => {
-    const { project_id } = req.params;
-    const { proposal_title, description, proposalStatus = "pending" } = req.body;
+  const { project_id } = req.params;
+  const { proposal_title, description, proposalStatus = "pending" } = req.body;
 
-    const insertProposalSQL = `
+  const insertProposalSQL = `
         INSERT INTO proposals (project_id, proposal_title, description, status)
         VALUES (?, ?, ?, ?)
     `;
 
-    db.query(insertProposalSQL, [project_id, proposal_title, description, proposalStatus], (err, result) => {
-        if (err) {
-            console.error("Error adding proposal:", err);
-            return res.status(500).json({ error: "Failed to add proposal" });
-        }
+  db.query(insertProposalSQL, [project_id, proposal_title, description, proposalStatus], (err, result) => {
+    if (err) {
+      console.error("Error adding proposal:", err);
+      return res.status(500).json({ error: "Failed to add proposal" });
+    }
 
-        const proposal_id = result.insertId;
+    const proposal_id = result.insertId;
 
-        return res.status(201).json({
-            message: "Proposal created successfully",
-            proposal_id
-        });
+    return res.status(201).json({
+      message: "Proposal created successfully",
+      proposal_id
     });
+  });
 };
 
 const deleteProposalByProject = (req, res) => {
@@ -102,33 +102,33 @@ const editProposalByProject = (req, res) => {
 
 
 const getApprovedProposalsByProject = (req, res) => {
-    const { project_id } = req.params;
+  const { project_id } = req.params;
 
-    const sql = `
+  const sql = `
         SELECT p.*, pr.project_name
         FROM proposals p
         JOIN projects pr ON p.project_id = pr.project_id
         WHERE p.project_id = ? AND p.status = 'approved';
     `;
 
-    db.query(sql, [project_id], (err, results) => {
-        if (err) {
-            console.error("Error fetching approved proposals:", err);
-            return res.status(500).json({ error: "Failed to fetch approved proposals" });
-        }
+  db.query(sql, [project_id], (err, results) => {
+    if (err) {
+      console.error("Error fetching approved proposals:", err);
+      return res.status(500).json({ error: "Failed to fetch approved proposals" });
+    }
 
-        return res.status(200).json(results);
-    });
+    return res.status(200).json(results);
+  });
 };
 
 
 
 module.exports = {
-    getProposalByProject,
-    addProposalByProject,
-    deleteProposalByProject,
-    editProposalByProject,
+  getProposalByProject,
+  addProposalByProject,
+  deleteProposalByProject,
+  editProposalByProject,
 
 
-    getApprovedProposalsByProject
+  getApprovedProposalsByProject,
 };

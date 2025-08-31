@@ -9,6 +9,8 @@ router.delete('/:project_id/:proposal_id', proposalController.deleteProposalByPr
 router.put('/:project_id/:proposal_id', proposalController.editProposalByProject);
 
 
+//single projects with approved proposals
 router.get("/approved/:project_id",proposalController.getApprovedProposalsByProject);
+
 
 module.exports = router;

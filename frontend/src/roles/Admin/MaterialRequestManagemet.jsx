@@ -11,19 +11,20 @@ const COLUMNS = [
   { key: "urgency", label: "Urgency" },
   { key: "notes", label: "Additional Notes" },
   { key: "request_date", label: "Request Date", format: (dateString) => new Date(dateString).toLocaleDateString() },
-  { key: "status", label: "Status", customRender: (req) => (
-    <span
-      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${
-        req.status === "approved"
-          ? "bg-green-100 text-green-800"
-          : req.status === "pending"
-          ? "bg-yellow-100 text-yellow-800"
-          : "bg-red-100 text-red-800"
-      }`}
-    >
-      {req.status}
-    </span>
-  )},
+  {
+    key: "status", label: "Status", customRender: (req) => (
+      <span
+        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${req.status === "approved"
+            ? "bg-green-100 text-green-800"
+            : req.status === "pending"
+              ? "bg-yellow-100 text-yellow-800"
+              : "bg-red-100 text-red-800"
+          }`}
+      >
+        {req.status}
+      </span>
+    )
+  },
 ];
 
 const MaterialRequestManagement = () => {
@@ -62,49 +63,49 @@ const MaterialRequestManagement = () => {
   const [viewMaterials, setViewMaterials] = useState([]);
 
   // Fetch requested materials history from backend
-// Fetch requested materials history from backend
-const fetchHistory = async () => {
-  try {
-    const response = await fetch("http://localhost:5000/api/resources/request-materials/history");
-    if (!response.ok) throw new Error("Failed to fetch history");
-    const data = await response.json();
-    const updatedRequests = Array.isArray(data)
-      ? data.map(r => {
-          let parsedItems = [];
-          try {
-            // Attempt to parse the items field if it exists and is a string
-            if (r.items && typeof r.items === "string") {
-              parsedItems = JSON.parse(r.items);
-            } else if (Array.isArray(r.items)) {
-              parsedItems = r.items;
-            }
-          } catch (e) {
-            console.error("Failed to parse items for request ID:", r.request_id, e);
-            parsedItems = []; // Default to empty array on error
-          }
+  // Fetch requested materials history from backend
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/resources/request-materials/history");
+      if (!response.ok) throw new Error("Failed to fetch history");
+      const data = await response.json();
+      const updatedRequests = Array.isArray(data)
+        ? data.map(r => {
+          let parsedItems = [];
+          try {
+            // Attempt to parse the items field if it exists and is a string
+            if (r.items && typeof r.items === "string") {
+              parsedItems = JSON.parse(r.items);
+            } else if (Array.isArray(r.items)) {
+              parsedItems = r.items;
+            }
+          } catch (e) {
+            console.error("Failed to parse items for request ID:", r.request_id, e);
+            parsedItems = []; // Default to empty array on error
+          }
 
-          return {
-            ...r,
-            // Assign the parsed items to the request object
-            items: parsedItems,
-            // Map is_approved to status for display and filtering
-            status:
-              r.is_approved === 1
-                ? "approved"
-                : r.is_approved === 2
-                ? "rejected"
-                : "pending",
-          };
-        })
-      : [];
-    setRequests(updatedRequests);
-  } catch (err) {
-    console.error("Failed to fetch material requests.", err);
-    setRequests([]);
-    setErrorMessage("Failed to fetch material requests.");
-    setShowErrorModal(true);
-  }
-};
+          return {
+            ...r,
+            // Assign the parsed items to the request object
+            items: parsedItems,
+            // Map is_approved to status for display and filtering
+            status:
+              r.is_approved === 1
+                ? "approved"
+                : r.is_approved === 2
+                  ? "rejected"
+                  : "pending",
+          };
+        })
+        : [];
+      setRequests(updatedRequests);
+    } catch (err) {
+      console.error("Failed to fetch material requests.", err);
+      setRequests([]);
+      setErrorMessage("Failed to fetch material requests.");
+      setShowErrorModal(true);
+    }
+  };
 
   useEffect(() => {
     fetchHistory();
@@ -212,7 +213,7 @@ const fetchHistory = async () => {
   const handleDisapprove = async (requestId) => {
     try {
       // await axios.put(`http://localhost:5000/api/resources/request-materials/${requestId}/reject`);
-        await axios.put(`http://localhost:5000/api/request-materials/${requestId}/reject`);
+      await axios.put(`http://localhost:5000/api/request-materials/${requestId}/reject`);
       fetchHistory(); // Re-fetch to get the updated status
       setShowRejectModal(false);
       setRequestToReject(null);
@@ -254,38 +255,38 @@ const fetchHistory = async () => {
   return (
     <>
       <PageMeta title="Material Request Management" description="Manage all material requests submitted" />
-      <div className="min-h-screen p-6 md:p-8">
+      <div className="min-h-screen  md:p-8">
         <div className="max-w-7xl mx-auto">
           <div>
-            <h1 className="text-3xl font-bold mb-10 text-gray-800">
+            <h1 className="text-2xl font-bold mb-10 text-gray-800">
               Material Request Management
             </h1>
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
               <div className="bg-gradient-to-l from-blue-500 to-blue-800 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
                 <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl dark:bg-gray-800">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard-list-icon lucide-clipboard-list"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard-list-icon lucide-clipboard-list"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Total Requests</p>
                 <h2 className="text-4xl font-bold text-white">{requests.length}</h2>
               </div>
               <div className="bg-gradient-to-l from-yellow-500 to-yellow-600 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
                 <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock-fading-icon lucide-clock-fading"><path d="M12 2a10 10 0 0 1 7.38 16.75"/><path d="M12 6v6l4 2"/><path d="M2.5 8.875a10 10 0 0 0-.5 3"/><path d="M2.83 16a10 10 0 0 0 2.43 3.4"/><path d="M4.636 5.235a10 10 0 0 1 .891-.857"/><path d="M8.644 21.42a10 10 0 0 0 7.631-.38"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock-fading-icon lucide-clock-fading"><path d="M12 2a10 10 0 0 1 7.38 16.75" /><path d="M12 6v6l4 2" /><path d="M2.5 8.875a10 10 0 0 0-.5 3" /><path d="M2.83 16a10 10 0 0 0 2.43 3.4" /><path d="M4.636 5.235a10 10 0 0 1 .891-.857" /><path d="M8.644 21.42a10 10 0 0 0 7.631-.38" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Pending Requests</p>
                 <h2 className="text-4xl font-bold text-white">{requests.filter(r => r.status === "pending").length}</h2>
               </div>
               <div className="bg-gradient-to-l from-green-500 to-green-600 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
                 <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-check-icon lucide-file-check"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-check-icon lucide-file-check"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m9 15 2 2 4-4" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Approved Requests</p>
                 <h2 className="text-4xl font-bold text-white">{requests.filter(r => r.status === "approved").length}</h2>
               </div>
               <div className="bg-gradient-to-l from-red-500 to-red-800 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
                 <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-x-icon lucide-file-x"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m15 11-6 6"/><path d="m9 11 6 6"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-x-icon lucide-file-x"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m15 11-6 6" /><path d="m9 11 6 6" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Rejected Requests</p>
                 <h2 className="text-4xl font-bold text-white">{requests.filter(r => r.status === "rejected").length}</h2>
@@ -390,12 +391,12 @@ const fetchHistory = async () => {
               />
             </div>
             {/* Table */}
-            <div className="overflow-x-auto shadow-md rounded-lg">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="overflow-x-auto max-h-[500px]">
+              <table className="min-w-full border border-gray-200 text-sm">
+                <thead className="bg-gray-50 sticky top-0">
                   <tr>
                     {/* Header checkbox */}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 ">
                       <input
                         type="checkbox"
                         checked={selectedRequests.length === currentRequests.length && currentRequests.length > 0}
@@ -405,12 +406,12 @@ const fetchHistory = async () => {
                     {columns.map((col, i) => (
                       <th
                         key={i}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                        className="px-6 py-3 text-left text-sm font-bold text-gray-700 "
                       >
                         {col.label}
                       </th>
                     ))}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-sm font-bold text-gray-700">
                       Actions
                     </th>
                   </tr>
@@ -435,8 +436,8 @@ const fetchHistory = async () => {
                             {col.customRender
                               ? col.customRender(request)
                               : col.format
-                              ? col.format(request[col.key])
-                              : request[col.key]}
+                                ? col.format(request[col.key])
+                                : request[col.key]}
                           </td>
                         ))}
                         <td className="px-6 py-4 text-sm relative">
@@ -502,31 +503,29 @@ const fetchHistory = async () => {
                   {filteredRequests.length === 0
                     ? "0"
                     : `${indexOfFirst + 1} to ${Math.min(
-                        indexOfLast,
-                        filteredRequests.length
-                      )}`}
+                      indexOfLast,
+                      filteredRequests.length
+                    )}`}
                   {" "}of {filteredRequests.length} entries
                 </div>
                 <div className="space-x-2">
                   <button
                     onClick={handlePrevious}
                     disabled={currentPage === 1}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage === 1
+                    className={`px-3 py-1 border rounded ${currentPage === 1
                         ? "bg-gray-200 text-gray-400"
                         : "bg-white hover:bg-gray-100"
-                    }`}
+                      }`}
                   >
                     Previous
                   </button>
                   <button
                     onClick={handleNext}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage === totalPages || totalPages === 0
+                    className={`px-3 py-1 border rounded ${currentPage === totalPages || totalPages === 0
                         ? "bg-gray-200 text-gray-400"
                         : "bg-white hover:bg-gray-100"
-                    }`}
+                      }`}
                   >
                     Next
                   </button>

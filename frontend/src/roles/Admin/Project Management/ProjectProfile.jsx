@@ -11,10 +11,9 @@ const ProjectProfile = () => {
 
   const tabClass = (path) =>
     `flex items-center gap-1 px-4 py-2 border-b-2 transition-all
-    ${
-      isActive(path)
-        ? "border-black text-gray-900 font-medium"
-        : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-400"
+    ${isActive(path)
+      ? "border-black text-gray-900 font-medium"
+      : "border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-400"
     }`;
 
   return (
@@ -47,26 +46,27 @@ const ProjectProfile = () => {
             </div>
 
             {/* Progress Billing with dropdown */}
-            <div className="relative group">
-              <button className={tabClass("billing")}>
-                Progress Billing
-                <span className="ml-1">▾</span>
-              </button>
-              <div className="absolute hidden group-hover:block bg-white border rounded shadow-lg mt-1 z-50">
-                <Link
-                  to={`/${project.billing_id}/table`}
-                  className="block px-4 py-2 hover:bg-gray-100"
-                >
-                  Progress Billing Table
-                </Link>
-                <Link
-                  to={`billing/${project.billing_id}/chart`}
-                  className="block px-4 py-2 hover:bg-gray-100"
-                >
-                  Recent Progress Chart
-                </Link>
-              </div>
-            </div>
+          {/* Progress Billing with dropdown */}
+<div className="relative group">
+  <Link to="billing" className={tabClass("billing")}>
+    Progress Billing
+  </Link>
+
+  {/* <div className="absolute hidden group-hover:block bg-white border rounded shadow-lg mt-1 z-50">
+    <Link
+      to={`billing/${project.billing_id}/table`}
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Progress Billing Table
+    </Link>
+    <Link
+      to={`billing/${project.billing_id}/chart`}
+      className="block px-4 py-2 hover:bg-gray-100"
+    >
+      Recent Progress Chart
+    </Link>
+  </div> */}
+</div>
 
             {/* Site Reports dropdown */}
             <div className="relative group">

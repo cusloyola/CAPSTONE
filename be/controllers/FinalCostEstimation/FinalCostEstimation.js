@@ -80,8 +80,6 @@ const sql = `
   });
 };
 
-
-
 const saveFinalEstimation = (req, res) => {
   const { proposal_id } = req.params;
   const { details, total, markup_percent, markup_amount, grand_total } = req.body;
@@ -90,39 +88,55 @@ const saveFinalEstimation = (req, res) => {
     return res.status(400).json({ error: "Missing required data" });
   }
 
-  const summaryQuery = `
-    INSERT INTO final_estimation_summary 
-    (proposal_id, total, markup_percent, markup_amount, grand_total)
-    VALUES (?, ?, ?, ?, ?)
-  `;
+  // Step 1: Check if a summary already exists
+  const checkQuery = `SELECT 1 FROM final_estimation_summary WHERE proposal_id = ? LIMIT 1`;
+  db.query(checkQuery, [proposal_id], (checkErr, checkResults) => {
+    if (checkErr) {
+      console.error("❌ Error checking existing summary:", checkErr);
+      return res.status(500).json({ error: "Failed to check existing summary" });
+    }
 
-  db.query(
-    summaryQuery,
-    [proposal_id, total, markup_percent, markup_amount, grand_total],
-    (summaryErr, summaryResult) => {
+    if (checkResults.length > 0) {
+      return res.status(400).json({ error: "Final estimation for this proposal already exists. Delete it first to save again." });
+    }
+
+    // Step 2: Insert summary
+    const summaryQuery = `
+      INSERT INTO final_estimation_summary 
+        (proposal_id, total, markup_percent, markup_amount, grand_total)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    db.query(summaryQuery, [proposal_id, total, markup_percent, markup_amount, grand_total], (summaryErr, summaryResult) => {
       if (summaryErr) {
         console.error("❌ Error inserting summary:", summaryErr);
         return res.status(500).json({ error: "Failed to insert summary" });
       }
 
-      const values = details.map((item) => [item.sow_proposal_id, item.amount]);
+      // Step 3: Prepare details with remaining_amount = amount
+      const values = details.map(item => [
+        proposal_id, 
+        item.sow_proposal_id, 
+        item.amount, 
+        item.amount // remaining_amount same as amount initially
+      ]);
 
       const detailQuery = `
-        INSERT INTO final_estimation_details (sow_proposal_id, amount)
+        INSERT INTO final_estimation_details (proposal_id, sow_proposal_id, amount, remaining_amount)
         VALUES ?
       `;
-
       db.query(detailQuery, [values], (detailErr) => {
         if (detailErr) {
           console.error("❌ Error inserting details:", detailErr);
           return res.status(500).json({ error: "Failed to insert details" });
         }
 
-        res.status(201).json({ message: "Final estimation saved successfully" });
+        return res.status(201).json({ message: "Final estimation saved successfully" });
       });
-    }
-  );
+    });
+  });
 };
+
+ 
 
 module.exports = {
     getFinalCostByProposalId,

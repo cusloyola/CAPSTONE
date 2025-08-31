@@ -20,7 +20,7 @@ import {
   PlusIcon,
   FileIcon,
 
-  
+
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
@@ -51,7 +51,7 @@ const navItems = [
   },
 
   {
-    icon: <UserIcon  />,
+    icon: <UserIcon />,
     name: "User Management",
     subItems: [{ name: "User Accounts", path: "/UserManagement", pro: false }],
   },
@@ -73,16 +73,29 @@ const navItems = [
     icon: <ListIcon />,
     name: "Inventory & Resources",
     subItems:
-    [
-      { name: "Inventory Management", path: "/InventoryManagement", pro: false, }, 
-       { name: "Resource Management", path: "/ResourceManagement", pro: false }, 
-      { name: "Inventory Monitoring", path: "/InventoryMonitoring", pro: false }, 
-    ],
+      [
+        { name: "Resource Management", path: "/ResourceManagement", pro: false },
+      ],
   },
   {
     icon: <PlusIcon />,
     name: "Request Management ",
-    subItems: [{ name: "Material Request", path: "/MaterialRequestManagement", pro: false }],
+    subItems:
+      [
+        { name: "Material Control Cost", path: "/MaterialControlCost", pro: false },
+        { name: "Material Request", path: "/MaterialRequestManagement", pro: false },
+      ],
+  },
+  {
+    icon: <PlusIcon />,
+    name: "Reports ",
+    subItems:
+      [
+        { name: "Daily Site", path: "/MaterialControlCost", pro: false },
+        { name: "Weekly Safety ", path: "/MaterialRequestManagement", pro: false },
+        { name: "Incident", path: "/MaterialRequestManagement", pro: false },
+
+      ],
   },
   // {
   //   icon: <FolderIcon />,
@@ -93,7 +106,7 @@ const navItems = [
     icon: <FileIcon />,
     name: "Contract Management",
     subItems: [{ name: "Employee Application Contract", path: "/EmploymentContract", pro: false },
-      { name: "Leave Application Contract", path: "/LeaveContract", pro: false },
+    { name: "Leave Application Contract", path: "/LeaveContract", pro: false },
     ],
   },
   // {
@@ -104,12 +117,12 @@ const navItems = [
   {
     icon: <FolderIcon />,
     name: "Reports",
-    subItems: 
-    [
-      { name: "Manage Safety Reports", path: "/SafetyReportsManagement", pro: false },
-      { name: "Manage Incident Reports", path: "/ViewIncidentReportAdmin", pro: false }, 
-    ],
-    
+    subItems:
+      [
+        { name: "Manage Safety Reports", path: "/SafetyReportsManagement", pro: false },
+        { name: "Manage Incident Reports", path: "/ViewIncidentReportAdmin", pro: false },
+      ],
+
   },
 
 
@@ -213,15 +226,15 @@ const AdminSidebar = () => {
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
               className={`menu-item group ${openSubmenu && openSubmenu.type === menuType && openSubmenu.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
+                ? "menu-item-active"
+                : "menu-item-inactive"
                 } cursor-pointer ${!isExpanded && !isHovered ? "lg:justify-center" : "lg:justify-start"
                 }`}
             >
               <span
                 className={`menu-item-icon-size ${openSubmenu && openSubmenu.type === menuType && openSubmenu.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
+                  ? "menu-item-icon-active"
+                  : "menu-item-icon-inactive"
                   }`}
               >
                 {nav.icon}
@@ -232,8 +245,8 @@ const AdminSidebar = () => {
               {(isExpanded || isHovered || isMobileOpen) && (
                 <ChevronDownIcon
                   className={`ml-auto w-5 h-5 transition-transform duration-200 ${openSubmenu && openSubmenu.type === menuType && openSubmenu.index === index
-                      ? "rotate-180 text-brand-500"
-                      : ""
+                    ? "rotate-180 text-brand-500"
+                    : ""
                     }`}
                 />
               )}
@@ -247,8 +260,8 @@ const AdminSidebar = () => {
               >
                 <span
                   className={`menu-item-icon-size ${isActive(nav.path)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
+                    ? "menu-item-icon-active"
+                    : "menu-item-icon-inactive"
                     }`}
                 >
                   {nav.icon}
@@ -278,8 +291,8 @@ const AdminSidebar = () => {
                     <Link
                       to={subItem.path}
                       className={`menu-dropdown-item ${isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
+                        ? "menu-dropdown-item-active"
+                        : "menu-dropdown-item-inactive"
                         }`}
                     >
                       {subItem.name}
@@ -287,8 +300,8 @@ const AdminSidebar = () => {
                         {subItem.new && (
                           <span
                             className={`ml-auto ${isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
+                              ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
                               } menu-dropdown-badge`}
                           >
                             new
@@ -297,8 +310,8 @@ const AdminSidebar = () => {
                         {subItem.pro && (
                           <span
                             className={`ml-auto ${isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
+                              ? "menu-dropdown-badge-active"
+                              : "menu-dropdown-badge-inactive"
                               } menu-dropdown-badge`}
                           >
                             pro
@@ -319,17 +332,15 @@ const AdminSidebar = () => {
   return (
     <aside
       className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
-        ${
-          isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"
+        ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`py-8 flex ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-        }`}
+        className={`py-8 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+          }`}
       >
         <Link to="/">
           {isExpanded || isHovered || isMobileOpen ? (
@@ -364,9 +375,8 @@ const AdminSidebar = () => {
           <div className="flex flex-col gap-4">
             <div>
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-                }`}
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? "Menu" : <HorizontaLDots className="size-6" />}
               </h2>
@@ -374,9 +384,8 @@ const AdminSidebar = () => {
             </div>
             <div className="">
               <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                  !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-                }`}
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
+                  }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? " " : <HorizontaLDots />}
               </h2>

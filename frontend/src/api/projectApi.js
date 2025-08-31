@@ -15,3 +15,17 @@ export const fetchProjectInfo = async (project_id) => {
     return null;
   }
 };
+
+//List of Projects
+export const fetchProjectsWithApproved = async () => {
+  try {
+    const response = await fetch(`${API_URL}/projects/with-approved`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch projects with approved proposals");
+    }
+    return await response.json();
+  } catch (err) {
+    console.error("Error fetching projects:", err);
+    return [];
+  }
+};

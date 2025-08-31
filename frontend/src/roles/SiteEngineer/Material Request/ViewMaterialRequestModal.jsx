@@ -107,7 +107,6 @@ const ViewMaterialRequestModal = ({ report, materials = [], onClose }) => {
                     <tr>
                       <th className="text-left font-semibold pb-2">Material</th>
                       <th className="text-left font-semibold pb-2">Brand</th>
-                      <th className="text-left font-semibold pb-2">Unit</th>
                       <th className="text-left font-semibold pb-2">Quantity</th>
                       <th className="text-left font-semibold pb-2">Unit Cost</th>
                       <th className="text-left font-semibold pb-2">Cost</th>
@@ -118,7 +117,6 @@ const ViewMaterialRequestModal = ({ report, materials = [], onClose }) => {
                       <tr key={idx}>
                         <td className="py-1">{mat.material_name}</td>
                         <td className="py-1">{mat.brand_name || "N/A"}</td>
-                        <td className="py-1">{mat.unitName}</td>
                         <td className="py-1 text-right">
                           {mat.request_quantity}
                         </td>

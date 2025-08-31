@@ -21,6 +21,10 @@ import ViewSafetyReportAdmin from "./roles/Admin/Safety Report/SafetyReportsMana
 import ViewIncidentReportAdmin from "./roles/Admin/Incident Report/ViewIncidentReportAdmin.jsx";
 
 import ResoureManagement from "./roles/Admin/Resource Management/ResourceManagement.jsx";
+import MaterialControlCost from "./roles/Admin/Request Management/Material Control Cost/MaterialControlCost.jsx";
+import MaterialControlDetails from "./roles/Admin/Request Management/Material Control Cost/MaterialControlDetails.jsx";
+
+
 
 // site
 import SiteProjectInfo from "./roles/SiteEngineer/Site Project Info/SiteProjectInfo.jsx";
@@ -113,6 +117,8 @@ import GanttChartSetup from "./roles/Admin/Project Gantt Chart/Gantt Chart Setup
 
 
 
+
+
 //Admin Site Report
 import AdminDailySiteReport from "./roles/Admin/Site Report/Admin Daily Site Report/AdminDailySiteReport.jsx";
 
@@ -169,6 +175,13 @@ export default function App() {
               <Route path="/AllPendingProjects" element={<AllPendingProjects />} />
               <Route path="/InProgressProjectTable" element={<InProgressProjectTable />} />
               <Route path="/ResourceManagement" element={<ResoureManagement />} />
+
+
+              <Route path="/MaterialControlCost" element={<MaterialControlCost />} />
+              <Route
+                path="/projects/:project_id/materialcontrol"
+                element={<MaterialControlDetails />}
+              />
 
               <Route path="/AllPendingProjects/:project_id/profile" element={<ProjectLayout />}>
                 <Route element={<ProjectProfile />}>

@@ -93,6 +93,8 @@ const resourceRoutes = require('./routes/Resource/resourceRoutes');
 const resourceRequestRoutes = require('./routes/Resource/resourceRequestRoutes');
 
 
+const materialcontrolRoutes = require('./routes/MaterialControlCostRoutes/materialcontrolRoutes');
+
 // Import the clientInfoRoutes for the /api/client-info endpoint
 const clientInfoRoutes = require('./routes/ProjectInfoRoutes/clientInfoRoutes');
 
@@ -166,6 +168,9 @@ app.use('/api/cost-estimation', finalcostestimationRoutes);
 
 app.use('/api/progress-billing',progressbillingRoutes );
 app.use('/api/gantt-chart', adminGanttChartRoutes);
+
+
+app.use('/api/materialcontrol', materialcontrolRoutes);
 
 
 
