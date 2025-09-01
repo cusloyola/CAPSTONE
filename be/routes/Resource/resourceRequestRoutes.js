@@ -56,7 +56,7 @@ router.put("/request-materials/:requestId/approve", (req, res, next) => {
 }, approveRequest);
 
 // Route to reject a specific materials request by ID
-router.put("/request-materials/reject/:requestId", (req, res, next) => {
+router.put("/request-materials/:requestId/reject", (req, res, next) => {
     console.log(`PUT /api/resources/request-materials/reject/${req.params.requestId} requested`);
     next();
 }, rejectRequest);

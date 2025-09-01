@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import PageMeta from '../../components/common/PageMeta';
+import PageMeta from '../../../components/common/PageMeta';
 import axios from 'axios';
+import { submitRequest } from '../../../api/materialRequests';
 
 const RESOURCES_API_URL = "http://localhost:5000/api/resources";
 const BRANDS_API_URL = "http://localhost:5000/api/resource/brands";
@@ -15,7 +16,7 @@ const RequestMaterial = () => {
   const [notes, setNotes] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
-  const [limit, setLimit] = useState(10); // Default limit for entries per page
+  const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [materials, setMaterials] = useState([]);
@@ -139,16 +140,16 @@ const RequestMaterial = () => {
       prev.map(m =>
         m.item_id === id
           ? {
-              ...m,
-              request_quantity: value,
-              // Validate quantity: must be at least 1 and not exceed available stock
-              error:
-                !value || value <= 0
-                  ? 'Quantity must be at least 1'
-                  : value > m.stock_quantity
+            ...m,
+            request_quantity: value,
+            // Validate quantity: must be at least 1 and not exceed available stock
+            error:
+              !value || value <= 0
+                ? 'Quantity must be at least 1'
+                : value > m.stock_quantity
                   ? 'Exceeds available stock!'
                   : '',
-            }
+          }
           : m
       )
     );
@@ -166,41 +167,30 @@ const RequestMaterial = () => {
   };
 
 
-  // Function to submit the material request
-  const submitRequest = async () => {
-    setRequestError(''); // Clear previous request errors
-    try {
-      await axios.post('http://localhost:5000/api/request-materials/create', {
-        selectedProject,
-        urgency,
-        notes,
-        // Send only necessary data for selected materials
-        selectedMaterials: selectedMaterials.map(m => ({
-          item_id: m.item_id,
-          request_quantity: m.request_quantity,
-        })),
-      });
+  const handleSubmission = async () => {
+    setRequestError('');
 
+    const result = await submitRequest(
+      selectedProject,
+      urgency,
+      notes,
+      selectedMaterials
+    );
 
+    if (result.success) {
       console.log('Request submitted successfully!');
-      closeModal(); // Close the confirmation modal
-      // Reset all form states after successful submission
+      // Assuming you have a function to close the modal
+      // closeModal(); 
       setSelectedMaterials([]);
       setUrgency('');
       setSelectedProject('');
       setNotes('');
-      setRequestSent(true); // Show success message modal
-    } catch (err) {
-      console.error('Error submitting request:', err);
-      // Display specific error message if available from backend, otherwise a generic one
-      if (err.response && err.response.data && err.response.data.error) {
-        setRequestError(err.response.data.error);
-      } else {
-        setRequestError('Failed to submit request. Please try again.');
-      }
+      setRequestSent(true);
+    } else {
+      console.error('Error submitting request:', result.error);
+      setRequestError(result.error);
     }
   };
-
 
   // Determine if the request form is invalid (for disabling submit button)
   const isRequestInvalid =
@@ -396,9 +386,8 @@ const RequestMaterial = () => {
                         parseInt(e.target.value, 10) || ''
                       )
                     }
-                    className={`w-full p-2 border rounded mt-1 ${
-                      material.error ? 'border-red-500' : ''
-                    }`}
+                    className={`w-full p-2 border rounded mt-1 ${material.error ? 'border-red-500' : ''
+                      }`}
                   />
                   {material.error && (
                     <p className="text-red-500 text-sm mt-1">{material.error}</p>
@@ -495,7 +484,7 @@ const RequestMaterial = () => {
             <div className="flex justify-end mt-6">
               <button
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
-                onClick={submitRequest}
+                onClick={handleSubmission}
               >
                 Submit Request
               </button>

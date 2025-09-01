@@ -2,7 +2,17 @@
 
 const db = require("../config/db"); // Adjust the path as needed
 const moment = require('moment');
+const generateStructuredId = require("../generated/GenerateCodes/generatecode"); // adjust path
 
+// Helper to promisify queries
+function queryAsync(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.query(sql, params, (err, results) => {
+      if (err) return reject(err);
+      resolve(results);
+    });
+  });
+}
 
 const getRequestMaterialItems = (req, res) => {
   db.query(
@@ -27,93 +37,91 @@ const getRequestMaterialItems = (req, res) => {
 };
 
 
-const createRequestedMaterials = (req, res) => {
+const createRequestedMaterials = async (req, res) => {
   const { selectedProject, urgency, notes, selectedMaterials } = req.body;
-
-  console.log("Received request to create materials:", req.body); // Debugging log
 
   if (!selectedProject || !urgency || !selectedMaterials || selectedMaterials.length === 0) {
     return res.status(400).json({ error: "Missing required fields." });
   }
 
-  // Input validation for selectedMaterials
-  if (!Array.isArray(selectedMaterials) || selectedMaterials.some(item => !item.item_id || !item.request_quantity)) {
-    return res.status(400).json({ error: "Invalid selectedMaterials format." });
-  }
+  try {
+    // Start transaction
+    await queryAsync("START TRANSACTION");
 
-  db.beginTransaction((err) => {
-    if (err) {
-      console.error("Database transaction error:", err); // Debugging Log
-      return res.status(500).json({ error: "Database transaction error." });
+    // Generate a single unique request_id for requested_materials
+    const request_id = await generateStructuredId(
+      "111",
+      "requested_materials",
+      "request_id"
+    );
+
+    // Insert into requested_materials table
+    await queryAsync(
+      "INSERT INTO requested_materials (request_id, project_id, urgency, notes) VALUES (?, ?, ?, ?)",
+      [request_id, selectedProject, urgency, notes]
+    );
+
+    // Get a unique starting ID for the items
+    const startId = await generateStructuredId(
+      "110",
+      "requested_material_items",
+      "item_request_id"
+    );
+    let serialCounter = parseInt(startId.slice(-3));
+
+    // Insert requested_material_items
+    const values = [];
+    for (const item of selectedMaterials) {
+      // Create a new unique ID by incrementing the counter
+      const year = new Date().getFullYear().toString().slice(-2);
+      const item_request_id = `110${year}${String(serialCounter).padStart(3, "0")}`;
+      serialCounter++;
+
+      values.push([item_request_id, request_id, item.resource_id, item.request_quantity]);
     }
 
-    db.query(
-      "INSERT INTO requested_materials (project_name, urgency, notes) VALUES (?, ?, ?)",
-      [selectedProject, urgency, notes],
-      (err, requestResults) => {
-        if (err) {
-          console.error("❌ Error inserting requested materials:", err);
-          return db.rollback(() => {
-            return res.status(500).json({ error: "Error creating request." });
-          });
-        }
+    if (values.length > 0) {
+      await queryAsync(
+        "INSERT INTO requested_material_items (item_request_id, request_id, resource_id, request_quantity) VALUES ?",
+        [values]
+      );
+    }
 
-        const request_id = requestResults.insertId;
-        console.log("Inserted requested materials, request ID:", request_id); // Debugging log
+    // Commit transaction
+    await queryAsync("COMMIT");
 
-        const values = selectedMaterials.map((item) => [
-          request_id,
-          item.item_id,
-          item.request_quantity,
-        ]);
-
-        db.query(
-          "INSERT INTO requested_material_items (request_id, item_id, request_quantity) VALUES ?",
-          [values],
-          (err) => {
-            if (err) {
-              console.error("❌ Error inserting requested material items:", err);
-              return db.rollback(() => {
-                return res.status(500).json({ error: "Error adding items to request." });
-              });
-            }
-
-            console.log("Inserted requested material items"); // Debugging log
-
-            db.commit((err) => {
-              if (err) {
-                console.error("❌ Error committing transaction:", err);
-                return db.rollback(() => {
-                  return res.status(500).json({ error: "Error completing request." });
-                });
-              }
-              console.log("✅ Request created successfully.");
-              return res.status(201).json({ message: "Request created successfully." });
-            });
-          }
-        );
-      }
-    );
-  });
+    console.log("✅ Request created successfully.");
+    return res.status(201).json({
+      message: "Request created successfully.",
+      request_id
+    });
+  } catch (err) {
+    console.error("❌ Transaction failed:", err);
+    await queryAsync("ROLLBACK");
+    return res.status(500).json({
+      error: "Failed to create request.",
+      details: err.message
+    });
+  }
 };
-
 
 const getRequestedMaterialsHistory = (req, res) => {
   db.query(
     `SELECT 
       rm.request_id, 
-      rm.project_name, 
+      p.project_name, 
       rm.urgency, 
       rm.notes, 
       rm.is_approved, 
       rm.request_date,
       rm.approved_at, 
-      rmi.item_id, 
+      rmi.resource_id, 
       ii.item_name, 
       rmi.request_quantity 
     FROM requested_materials rm
     JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
-    JOIN inventory_items ii ON rmi.item_id = ii.item_id
+    JOIN projects p ON rmi.project_id = p.project_id
+    JOIN inventory_items ii ON rmi.resource_id = ii.item_id
     ORDER BY rm.request_id`,
     (err, results) => {
       if (err) {
@@ -144,10 +152,10 @@ const getRequestedMaterialsHistory = (req, res) => {
               row.is_approved === 1
                 ? 'approved'
                 : row.is_approved === 2
-                ? 'rejected'
-                : 'pending',
+                  ? 'rejected'
+                  : 'pending',
             request_date: row.request_date,
-            approved_at: row.approved_at, 
+            approved_at: row.approved_at,
             items: [{
               item_id: row.item_id,
               item_name: row.item_name,

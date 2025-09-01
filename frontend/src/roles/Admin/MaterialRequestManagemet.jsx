@@ -5,7 +5,8 @@ import axios from 'axios';
 import MaterialRequestPDF from "../SiteEngineer/Material Request/MaterialRequestPDF";
 import exportMaterialRequestPDF from "../SiteEngineer/Material Request/exportMaterialRequest";
 import ViewMaterialRequestModalAdmin from "../SiteEngineer/Material Request/ViewMaterialRequestModalAdmin";
-// Define the columns for the table
+import { fetchHistory, approveRequest, rejectRequest  } from '../../api/materialRequests'; 
+
 const COLUMNS = [
   { key: "project_name", label: "Project Name" },
   { key: "urgency", label: "Urgency" },
@@ -63,52 +64,19 @@ const MaterialRequestManagement = () => {
   const [viewMaterials, setViewMaterials] = useState([]);
 
   // Fetch requested materials history from backend
-  // Fetch requested materials history from backend
-  const fetchHistory = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/api/resources/request-materials/history");
-      if (!response.ok) throw new Error("Failed to fetch history");
-      const data = await response.json();
-      const updatedRequests = Array.isArray(data)
-        ? data.map(r => {
-          let parsedItems = [];
-          try {
-            // Attempt to parse the items field if it exists and is a string
-            if (r.items && typeof r.items === "string") {
-              parsedItems = JSON.parse(r.items);
-            } else if (Array.isArray(r.items)) {
-              parsedItems = r.items;
-            }
-          } catch (e) {
-            console.error("Failed to parse items for request ID:", r.request_id, e);
-            parsedItems = []; // Default to empty array on error
-          }
+   useEffect(() => {
+    const getHistory = async () => {
+      const result = await fetchHistory();
+      if (result.success) {
+        setRequests(result.data);
+      } else {
+        setRequests([]);
+        setErrorMessage(result.error);
+        setShowErrorModal(true);
+      }
+    };
 
-          return {
-            ...r,
-            // Assign the parsed items to the request object
-            items: parsedItems,
-            // Map is_approved to status for display and filtering
-            status:
-              r.is_approved === 1
-                ? "approved"
-                : r.is_approved === 2
-                  ? "rejected"
-                  : "pending",
-          };
-        })
-        : [];
-      setRequests(updatedRequests);
-    } catch (err) {
-      console.error("Failed to fetch material requests.", err);
-      setRequests([]);
-      setErrorMessage("Failed to fetch material requests.");
-      setShowErrorModal(true);
-    }
-  };
-
-  useEffect(() => {
-    fetchHistory();
+    getHistory();
   }, []);
 
   // Close the action menu if a user clicks outside of it
@@ -195,36 +163,33 @@ const MaterialRequestManagement = () => {
     }, 100);
   };
 
-  // Approve/Reject handlers
-  const handleApprove = async (requestId) => {
-    try {
-      await axios.put(`http://localhost:5000/api/resources/request-materials/${requestId}/approve`);
-      fetchHistory(); // Re-fetch to get the updated status
-      setShowApproveModal(false);
-      setRequestToApprove(null);
-      setSuccessMessage('Material request successfully approved!');
-      setShowSuccessModal(true);
-    } catch (err) {
-      setErrorMessage('Failed to approve request.');
-      setShowErrorModal(true);
-    }
-  };
+const handleApprove = async (requestId) => {
+  const result = await approveRequest(requestId);
+  if (result.success) {
+    fetchHistory(); // Re-fetch to get the updated status
+    setShowApproveModal(false);
+    setRequestToApprove(null);
+    setSuccessMessage(result.message);
+    setShowSuccessModal(true);
+  } else {
+    setErrorMessage(result.error);
+    setShowErrorModal(true);
+  }
+};
 
-  const handleDisapprove = async (requestId) => {
-    try {
-      // await axios.put(`http://localhost:5000/api/resources/request-materials/${requestId}/reject`);
-      await axios.put(`http://localhost:5000/api/request-materials/${requestId}/reject`);
-      fetchHistory(); // Re-fetch to get the updated status
-      setShowRejectModal(false);
-      setRequestToReject(null);
-      setSuccessMessage('Material request successfully rejected!');
-      setShowSuccessModal(true);
-    } catch (err) {
-      setErrorMessage('Failed to reject request.');
-      setShowErrorModal(true);
-    }
-  };
-
+const handleDisapprove = async (requestId) => {
+  const result = await rejectRequest(requestId);
+  if (result.success) {
+    fetchHistory(); // Re-fetch to get the updated status
+    setShowRejectModal(false);
+    setRequestToReject(null);
+    setSuccessMessage(result.message);
+    setShowSuccessModal(true);
+  } else {
+    setErrorMessage(result.error);
+    setShowErrorModal(true);
+  }
+};
   // Handle actions like "view", "approve", or "reject" for a specific request
   const handleAction = (request, type) => {
     if (type === "approve") {

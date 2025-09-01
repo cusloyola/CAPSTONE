@@ -2,6 +2,7 @@
 
 const db = require("../../config/db");
 const moment = require("moment");
+const { generateStructuredId } = require("../../generated/GenerateCodes/generatecode");
 
 /**
  * @description Retrieves a list of all resources with details from related tables, including search, filter, and pagination.
@@ -148,83 +149,86 @@ const getRequestMaterialItems = (req, res) => {
         }
     );
 };
-
-
 const createRequestedMaterials = (req, res) => {
     const { selectedProject, urgency, notes, selectedMaterials } = req.body;
-
-    console.log("Received request to create materials:", req.body); // Debugging log
 
     if (!selectedProject || !urgency || !selectedMaterials || selectedMaterials.length === 0) {
         return res.status(400).json({ error: "Missing required fields." });
     }
 
-    // Input validation for selectedMaterials
-    if (!Array.isArray(selectedMaterials) || selectedMaterials.some(item => !item.item_id || !item.request_quantity)) {
-        return res.status(400).json({ error: "Invalid selectedMaterials format." });
-    }
-
     db.beginTransaction((err) => {
         if (err) {
-            console.error("Database transaction error:", err); // Debugging Log
+            console.error("❌ Transaction start error:", err);
             return res.status(500).json({ error: "Database transaction error." });
         }
 
-        db.query(
-            "INSERT INTO requested_materials (project_name, urgency, notes) VALUES (?, ?, ?)",
-            [selectedProject, urgency, notes],
-            (err, requestResults) => {
-                if (err) {
-                    console.error("❌ Error inserting requested materials:", err);
-                    return db.rollback(() => {
-                        return res.status(500).json({ error: "Error creating request." });
+        // Generate request_id for requested_materials (111)
+        generateStructuredId("111", "requested_materials", "request_id", (err, request_id) => {
+            if (err) {
+                console.error("❌ Error generating request_id:", err);
+                return db.rollback(() => res.status(500).json({ error: err }));
+            }
+
+            db.query(
+                "INSERT INTO requested_materials (request_id, project_id, urgency, notes) VALUES (?, ?, ?, ?)",
+                [request_id, selectedProject, urgency, notes],
+                (err) => {
+                    if (err) {
+                        console.error("❌ Error inserting requested_materials:", err);
+                        return db.rollback(() => res.status(500).json({ error: err }));
+                    }
+
+                    // Generate item_request_id for each item and prepare values
+                    const values = [];
+                    let count = 0;
+
+                    selectedMaterials.forEach((item) => {
+                        generateStructuredId("110", "requested_material_items", "item_request_id", (err, item_request_id) => {
+                            if (err) {
+                                console.error("❌ Error generating item_request_id:", err);
+                                return db.rollback(() => res.status(500).json({ error: err }));
+                            }
+
+                            values.push([item_request_id, request_id, item.resource_id, item.request_quantity]);
+                            count++;
+
+                            // Once all items have generated IDs
+                            if (count === selectedMaterials.length) {
+                                db.query(
+                                    "INSERT INTO requested_material_items (item_request_id, request_id, resource_id, request_quantity) VALUES ?",
+                                    [values],
+                                    (err) => {
+                                        if (err) {
+                                            console.error("❌ Error inserting requested_material_items:", err);
+                                            return db.rollback(() => res.status(500).json({ error: err }));
+                                        }
+
+                                        db.commit((err) => {
+                                            if (err) {
+                                                console.error("❌ Error committing transaction:", err);
+                                                return db.rollback(() => res.status(500).json({ error: err }));
+                                            }
+                                            console.log("✅ Request created successfully.");
+                                            return res.status(201).json({ message: "Request created successfully.", request_id });
+                                        });
+                                    }
+                                );
+                            }
+                        });
                     });
                 }
-
-                const request_id = requestResults.insertId;
-                console.log("Inserted requested materials, request ID:", request_id); // Debugging log
-
-                const values = selectedMaterials.map((item) => [
-                    request_id,
-                    item.item_id,
-                    item.request_quantity,
-                ]);
-
-                db.query(
-                    "INSERT INTO requested_material_items (request_id, item_id, request_quantity) VALUES ?",
-                    [values],
-                    (err) => {
-                        if (err) {
-                            console.error("❌ Error inserting requested material items:", err);
-                            return db.rollback(() => {
-                                return res.status(500).json({ error: "Error adding items to request." });
-                            });
-                        }
-
-                        console.log("Inserted requested material items"); // Debugging log
-
-                        db.commit((err) => {
-                            if (err) {
-                                console.error("❌ Error committing transaction:", err);
-                                return db.rollback(() => {
-                                    return res.status(500).json({ error: "Error completing request." });
-                                });
-                            }
-                            console.log("✅ Request created successfully.");
-                            return res.status(201).json({ message: "Request created successfully." });
-                        });
-                    }
-                );
-            }
-        );
+            );
+        });
     });
 };
 
+
 const getRequestedMaterialsHistory = (req, res) => {
     const query = `
-  SELECT
+SELECT
     rm.request_id,
-    rm.project_name,
+    p.project_name,
+    p.location,
     rm.urgency,
     rm.notes,
     rm.is_approved,
@@ -235,7 +239,7 @@ const getRequestedMaterialsHistory = (req, res) => {
         GROUP_CONCAT(
             JSON_OBJECT(
                 'item_request_id', rmi.item_request_id,
-                'item_id', rmi.item_id,
+                'resource_id', rmi.resource_id,
                 'request_quantity', rmi.request_quantity,
                 'material_name', r.material_name,
                 'brand_name', rb.brand_name,
@@ -246,12 +250,14 @@ const getRequestedMaterialsHistory = (req, res) => {
         ']'
     ) AS items
 FROM requested_materials rm
+LEFT JOIN projects p ON rm.project_id = p.project_id
 LEFT JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
-LEFT JOIN resource r ON rmi.item_id = r.resource_id
+LEFT JOIN resource r ON rmi.resource_id = r.resource_id
 LEFT JOIN resource_brand rb ON r.brand_id = rb.brand_id
 LEFT JOIN unit_of_measure u ON r.unitId = u.unitId
 GROUP BY rm.request_id
 ORDER BY rm.request_id DESC;
+
     `;
 
     db.query(query, (err, results) => {
@@ -309,7 +315,7 @@ const approveRequest = (req, res) => {
                 
                 // Second query: Get the list of items associated with the request
                 db.query(
-                    'SELECT item_id, request_quantity FROM requested_material_items WHERE request_id = ?',
+                    'SELECT resource_id, request_quantity FROM requested_material_items WHERE request_id = ?',
                     [requestId],
                     (err, itemsResults) => {
                         if (err) {

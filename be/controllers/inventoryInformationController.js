@@ -189,14 +189,14 @@ const getFastMovingItems = (req, res) => {
 
   const query = `
     SELECT
-      rmi.item_id,
+      rmi.resource_id,
       ii.item_name,
       SUM(rmi.request_quantity) AS total_requested_quantity
     FROM requested_material_items rmi
     JOIN requested_materials rm ON rmi.request_id = rm.request_id
-    JOIN inventory_items ii ON rmi.item_id = ii.item_id
+    JOIN inventory_items ii ON rmi.resource_id = ii.item_id
     WHERE rm.is_approved = 1
-    GROUP BY rmi.item_id, ii.item_name
+    GROUP BY rmi.resource_id, ii.item_name
     ORDER BY total_requested_quantity DESC
     LIMIT 5;
   `;
@@ -229,14 +229,14 @@ const getSlowMovingItems = (req, res) => {
 
   const query = `
     SELECT
-      rmi.item_id,
+     rmi.resource_id,
       ii.item_name,
       SUM(rmi.request_quantity) AS total_requested_quantity
     FROM requested_material_items rmi
     JOIN requested_materials rm ON rmi.request_id = rm.request_id
-    JOIN inventory_items ii ON rmi.item_id = ii.item_id
+    JOIN inventory_items ii ON rmi.resource_id = ii.item_id
     WHERE rm.is_approved = 1
-    GROUP BY rmi.item_id, ii.item_name
+    GROUP BY rmi.resource_id, ii.item_name
     ORDER BY total_requested_quantity ASC
     LIMIT 5;
   `;

@@ -1,6 +1,37 @@
 import { API_URL } from "./api";
 
 
+export const fetchBrands = async () => {
+  try {
+    const response = await fetch(`${API_URL}/resource/brands`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('API Error: Failed to fetch brands', error);
+    throw new Error('Failed to fetch brand categories.');
+  }
+};
+
+// Fetch all available projects
+export const fetchProjects = async () => {
+  try {
+    const response = await fetch(`${API_URL}/projects`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('API Error: Failed to fetch projects', error);
+    throw new Error('Failed to fetch projects.');
+  }
+};
+
+
+
 //Project Information
 export const fetchProjectInfo = async (project_id) => {
   try {
