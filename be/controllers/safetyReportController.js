@@ -1,15 +1,13 @@
 const db = require("../config/db"); // ✅ CommonJS import
 const fs = require("fs");
 const path = require("path");
-
+const generateStructuredId = require("../generated/GenerateCodes/generatecode"); // adjust path
 
 // 📌 Create Safety Report
-const createSafetyReport = (req, res) => {
+const createSafetyReport = async (req, res) => {
   try {
-
     const { project_id, report_date, description, user_id } = req.body;
 
-    // Save image paths if uploaded
     const image1 = req.files?.image1
       ? `uploads/weeklySafetyReports/${req.files.image1[0].filename}`
       : null;
@@ -17,37 +15,56 @@ const createSafetyReport = (req, res) => {
       ? `uploads/weeklySafetyReports/${req.files.image2[0].filename}`
       : null;
 
-    // Insert into DB
+    // Generate the new structured ID before inserting
+    const safety_report_id = await generateStructuredId(
+      "108",
+      "weekly_safety_report",
+      "safety_report_id"
+    );
+
+    // Insert into DB with the new structured ID
     db.query(
       `INSERT INTO weekly_safety_report 
-       (project_id, report_date, description, image1, image2, user_id) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [project_id, report_date, description, image1, image2, user_id],
+      (safety_report_id, project_id, report_date, description, image1, image2, user_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        safety_report_id,
+        project_id,
+        report_date,
+        description,
+        image1,
+        image2,
+        user_id,
+      ],
       (err, result) => {
         if (err) {
           console.error("❌ SQL Error (createSafetyReport):", err);
           if (err.code === "ER_DUP_ENTRY") {
             return res
               .status(400)
-              .json({ error: "A report already exists for this project and date." });
+              .json({
+                error: "A report already exists for this project and date.",
+              });
           }
-          return res.status(500).json({ error: "Server error while creating report" });
+          return res
+            .status(500)
+            .json({ error: "Server error while creating report" });
         }
 
-        console.log("✅ Report inserted with ID:", result.insertId);
+        console.log("✅ Report inserted with ID:", safety_report_id);
 
-        // Fetch project name and user full_name for the frontend immediately
+        // Fetch project name and user full_name
         db.query(
           `SELECT p.project_name, u.full_name 
-           FROM projects p 
-           JOIN users u ON u.user_id = ? 
-           WHERE p.project_id = ?`,
+          FROM projects p 
+          JOIN users u ON u.user_id = ? 
+          WHERE p.project_id = ?`,
           [user_id, project_id],
           (fetchErr, rows) => {
             if (fetchErr) {
               console.warn("⚠️ Could not fetch project/user info:", fetchErr);
               return res.status(201).json({
-                safety_report_id: result.insertId,
+                safety_report_id, // Use the new ID
                 project_id,
                 report_date,
                 description,
@@ -64,7 +81,7 @@ const createSafetyReport = (req, res) => {
             const full_name = rows[0]?.full_name || "Unknown User";
 
             res.status(201).json({
-              safety_report_id: result.insertId,
+              safety_report_id, // Use the new ID
               project_id,
               report_date,
               description,
@@ -73,7 +90,7 @@ const createSafetyReport = (req, res) => {
               user_id,
               project_name,
               full_name,
-              status: "pending",
+              status: "Pending",
             });
           }
         );
@@ -84,6 +101,7 @@ const createSafetyReport = (req, res) => {
     res.status(500).json({ error: "Unexpected server error" });
   }
 };
+
 
 // 📌 Get All Reports
 const getSafetyReports = (req, res) => {
