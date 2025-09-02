@@ -276,120 +276,74 @@ ORDER BY rm.request_id DESC;
     });
 };
 
-const approveRequest = (req, res) => {
-    const requestId = req.params.requestId;
-    const approvedBy = 'Admin'; 
-    const approvedAt = moment().format('YYYY-MM-DD HH:mm:ss');
-
-    // NEW LOG: Log the start of the approval process
-    console.log(`🚀 Starting approval process for Request ID: ${requestId}`);
-
-    // Start a database transaction
-    db.beginTransaction((err) => {
-        if (err) {
-            console.error('❌ Database transaction error:', err);
-            return res.status(500).json({ error: 'Database transaction error.' });
-        }
-
-        // First query: Update the status of the request
-        db.query(
-            'UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?',
-            [approvedBy, approvedAt, requestId],
-            (err, results) => {
-                if (err) {
-                    console.error('❌ Database error during request update:', err);
-                    return db.rollback(() => {
-                        return res.status(500).json({ error: 'Failed to approve request' });
-                    });
-                }
-                
-                // NEW LOG: Log the affected rows from the initial update
-                console.log(`✅ Initial request update successful. Affected rows: ${results.affectedRows}`);
-
-                if (results.affectedRows === 0) {
-                    console.warn(`⚠️ Request ID ${requestId} not found for approval. Rollback initiated.`);
-                    return db.rollback(() => {
-                        return res.status(404).json({ error: 'Request not found' });
-                    });
-                }
-                
-                // Second query: Get the list of items associated with the request
-                db.query(
-                    'SELECT resource_id, request_quantity FROM requested_material_items WHERE request_id = ?',
-                    [requestId],
-                    (err, itemsResults) => {
-                        if (err) {
-                            console.error('❌ Database error during item fetch:', err);
-                            return db.rollback(() => {
-                                return res.status(500).json({ error: 'Failed to fetch items for stock update' });
-                            });
-                        }
-                        
-                        console.log(`🔎 Found ${itemsResults.length} items for request ID ${requestId}. Items:`, itemsResults);
-
-                        if (!itemsResults || itemsResults.length === 0) {
-                            console.warn(`⚠️ No items found for request ID ${requestId}. Committing approval without stock update.`);
-                            db.commit((err) => {
-                                if (err) {
-                                    console.error('❌ Error committing transaction (no items):', err);
-                                    return db.rollback(() => {
-                                        return res.status(500).json({ error: 'Error completing transaction.' });
-                                    });
-                                }
-                                return res.json({ message: 'Request approved successfully (no items to update).' });
-                            });
-                            return;
-                        }
-
-                        const updateStockPromises = itemsResults.map(item => {
-                            return new Promise((resolve, reject) => {
-                                console.log(`🔄 Attempting to update stock for resource_id: ${item.item_id}, quantity: ${item.request_quantity}`);
-                                db.query(
-                                    'UPDATE resource SET stocks = stocks - ? WHERE resource_id = ?',
-                                    [item.request_quantity, item.item_id],
-                                    (err, updateResults) => {
-                                        if (err) {
-                                            console.error(`❌ Error updating stock for item ${item.item_id}:`, err);
-                                            reject(err);
-                                        } else {
-                                            if (updateResults.affectedRows === 0) {
-                                                console.warn(`⚠️ Stock update for item ${item.item_id} failed: No matching resource_id found.`);
-                                            } else {
-                                                console.log(`✅ Stock updated for item ${item.item_id}. Affected rows: ${updateResults.affectedRows}`);
-                                            }
-                                            resolve(updateResults);
-                                        }
-                                    }
-                                );
-                            });
-                        });
-
-                        Promise.all(updateStockPromises)
-                            .then(() => {
-                                db.commit((err) => {
-                                    if (err) {
-                                        console.error('❌ Error committing transaction after stock update:', err);
-                                        return db.rollback(() => {
-                                            return res.status(500).json({ error: 'Error completing transaction.' });
-                                        });
-                                    }
-                                    console.log('✅ Request approved and all stocks updated successfully.');
-                                    res.json({ message: 'Request approved and stock updated successfully' });
-                                });
-                            })
-                            .catch(err => {
-                                console.error('❌ One or more stock updates failed. Rolling back transaction.', err);
-                                return db.rollback(() => {
-                                    return res.status(500).json({ error: 'Failed to update stock. Transaction rolled back.' });
-                                });
-                            });
-                    }
-                );
+// A simple helper function to promisify a MySQL query
+const promisifyQuery = (db, sql, params) => {
+    return new Promise((resolve, reject) => {
+        db.query(sql, params, (err, results) => {
+            if (err) {
+                return reject(err);
             }
-        );
+            resolve(results);
+        });
     });
 };
 
+const approveRequest = async (req, res) => {
+    const { requestId } = req.params;
+    const approvedBy = 'Admin';
+    const approvedAt = new Date();
+
+    console.log(`🚀 Starting approval process for Request ID: ${requestId}`);
+
+    // Create promise-based versions of the transaction methods
+    const beginTransaction = () => new Promise((resolve, reject) => db.beginTransaction(err => (err ? reject(err) : resolve())));
+    const commit = () => new Promise((resolve, reject) => db.commit(err => (err ? reject(err) : resolve())));
+    const rollback = () => new Promise((resolve, reject) => db.rollback(err => (err ? reject(err) : resolve())));
+
+    await beginTransaction();
+
+    try {
+        // First query: Update the status of the request
+        const updateResult = await promisifyQuery(
+            db,
+            'UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?',
+            [approvedBy, approvedAt, requestId]
+        );
+        
+        if (updateResult.affectedRows === 0) {
+            await rollback();
+            return res.status(404).json({ error: 'Request not found' });
+        }
+        
+        // Second query: Get the list of items
+        const items = await promisifyQuery(
+            db,
+            'SELECT resource_id, request_quantity FROM requested_material_items WHERE request_id = ?',
+            [requestId]
+        );
+
+        if (items.length > 0) {
+            // Third query: Update the stock for each item concurrently
+            const stockUpdatePromises = items.map(item =>
+                promisifyQuery(
+                    db,
+                    'UPDATE resource SET stocks = stocks - ? WHERE resource_id = ?',
+                    [item.request_quantity, item.resource_id]
+                )
+            );
+            await Promise.all(stockUpdatePromises);
+        }
+
+        await commit();
+        console.log('✅ Request approved and stocks updated successfully.');
+        res.json({ message: 'Request approved and stock updated successfully' });
+
+    } catch (err) {
+        await rollback();
+        console.error('❌ Transaction failed. Rolling back.', err);
+        res.status(500).json({ error: 'Failed to complete request approval. Transaction rolled back.' });
+    }
+};
 
 
 const rejectRequest = (req, res) => {

@@ -228,29 +228,29 @@ const handleDisapprove = async (requestId) => {
             </h1>
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
-              <div className="bg-gradient-to-l from-blue-500 to-blue-800 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl dark:bg-gray-800">
+              <div className="bg-[#518bff] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+                <div className="flex items-center justify-center w-12 h-12 bg-white rounded-xl dark:bg-gray-800">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clipboard-list-icon lucide-clipboard-list"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Total Requests</p>
                 <h2 className="text-4xl font-bold text-white">{requests.length}</h2>
               </div>
-              <div className="bg-gradient-to-l from-yellow-500 to-yellow-600 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+              <div className="bg-[#fabc1c] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+                <div className="flex items-center justify-center w-12 h-12 bg-white rounded-xl dark:bg-gray-800">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock-fading-icon lucide-clock-fading"><path d="M12 2a10 10 0 0 1 7.38 16.75" /><path d="M12 6v6l4 2" /><path d="M2.5 8.875a10 10 0 0 0-.5 3" /><path d="M2.83 16a10 10 0 0 0 2.43 3.4" /><path d="M4.636 5.235a10 10 0 0 1 .891-.857" /><path d="M8.644 21.42a10 10 0 0 0 7.631-.38" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Pending Requests</p>
                 <h2 className="text-4xl font-bold text-white">{requests.filter(r => r.status === "pending").length}</h2>
               </div>
-              <div className="bg-gradient-to-l from-green-500 to-green-600 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+              <div className="bg-[#3fc4a9] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+                <div className="flex items-center justify-center w-12 h-12 bg-white rounded-xl dark:bg-gray-800">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-check-icon lucide-file-check"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m9 15 2 2 4-4" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Approved Requests</p>
                 <h2 className="text-4xl font-bold text-white">{requests.filter(r => r.status === "approved").length}</h2>
               </div>
-              <div className="bg-gradient-to-l from-red-500 to-red-800 border border-gray-200 p-5 rounded-2xl shadow space-y-2">
-                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl dark:bg-gray-800">
+              <div className="bg-[#f3527f] border border-gray-200 p-5 rounded-2xl shadow space-y-2">
+                <div className="flex items-center justify-center w-12 h-12 bg-white rounded-xl dark:bg-gray-800">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-x-icon lucide-file-x"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="m15 11-6 6" /><path d="m9 11 6 6" /></svg>
                 </div>
                 <p className="text-md text-white font-semibold">Rejected Requests</p>

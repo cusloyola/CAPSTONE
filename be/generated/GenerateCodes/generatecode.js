@@ -1,10 +1,9 @@
-const db = require("../../config/db"); // adjust path
+const db = require("../../config/db"); 
 
 function generateStructuredId(tableCode, tableName, idColumn) {
   return new Promise((resolve, reject) => {
     const year = new Date().getFullYear().toString().slice(-2);
 
-   // This is the corrected SQL query
 const sql = `
   SELECT ${idColumn} FROM ${tableName} 
   WHERE ${idColumn} LIKE '${tableCode}${year}%'
