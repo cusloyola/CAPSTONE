@@ -101,6 +101,9 @@ const clientInfoRoutes = require('./routes/ProjectInfoRoutes/clientInfoRoutes');
 // NEW: Import the floorInfoRoutes for the /api/floor-info endpoint
 const floorInfoRoutes = require('./routes/ProjectInfoRoutes/floorsInfoRoutes');
 
+const dashboardMetricsRoutes = require('./routes/DashboardMetricsRoutes');
+
+
 
 // Ensure the uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
@@ -186,6 +189,15 @@ app.use('/api/client-info', clientInfoRoutes);
 
 // NEW: Use the floorInfoRoutes for the /api/floor-info endpoint
 app.use('/api/floor-info', floorInfoRoutes);
+
+app.use('/api/dashboard-metrics', dashboardMetricsRoutes);
+
+
+
+
+
+
+
 
 
 // ✅ Health Check Route

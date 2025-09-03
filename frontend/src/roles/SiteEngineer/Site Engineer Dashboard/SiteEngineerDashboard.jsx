@@ -3,10 +3,24 @@ import SiteEngineerMetrics from "./Metrics";
 
 const SiteEngineerDashboard = () => {
     const [dateTime, setDateTime] = useState(new Date());
+    const [userName, setUserName] = useState("SITE ENGINEER");
 
     useEffect(() => {
         const interval = setInterval(() => setDateTime(new Date()), 1000);
         return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        // Get user from localStorage (same as UserDropdown.jsx)
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                setUserName(parsedUser.name || "SITE ENGINEER");
+            } catch {
+                setUserName("SITE ENGINEER");
+            }
+        }
     }, []);
 
     // Format: August 8, 2024
@@ -26,7 +40,7 @@ const SiteEngineerDashboard = () => {
                             className="inline-block bg-blue-100 text-blue-800 text-xl font-bold px-4 py-4 rounded-2xl shadow-sm border border-blue-200"
                             style={{ minWidth: "370px", textTransform: "uppercase", letterSpacing: "1px" }}
                         >
-                           Welcome, SITE ENGR. Gino Herrera!
+                           Welcome, SITE ENGR. {userName && userName.toUpperCase()}
                         </span>
                     </div>
                     <div className="mt-4 md:mt-0 text-right">
