@@ -78,8 +78,25 @@ const getProjectCounts = (req, res) => {
     });
 };
 
+const getInspectionReportsCount = (req, res) => {
+    const query = "SELECT COUNT(*) AS totalInspectionReports FROM checklist_inspection_reports";
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching total inspection reports:", err);
+            return res.status(500).json({ error: "Server error while fetching inspection reports count" });
+        }
+        
+        const totalInspectionReports = results[0].totalInspectionReports;
+        
+        console.log("📌 Sending total inspection reports count:", totalInspectionReports);
+        return res.status(200).json({ totalInspectionReports });
+    });
+};
+
 module.exports = { 
     getMaterialRequestCount,
     getDailySiteReportCount,
-    getProjectCounts
+    getProjectCounts,
+    getInspectionReportsCount
 };

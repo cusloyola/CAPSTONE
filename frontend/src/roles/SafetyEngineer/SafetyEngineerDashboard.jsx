@@ -3,10 +3,24 @@ import SafetyEngineerMetrics from "./Safety Dashboard/SafetyEngineerMetrics";
 
 const SafetyEngineerDashboard = () => {
     const [dateTime, setDateTime] = useState(new Date());
+    const [userName, setUserName] = useState("SAFETY ENGINEER");
 
     useEffect(() => {
         const interval = setInterval(() => setDateTime(new Date()), 1000);
         return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        // Get user from localStorage (same as UserDropdown.jsx)
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                setUserName(parsedUser.name || "SAFETY ENGINEER");
+            } catch {
+                setUserName("SAFETY ENGINEER");
+            }
+        }
     }, []);
 
     // Format: August 8, 2024
@@ -26,7 +40,7 @@ const SafetyEngineerDashboard = () => {
                             className="inline-block bg-blue-100 text-blue-800 text-xl font-bold px-4 py-4 rounded-2xl shadow-sm border border-blue-200"
                             style={{ minWidth: "370px", textTransform: "uppercase", letterSpacing: "1px" }}
                         >
-                           Welcome, SAFETY ENGR. Gino Herrera!
+                           Welcome, SAFETY ENGR. {userName && userName.toUpperCase()}
                         </span>
                     </div>
                     <div className="mt-4 md:mt-0 text-right">
