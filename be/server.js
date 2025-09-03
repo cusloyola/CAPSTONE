@@ -108,6 +108,9 @@ const clientInfoRoutes = require('./routes/ProjectInfoRoutes/clientInfoRoutes');
 const floorInfoRoutes = require('./routes/ProjectInfoRoutes/floorsInfoRoutes');
 
 
+const dashboardMetricsRoutes = require('./routes/DashboardMetricsRoutes');
+
+
 // Ensure the uploads directory exists
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -139,6 +142,7 @@ app.use('/api/resource', resourceRoutes);
 
 
 
+app.use('/api/dashboard-metrics', dashboardMetricsRoutes);
 
 
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import SiteEngineerMetrics from "./Metrics";
+import ProgressLineGraph from "../../Admin/Charts/ProgressLineGraph";
 
 const SiteEngineerDashboard = () => {
     const [dateTime, setDateTime] = useState(new Date());
@@ -30,28 +31,79 @@ const SiteEngineerDashboard = () => {
         day: "numeric",
     });
 
+
+
     return (
         <div>
             <div className="flex flex-col mb-6">
-                <h1 className="text-3xl font-bold mb-6">Site Engineer Dashboard</h1>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-center gap-6">
-                        <span
-                            className="inline-block bg-blue-100 text-blue-800 text-xl font-bold px-4 py-4 rounded-2xl shadow-sm border border-blue-200"
-                            style={{ minWidth: "370px", textTransform: "uppercase", letterSpacing: "1px" }}
-                        >
-                           Welcome, SITE ENGR. {userName && userName.toUpperCase()}
-                        </span>
+                <h4 className="text-2xl font-bold mb-12">Site Engineer Dashboard</h4>
+{/* 
+                <div className=" bottom-4 right-4 z-10 text-right flex flex-row gap-2">
+                            <span className="text-md font-semibold text-black">
+                                {formattedDate}
+                            </span>
+                            <span className="text-md font-semibold text-black">
+                                {dateTime.toLocaleTimeString()}
+                            </span>
+                        </div> */}
+
+
+                {/* Two-side container */}
+                <div className="flex flex-col md:flex-row gap-6">
+                    {/* Left side - Welcome container */}
+                    <div
+                        className="flex-1 border-r border-gray-300 pr-6 rounded-xl px-6 py-10 flex flex-col items-start relative overflow-hidden min-h-[350px]"
+                        style={{
+                            backgroundImage: "url('/images/grid-image/image-02.png')",
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                        }}
+                    >
+                        {/* Blue gradient overlay (solid left → light right) */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-600/80 to-blue-700/70 rounded-xl"></div>
+
+                        {/* Content aligned top-left */}
+                        <div className="relative z-10 text-left flex flex-col gap-2">
+                            <span
+                                className="inline-block text-white text-2xl font-bold drop-shadow-lg"
+                                style={{ letterSpacing: "1px" }}
+                            >
+                                Welcome,
+                            </span>
+                            <span
+                                className="inline-block text-white text-5xl font-bold drop-shadow-lg"
+                                style={{ letterSpacing: "1px" }}
+                            >
+                                {userName}
+                            </span>
+
+                        </div>
+                        <div className="mt-6 max-w-lg">
+                            <p className="text-white text-lg drop-shadow-md leading-relaxed">
+                                As a Site Engineer, you play a vital role in turning plans into reality,
+                                ensuring every detail on site aligns with precision and quality.
+                            </p>
+                        </div>
+                        
+    
                     </div>
-                    <div className="mt-4 md:mt-0 text-right">
-                        <span className="text-2xl font-semibold">
-                            {formattedDate} {dateTime.toLocaleTimeString()}
-                        </span>
+
+
+
+
+
+                    {/* Right side - Metrics */}
+                    <div className="flex-1 pl-6">
+                        <SiteEngineerMetrics />
                     </div>
                 </div>
             </div>
-            <div className="mt-8">
-                <SiteEngineerMetrics />
+
+
+            <div className="grid grid-cols-1 mt-12">
+                <div className="col-span-2 flex flex-col justify-between mt-12">
+                    <ProgressLineGraph />
+                </div>
             </div>
         </div>
     );
