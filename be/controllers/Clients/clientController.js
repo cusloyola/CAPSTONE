@@ -1,4 +1,5 @@
-const db = require("../config/db");
+const db = require("../../config/db");
+const generateStructuredId = require("../../generated/GenerateCodes/generatecode"); 
 
 const getAllClients = (req, res) => {
     console.log("Attempting to fetch clients...");
@@ -38,35 +39,49 @@ const getClientById = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch client", error: err.message });
   }
 };
-// controllers/clientController.js
-const createClient = (req, res, next) => {
-  const { client_name, email, phone_number, industry, website } = req.body;
 
-  if (!client_name || !email || !phone_number || !industry) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
+const createClient = async (req, res, next) => {
+  try {
+    const { client_name, email, phone_number, industry, website } = req.body;
 
-  const query = "INSERT INTO clients (client_name, email, phone_number, industry, website) VALUES (?, ?, ?, ?, ?)";
-  db.query(query, [client_name, email, phone_number, industry, website], (err, result) => {
-    if (err) {
-      return next(err);
+    if (!client_name || !email || !phone_number || !industry) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    res.status(201).json({
-      message: "Client created successfully",
-      clientId: result.insertId,
-      client: {
-        client_id: result.insertId,
-        client_name,
-        email,
-        phone_number,
-        industry,
-        website,
-      },
-    });
-  });
-};
+    // Generate structured client_id
+    const client_id = await generateStructuredId("101", "clients", "client_id");
 
+    const query = `
+      INSERT INTO clients (client_id, client_name, email, phone_number, industry, website)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      query,
+      [client_id, client_name, email, phone_number, industry, website],
+      (err, result) => {
+        if (err) {
+          return next(err);
+        }
+
+        res.status(201).json({
+          message: "Client created successfully",
+          clientId: client_id,
+          client: {
+            client_id,
+            client_name,
+            email,
+            phone_number,
+            industry,
+            website,
+          },
+        });
+      }
+    );
+  } catch (err) {
+    next(err);
+  }
+};
 
 // Update client information
 const updateClient = async (req, res) => {

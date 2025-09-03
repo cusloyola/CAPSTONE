@@ -149,6 +149,8 @@ const getRequestMaterialItems = (req, res) => {
         }
     );
 };
+
+
 const createRequestedMaterials = (req, res) => {
     const { selectedProject, urgency, notes, selectedMaterials } = req.body;
 
@@ -260,91 +262,163 @@ ORDER BY rm.request_id DESC;
 
     `;
 
-    db.query(query, (err, results) => {
-        if (err) {
-            console.error("❌ Error fetching requested materials history:", err);
-            return res.status(500).json({ error: "Server error while fetching history" });
-        }
+  db.query(query, (err, results) => {
+  if (err) {
+    console.error("❌ Error fetching requested materials history:", err);
+    return res.status(500).json({ error: "Server error while fetching history" });
+  }
 
-        if (!results || results.length === 0) {
-            console.warn("⚠️ No requested materials history found.");
-            return res.status(404).json({ message: "No requested materials history found." });
-        }
+  if (!results || results.length === 0) {
+    console.warn("⚠️ No requested materials history found.");
+    return res.status(404).json({ message: "No requested materials history found." });
+  }
 
-        console.log("📌 Sending Requested Materials History Data:", results);
-        return res.json(results);
-    });
+  // Convert `items` string → array
+  const formattedResults = results.map(row => ({
+    ...row,
+    items: row.items ? JSON.parse(row.items) : []
+  }));
+
+  console.dir(formattedResults, { depth: null }); // 👈 Shows nested objects properly
+  return res.json(formattedResults);
+});
+
+
 };
-
-// A simple helper function to promisify a MySQL query
+// Helper function to promisify a MySQL query
 const promisifyQuery = (db, sql, params) => {
     return new Promise((resolve, reject) => {
         db.query(sql, params, (err, results) => {
-            if (err) {
-                return reject(err);
-            }
+            if (err) return reject(err);
             resolve(results);
         });
     });
 };
 
 const approveRequest = async (req, res) => {
+    console.log("--- New Request Received ---");
+    console.log("Request Params:", req.params);
+    console.log("Request Body:", req.body);
+
     const { requestId } = req.params;
-    const approvedBy = 'Admin';
+    const approvedBy = "Admin";
     const approvedAt = new Date();
 
-    console.log(`🚀 Starting approval process for Request ID: ${requestId}`);
-
-    // Create promise-based versions of the transaction methods
-    const beginTransaction = () => new Promise((resolve, reject) => db.beginTransaction(err => (err ? reject(err) : resolve())));
-    const commit = () => new Promise((resolve, reject) => db.commit(err => (err ? reject(err) : resolve())));
-    const rollback = () => new Promise((resolve, reject) => db.rollback(err => (err ? reject(err) : resolve())));
-
-    await beginTransaction();
-
     try {
-        // First query: Update the status of the request
-        const updateResult = await promisifyQuery(
+        await promisifyQuery(db, "START TRANSACTION");
+        console.log(`🚀 Transaction started for Request ID: ${requestId}`);
+
+        const resultApprove = await promisifyQuery(
             db,
-            'UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?',
+            "UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?",
             [approvedBy, approvedAt, requestId]
         );
-        
-        if (updateResult.affectedRows === 0) {
-            await rollback();
-            return res.status(404).json({ error: 'Request not found' });
+
+        if (resultApprove.affectedRows === 0) {
+            console.log("❌ Request not found. Rolling back.");
+            await promisifyQuery(db, "ROLLBACK");
+            return res.status(404).json({ error: "Request not found" });
         }
-        
-        // Second query: Get the list of items
+        console.log("✅ Request approved in requested_materials");
+
         const items = await promisifyQuery(
             db,
-            'SELECT resource_id, request_quantity FROM requested_material_items WHERE request_id = ?',
+            `SELECT t1.resource_id, t1.request_quantity, t2.project_id
+             FROM requested_material_items t1
+             JOIN requested_materials t2 ON t1.request_id = t2.request_id
+             WHERE t1.request_id = ?`,
             [requestId]
         );
 
-        if (items.length > 0) {
-            // Third query: Update the stock for each item concurrently
-            const stockUpdatePromises = items.map(item =>
-                promisifyQuery(
-                    db,
-                    'UPDATE resource SET stocks = stocks - ? WHERE resource_id = ?',
-                    [item.request_quantity, item.resource_id]
-                )
+        console.log(`📦 Found ${items.length} items to process`);
+        console.log("Items to process:", items);
+
+        for (const item of items) {
+            const { resource_id, request_quantity, project_id } = item;
+
+            const [resource] = await promisifyQuery(
+                db,
+                "SELECT work_item_id, stocks, default_unit_cost FROM resource WHERE resource_id = ?",
+                [resource_id]
             );
-            await Promise.all(stockUpdatePromises);
+            if (!resource) throw new Error(`Resource ${resource_id} not found`);
+            
+            const previous_stock = resource.stocks;
+            const current_stock = previous_stock - request_quantity;
+            const total_cost = request_quantity * resource.default_unit_cost;
+
+            console.log(`🔹 Processing resource_id: ${resource_id}, quantity: ${request_quantity}`);
+            console.log(`  Previous stock: ${previous_stock}, Current stock: ${current_stock}, Total cost: ${total_cost}`);
+
+            const updateResource = await promisifyQuery(
+                db,
+                "UPDATE resource SET stocks = ? WHERE resource_id = ?",
+                [current_stock, resource_id]
+            );
+            console.log("  ✅ Resource stock updated:", updateResource.affectedRows);
+
+            const [proposal] = await promisifyQuery(
+                db,
+                `SELECT sp.sow_proposal_id
+                 FROM sow_proposal sp
+                 JOIN proposals p ON sp.proposal_id = p.proposal_id
+                 WHERE sp.work_item_id = ? AND p.project_id = ?`,
+                [resource.work_item_id, project_id]
+            );
+
+            if (!proposal) {
+                throw new Error(`Sow proposal not found for work_item ${resource.work_item_id} and project ${project_id}`);
+            }
+
+            const updateFinal = await promisifyQuery(
+                db,
+                `UPDATE final_estimation_details
+                 SET remaining_amount = remaining_amount - ?
+                 WHERE sow_proposal_id = ?`,
+                [total_cost, proposal.sow_proposal_id]
+            );
+
+            console.log("  ✅ Final estimation updated:", updateFinal.affectedRows);
+
+            const materialUsageId = await generateStructuredId("12", "material_usage", "material_usage_id");
+            console.log("  Generated material_usage_id:", materialUsageId);
+
+            const insertUsage = await promisifyQuery(
+                db,
+                `INSERT INTO material_usage
+                 (material_usage_id, work_item_id, project_id, resource_id, quantity_used, total_cost, previous_stock, quantity_issued, current_stock, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    materialUsageId,
+                    resource.work_item_id,
+                    project_id,
+                    resource_id,
+                    request_quantity,
+                    total_cost,
+                    previous_stock,
+                    request_quantity,
+                    current_stock,
+                    approvedAt
+                ]
+            );
+            console.log("  ✅ Material usage inserted:", insertUsage.affectedRows);
         }
 
-        await commit();
-        console.log('✅ Request approved and stocks updated successfully.');
-        res.json({ message: 'Request approved and stock updated successfully' });
+        await promisifyQuery(db, "COMMIT");
+        console.log("🎉 Transaction committed successfully");
+        res.json({ message: "Request approved and all related tables updated successfully" });
 
     } catch (err) {
-        await rollback();
-        console.error('❌ Transaction failed. Rolling back.', err);
-        res.status(500).json({ error: 'Failed to complete request approval. Transaction rolled back.' });
+        await promisifyQuery(db, "ROLLBACK");
+        console.error("❌ Transaction failed. Rolled back.", err);
+        res.status(500).json({ error: "Transaction failed. Rolled back." });
     }
 };
 
+// You need to ensure the generateStructuredId and db variables are also defined and available in this file.
+// For example, if they are imported from another file:
+// const db = require('../path/to/db-connection');
+// const generateStructuredId = require('../path/to/generate-id-helper');
 
 const rejectRequest = (req, res) => {
     const requestId = req.params.requestId;
@@ -355,7 +429,7 @@ const rejectRequest = (req, res) => {
             console.error('❌ Database transaction error:', err);
             return res.status(500).json({ error: 'Database transaction error.' });
         }
-        
+
         db.query(
             'UPDATE requested_materials SET is_approved = 2, approved_at = ? WHERE request_id = ?',
             [rejectedAt, requestId],
@@ -372,7 +446,7 @@ const rejectRequest = (req, res) => {
                         return res.status(404).json({ error: 'Request not found' });
                     });
                 }
-                
+
                 db.commit((err) => {
                     if (err) {
                         console.error('❌ Error committing rejection transaction:', err);

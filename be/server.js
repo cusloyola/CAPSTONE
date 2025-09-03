@@ -41,7 +41,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const reportsRoutes = require("./routes/reportsRoutes");
 const projectRoutes = require('./routes/projectRoutes');
 const checkListRoutes = require('./routes/checkListRoutes');
-const requestMaterialRoutes = require("./routes/requestMaterialRoutes");
+const requestMaterialRoutes = require("./routes/RequestMaterialsRoutes/adminrequestMaterialRoutes");
 const materialtakeoffRoutes = require('./routes/MaterialTakeOffRoutes/materialtakeoffRoutes');
 
 
@@ -57,7 +57,7 @@ const dailySiteReportRoutes = require("./routes/DailySiteReportRoutes/dailySiteR
  
 
 const adminSiteReport = require("./routes/adminSiteReportRoutes");
-const clientRoutes = require("./routes/clientRoutes"); // Existing client routes
+const clientRoutes = require("./routes/ClientRoutes/clientRoutes"); // Existing client routes
 
 const subclientRoutes = require("./routes/subclientRoutes");
 const folderRoutes = require("./routes/folderRoutes");
@@ -90,8 +90,14 @@ const incidentreportRoutes = require('./routes/IncidentReportsRoutes/incidentrep
 
 const projectInfoRoutes = require('./routes/ProjectInfoRoutes/projectInfoRoutes');
 const resourceRoutes = require('./routes/Resource/resourceRoutes');
-const resourceRequestRoutes = require('./routes/Resource/resourceRequestRoutes');
 
+
+
+
+
+
+
+const adminrequestMaterialRoutes = require('./routes/RequestMaterialsRoutes/adminrequestMaterialRoutes')
 
 const materialcontrolRoutes = require('./routes/MaterialControlCostRoutes/materialcontrolRoutes');
 
@@ -100,9 +106,6 @@ const clientInfoRoutes = require('./routes/ProjectInfoRoutes/clientInfoRoutes');
 
 // NEW: Import the floorInfoRoutes for the /api/floor-info endpoint
 const floorInfoRoutes = require('./routes/ProjectInfoRoutes/floorsInfoRoutes');
-
-const dashboardMetricsRoutes = require('./routes/DashboardMetricsRoutes');
-
 
 
 // Ensure the uploads directory exists
@@ -130,7 +133,19 @@ app.use("/api/leave-contract", leaveContractRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/inspection', inspectionReportRoutes); // Use the inspection report routes
 app.use('/api/resource', resourceRoutes);
-app.use('/api/resources', resourceRequestRoutes);
+
+
+
+
+
+
+
+
+
+
+
+
+app.use('/api/admin-request', adminrequestMaterialRoutes);
 
 app.use('/api/events', eventRoutes);
 
@@ -189,15 +204,6 @@ app.use('/api/client-info', clientInfoRoutes);
 
 // NEW: Use the floorInfoRoutes for the /api/floor-info endpoint
 app.use('/api/floor-info', floorInfoRoutes);
-
-app.use('/api/dashboard-metrics', dashboardMetricsRoutes);
-
-
-
-
-
-
-
 
 
 // ✅ Health Check Route

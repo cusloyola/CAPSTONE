@@ -70,10 +70,10 @@ const ViewMaterialRequestModalAdmin = ({ report, materials = [], onClose }) => {
               <p className="text-md font-bold text-gray-800">Status</p>
               <span
                 className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${report.status === "approved"
-                    ? "bg-green-100 text-green-800"
-                    : report.status === "pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
+                  ? "bg-green-100 text-green-800"
+                  : report.status === "pending"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800"
                   }`}
               >
                 {statusDisplay}
@@ -123,8 +123,12 @@ const ViewMaterialRequestModalAdmin = ({ report, materials = [], onClose }) => {
                         <td className="border border-gray-300 px-2 py-1 text-left">{mat.material_name}</td>
                         <td className="border border-gray-300 px-2 py-1 text-left">{mat.brand_name || "N/A"}</td>
                         <td className="border border-gray-300 px-2 py-1 text-right">{mat.request_quantity}</td>
-                        <td className="border border-gray-300 px-2 py-1 text-right">₱{mat.default_unit_cost.toLocaleString()}</td>
-                        <td className="border border-gray-300 px-2 py-1 text-right">₱{(mat.request_quantity * mat.default_unit_cost).toLocaleString()}</td>
+                        <td className="border border-gray-300 px-2 py-1 text-right">
+                          ₱{mat.default_unit_cost ? mat.default_unit_cost.toLocaleString() : "N/A"}
+                        </td>
+                        <td className="border border-gray-300 px-2 py-1 text-right">
+                          ₱{(mat.request_quantity && mat.default_unit_cost) ? (mat.request_quantity * mat.default_unit_cost).toLocaleString() : "N/A"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

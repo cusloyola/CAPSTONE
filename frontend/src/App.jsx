@@ -15,7 +15,7 @@ import AdminDashboard from "./roles/Admin/AdminDashboard.jsx";
 
 import InventortManagement from "./roles/Admin/InventoryManagement.jsx"
 import AdminReports from "./roles/Admin/Reports.jsx";
-import MaterialRequestManagement from "./roles/Admin/MaterialRequestManagemet.jsx";
+import MaterialRequestManagement from "./roles/Admin/Request Management/Material Request/MaterialRequestManagement.jsx";
 import EmployeeManagement from "./roles/Admin/EmployeeManagement.jsx";
 import ViewSafetyReportAdmin from "./roles/Admin/Safety Report/SafetyReportsManagement.jsx";
 import ViewIncidentReportAdmin from "./roles/Admin/Incident Report/ViewIncidentReportAdmin.jsx";
@@ -30,8 +30,8 @@ import MaterialControlDetails from "./roles/Admin/Request Management/Material Co
 import SiteProjectInfo from "./roles/SiteEngineer/Site Project Info/SiteProjectInfo.jsx";
 import SiteEngineerDashboard from "./roles/SiteEngineer/Site Engineer Dashboard/SiteEngineerDashboard.jsx";
 import DailySiteReport from "./roles/SiteEngineer/Site Progress Tracking/DailySiteReport.jsx";
-import RequestMaterial from "./roles/SiteEngineer/Request Materials/RequestMaterial.jsx";
-import MaterialRequestHistory from "./roles/SiteEngineer/ViewRequestHistory.jsx";
+import RequestMaterial from "./roles/SiteEngineer/Request Materials/Submit Request/RequestMaterial.jsx";
+import MaterialRequestHistory from "./roles/SiteEngineer/Request Materials/View Submission/ViewRequestHistory.jsx";
 
 
 import SiteWeeklyReport from "./roles/SiteEngineer/Site Weekly Report/SiteWeeklyReport.jsx";

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import PageMeta from '../../../components/common/PageMeta';
+import PageMeta from '../../../../components/common/PageMeta';
 import axios from 'axios';
-import { submitRequest } from '../../../api/materialRequests';
+import { submitRequest } from '../../../../api/materialRequests';
 
 const RESOURCES_API_URL = "http://localhost:5000/api/resources";
 const BRANDS_API_URL = "http://localhost:5000/api/resource/brands";

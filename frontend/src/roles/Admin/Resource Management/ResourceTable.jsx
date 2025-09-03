@@ -262,8 +262,8 @@ const ResourceTable = () => {
     const fetchBrandsAndUnits = useCallback(async () => {
         try {
             const [brandsRes, unitsRes] = await Promise.all([
-                fetch("http://localhost:5000/api/resource/brands"),
-                fetch("http://localhost:5000/api/resource/units"),
+                fetch("http://localhost:5000/api/site-resource/brands"),
+                fetch("http://localhost:5000/api/site-resource/units"),
             ]);
             const brandsData = await brandsRes.json();
             const unitsData = await unitsRes.json();
@@ -370,7 +370,7 @@ const ResourceTable = () => {
                                 <tr key={resource.resource_id}>
                                     <td className="border px-4 py-2">{resource.material_name}</td>
                                     <td className="border px-4 py-2">{resource.brand_name}</td>
-                                    <td className="border px-4 py-2">{resource.unitName}</td>
+                                    <td className="border px-4 py-2">{resource.unitCode}</td>
                                     <td className="border px-4 py-2 text-right">
                                         ₱{Number(resource.default_unit_cost).toFixed(2)}
                                     </td>
@@ -522,24 +522,23 @@ const ResourceTable = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-    <button
-        onClick={closeModal}
-        type="button"
-        className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
-    >
-        Close
-    </button>
-    <button
-        onClick={handleSave}
-        disabled={isSaving}
-        type="submit"
-        className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
-            isSaving ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-    >
-        {isSaving ? "Saving..." : "Save Changes"}
-    </button>
-</div>
+                            <button
+                                onClick={closeModal}
+                                type="button"
+                                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                type="submit"
+                                className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${isSaving ? "opacity-50 cursor-not-allowed" : ""
+                                    }`}
+                            >
+                                {isSaving ? "Saving..." : "Save Changes"}
+                            </button>
+                        </div>
 
                     </form>
                 </div>

@@ -1,6 +1,6 @@
-const db = require("../config/db"); 
+const db = require("../../config/db");
 const moment = require('moment');
-const generateStructuredId = require("../generated/GenerateCodes/generatecode"); 
+const generateStructuredId = require("../../generated/GenerateCodes/generatecode");
 
 function queryAsync(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -95,6 +95,9 @@ const createRequestedMaterials = async (req, res) => {
   }
 };
 
+
+
+
 const getRequestedMaterialsHistory = (req, res) => {
   db.query(
     `SELECT 
@@ -106,12 +109,15 @@ const getRequestedMaterialsHistory = (req, res) => {
       rm.request_date,
       rm.approved_at, 
       rmi.resource_id, 
-      ii.item_name, 
-      rmi.request_quantity 
+      r.default_unit_cost, 
+      rmi.request_quantity,
+      r.material_name,
+      rb.brand_name
     FROM requested_materials rm
     JOIN requested_material_items rmi ON rm.request_id = rmi.request_id
-    JOIN projects p ON rmi.project_id = p.project_id
-    JOIN inventory_items ii ON rmi.resource_id = ii.item_id
+    JOIN projects p ON rm.project_id = p.project_id
+    JOIN resource r ON rmi.resource_id = r.resource_id
+    JOIN resource_brand rb ON r.brand_id = rb.brand_id
     ORDER BY rm.request_id`,
     (err, results) => {
       if (err) {
@@ -119,19 +125,24 @@ const getRequestedMaterialsHistory = (req, res) => {
         return res.status(500).json({ error: "Server error while fetching history" });
       }
 
-      if (!results || results.length === 0) {
-        console.warn("⚠️ No requested materials history found.");
-        return res.status(404).json({ message: "No requested materials history found." });
-      }
+     if (!results || results.length === 0) {
+  console.warn("⚠️ No requested materials history found.");
+  return res.json([]); 
+}
+
 
       const formattedResults = results.reduce((acc, row) => {
         const existingRequest = acc.find(item => item.request_id === row.request_id);
+        const material = {
+          resource_id: row.resource_id,
+          material_name: row.material_name,
+          brand_name: row.brand_name,
+          request_quantity: row.request_quantity,
+          default_unit_cost: row.default_unit_cost,
+        };
+
         if (existingRequest) {
-          existingRequest.items.push({
-            item_id: row.item_id,
-            item_name: row.item_name,
-            request_quantity: row.request_quantity,
-          });
+          existingRequest.items.push(material);
         } else {
           acc.push({
             request_id: row.request_id,
@@ -140,21 +151,18 @@ const getRequestedMaterialsHistory = (req, res) => {
             notes: row.notes,
             status:
               row.is_approved === 1
-                ? 'approved'
+                ? "approved"
                 : row.is_approved === 2
-                  ? 'rejected'
-                  : 'pending',
+                  ? "rejected"
+                  : "pending",
             request_date: row.request_date,
             approved_at: row.approved_at,
-            items: [{
-              item_id: row.item_id,
-              item_name: row.item_name,
-              request_quantity: row.request_quantity,
-            }],
+            items: [material],
           });
         }
         return acc;
       }, []);
+
 
       console.log("📌 Sending Requested Materials History Data:", formattedResults);
       return res.json(formattedResults);
@@ -174,16 +182,18 @@ const promisifyQuery = (db, sql, params) => {
 };
 
 const approveRequest = async (req, res) => {
+  console.log("--- New Request Received ---");
+  console.log("Request Params:", req.params);
+  console.log("Request Body:", req.body);
+
   const { requestId } = req.params;
   const approvedBy = "Admin";
   const approvedAt = new Date();
 
   try {
-    // 1️⃣ Begin transaction
     await promisifyQuery(db, "START TRANSACTION");
     console.log(`🚀 Transaction started for Request ID: ${requestId}`);
 
-    // 2️⃣ Approve request
     const resultApprove = await promisifyQuery(
       db,
       "UPDATE requested_materials SET is_approved = 1, approved_by = ?, approved_at = ? WHERE request_id = ?",
@@ -197,7 +207,6 @@ const approveRequest = async (req, res) => {
     }
     console.log("✅ Request approved in requested_materials");
 
-    // 3️⃣ Get requested items
     const items = await promisifyQuery(
       db,
       `SELECT t1.resource_id, t1.request_quantity, t2.project_id
@@ -208,11 +217,11 @@ const approveRequest = async (req, res) => {
     );
 
     console.log(`📦 Found ${items.length} items to process`);
+    console.log("Items to process:", items);
 
     for (const item of items) {
       const { resource_id, request_quantity, project_id } = item;
 
-      // Get resource info
       const [resource] = await promisifyQuery(
         db,
         "SELECT work_item_id, stocks, default_unit_cost FROM resource WHERE resource_id = ?",
@@ -225,23 +234,21 @@ const approveRequest = async (req, res) => {
       const total_cost = request_quantity * resource.default_unit_cost;
 
       console.log(`🔹 Processing resource_id: ${resource_id}, quantity: ${request_quantity}`);
-      console.log(`   Previous stock: ${previous_stock}, Current stock: ${current_stock}, Total cost: ${total_cost}`);
+      console.log(`  Previous stock: ${previous_stock}, Current stock: ${current_stock}, Total cost: ${total_cost}`);
 
-      // Update resource stock
       const updateResource = await promisifyQuery(
         db,
         "UPDATE resource SET stocks = ? WHERE resource_id = ?",
         [current_stock, resource_id]
       );
-      console.log("   ✅ Resource stock updated:", updateResource.affectedRows);
+      console.log("  ✅ Resource stock updated:", updateResource.affectedRows);
 
-    
       const [proposal] = await promisifyQuery(
         db,
         `SELECT sp.sow_proposal_id
-     FROM sow_proposal sp
-     JOIN proposals p ON sp.proposal_id = p.proposal_id
-     WHERE sp.work_item_id = ? AND p.project_id = ?`,
+                 FROM sow_proposal sp
+                 JOIN proposals p ON sp.proposal_id = p.proposal_id
+                 WHERE sp.work_item_id = ? AND p.project_id = ?`,
         [resource.work_item_id, project_id]
       );
 
@@ -252,15 +259,15 @@ const approveRequest = async (req, res) => {
       const updateFinal = await promisifyQuery(
         db,
         `UPDATE final_estimation_details
-     SET remaining_amount = remaining_amount - ?
-     WHERE sow_proposal_id = ?`,
+                 SET remaining_amount = remaining_amount - ?
+                 WHERE sow_proposal_id = ?`,
         [total_cost, proposal.sow_proposal_id]
       );
 
-      console.log("   ✅ Final estimation updated:", updateFinal.affectedRows);
+      console.log("  ✅ Final estimation updated:", updateFinal.affectedRows);
 
       const materialUsageId = await generateStructuredId("12", "material_usage", "material_usage_id");
-      console.log("   Generated material_usage_id:", materialUsageId);
+      console.log("  Generated material_usage_id:", materialUsageId);
 
       const insertUsage = await promisifyQuery(
         db,
@@ -280,22 +287,24 @@ const approveRequest = async (req, res) => {
           approvedAt
         ]
       );
-      console.log("   ✅ Material usage inserted:", insertUsage.affectedRows);
+      console.log("  ✅ Material usage inserted:", insertUsage.affectedRows);
     }
 
-    // 4️⃣ Commit transaction
     await promisifyQuery(db, "COMMIT");
     console.log("🎉 Transaction committed successfully");
-
     res.json({ message: "Request approved and all related tables updated successfully" });
 
   } catch (err) {
-    // Rollback on error
     await promisifyQuery(db, "ROLLBACK");
     console.error("❌ Transaction failed. Rolled back.", err);
     res.status(500).json({ error: "Transaction failed. Rolled back." });
   }
 };
+
+// You need to ensure the generateStructuredId and db variables are also defined and available in this file.
+// For example, if they are imported from another file:
+// const db = require('../path/to/db-connection');
+// const generateStructuredId = require('../path/to/generate-id-helper');
 
 
 const rejectRequest = (req, res) => {

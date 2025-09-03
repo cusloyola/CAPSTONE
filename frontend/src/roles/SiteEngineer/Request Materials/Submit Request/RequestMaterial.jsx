@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import PageMeta from '../../../components/common/PageMeta';
+import PageMeta from '../../../../components/common/PageMeta';
 import { toast, ToastContainer } from "react-toastify";
 
 
 // Import all necessary functions from your API file
 import { 
   fetchMaterials
-} from '../../../api/resourceApi';
+} from '../../../../api/resourceApi';
 import { 
   fetchBrands, 
   fetchProjects
-} from '../../../api/projectApi';
+} from '../../../../api/projectApi';
 import { 
   submitRequest
-} from '../../../api/materialRequests';
+} from '../../../../api/materialRequests';
 import MaterialSearchTable from './MaterialSearchTable';
 import SelectedMaterialsList from './SelectedMaterialsList';
 import RequestForm from './RequestForm';
@@ -170,10 +170,14 @@ const toggleMaterial = (material) => {
 
   return (
     <>
-      <PageMeta
-        title="Request Construction Materials"
-        description="Select materials and request stock"
-      />
+  <PageMeta
+    title="Request Construction Materials"
+    description="Select materials and request stock"
+  />
+
+  {/* Main Grid Container */}
+  <div className="grid grid-rows-[auto,1fr,auto] gap-6 min-h-screen">
+    {/* Row 1: Materials Table */}
       <MaterialSearchTable
         materials={materials}
         loading={loading}
@@ -191,23 +195,28 @@ const toggleMaterial = (material) => {
         setPage={setPage}
         totalItems={totalItems}
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SelectedMaterialsList
-          selectedMaterials={selectedMaterials}
-          handleQuantityChange={handleQuantityChange}
-        />
-        <RequestForm
-          selectedProject={selectedProject}
-          setSelectedProject={setSelectedProject}
-          projects={projects}
-          urgency={urgency}
-          setUrgency={setUrgency}
-          notes={notes}
-          setNotes={setNotes}
-          isRequestInvalid={isRequestInvalid}
-          openModal={openModal}
-        />
-      </div>
+
+    {/* Row 2: Selected Materials + Request Form */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <SelectedMaterialsList
+        selectedMaterials={selectedMaterials}
+        handleQuantityChange={handleQuantityChange}
+      />
+      <RequestForm
+        selectedProject={selectedProject}
+        setSelectedProject={setSelectedProject}
+        projects={projects}
+        urgency={urgency}
+        setUrgency={setUrgency}
+        notes={notes}
+        setNotes={setNotes}
+        isRequestInvalid={isRequestInvalid}
+        openModal={openModal}
+      />
+    </div>
+
+    {/* Row 3: Modals & Toast */}
+    <div>
       <ConfirmationModal
         isModalOpen={isModalOpen}
         closeModal={closeModal}
@@ -223,9 +232,11 @@ const toggleMaterial = (material) => {
         requestSent={requestSent}
         setRequestSent={setRequestSent}
       /> */}
-          <ToastContainer />
+      <ToastContainer />
+    </div>
+  </div>
+</>
 
-    </>
   );
 };
 

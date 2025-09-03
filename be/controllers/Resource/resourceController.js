@@ -7,7 +7,7 @@ const getAllResources = (req, res) => {
         SELECT 
             r.*, 
             rb.brand_name, 
-            u.unitName
+            u.unitCode
         FROM 
             resource r
         JOIN 

@@ -11,7 +11,7 @@ const {
     getRequestedMaterialsHistory,
     approveRequest,
     rejectRequest
-} = require("../../controllers/Resource/requestMaterialController");
+} = require("../../controllers/RequestMaterials/requestMaterialController");
 
 // Route to get a list of all resources with optional pagination and search
 router.get("/", (req, res, next) => {

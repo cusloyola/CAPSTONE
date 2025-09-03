@@ -1,53 +1,47 @@
 import { API_URL } from "./api";
 
-
 export const fetchHistory = async () => {
-    try {
-        const response = await fetch(`${API_URL}/resources/request-materials/history`);
-        if (!response.ok) {
-            throw new Error("Failed to fetch history");
-        }
-        const data = await response.json();
+  try {
+    const response = await fetch(`${API_URL}/admin-request/history`);
 
-        const updatedRequests = Array.isArray(data)
-            ? data.map(r => {
-                let parsedItems = [];
-                try {
-                    if (r.items && typeof r.items === "string") {
-                        parsedItems = JSON.parse(r.items);
-                    } else if (Array.isArray(r.items)) {
-                        parsedItems = r.items;
-                    }
-                } catch (e) {
-                    console.error("Failed to parse items for request ID:", r.request_id, e);
-                    parsedItems = [];
-                }
-
-                return {
-                    ...r,
-                    items: parsedItems,
-                    status:
-                        r.is_approved === 1
-                            ? "approved"
-                            : r.is_approved === 2
-                                ? "rejected"
-                                : "pending",
-                };
-            })
-            : [];
-
-        return { success: true, data: updatedRequests };
-    } catch (error) {
-        console.error("Failed to fetch material requests.", error);
-        // Return a structured error object
-        return { success: false, error: "Failed to fetch material requests." };
+    if (!response.ok) {
+      const text = await response.text(); // see what server sent
+      throw new Error(`Failed to fetch history: ${text}`);
     }
+
+    const data = await response.json().catch(() => []); // fallback to empty
+
+    const updatedRequests = Array.isArray(data)
+      ? data.map(r => ({
+          ...r,
+          status: r.status || "pending",
+        }))
+      : [];
+
+    return { success: true, data: updatedRequests };
+  } catch (error) {
+    console.error("Failed to fetch material requests.", error);
+    return { success: false, error: "Failed to fetch material requests." };
+  }
+};
+
+
+
+export const openModal = async (requestId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/admin-request/${requestId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+  setSelectedReport(data.report);
+  setSelectedMaterials(data.materials);
+  setShowModal(true);
 };
 
 
 export const approveRequest = async (requestId) => {
     try {
-        const response = await fetch(`${API_URL}/resources/request-materials/${requestId}/approve`, {
+        const response = await fetch(`${API_URL}/admin-request/${requestId}/approve`, {
             method: 'PUT',
         });
 
@@ -65,7 +59,7 @@ export const approveRequest = async (requestId) => {
 export const rejectRequest = async (requestId) => {
     try {
 
-        const response = await fetch(`${API_URL}/resources/request-materials/${requestId}/reject`, {
+        const response = await fetch(`${API_URL}/admin-request/${requestId}/reject`, {
             method: 'PUT',
         });
 
@@ -79,6 +73,9 @@ export const rejectRequest = async (requestId) => {
         return { success: false, error: "Failed to reject request." };
     }
 };
+
+
+
 
 export const submitRequest = async (selectedProject, urgency, notes, selectedMaterials) => {
   try {

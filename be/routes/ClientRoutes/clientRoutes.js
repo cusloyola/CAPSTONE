@@ -6,7 +6,7 @@ const {
   createClient,
   updateClient,
   deleteClient,
-} = require("../controllers/clientController");
+} = require("../../controllers/Clients/clientController");
 
 // Remove verifyToken middleware for testing
 router.get("/", getAllClients); // Now no token required

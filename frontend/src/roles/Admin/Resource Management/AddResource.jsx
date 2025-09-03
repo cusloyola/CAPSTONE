@@ -154,7 +154,7 @@ const AddResourceModal = ({ onClose, onResourceAdded }) => {
                             <option value="">Select Unit</option>
                             {units.map((unit) => (
                                 <option key={unit.unitId} value={unit.unitId}>
-                                    {unit.unitName}
+                                    {unit.unitCode}
                                 </option>
                             ))}
                         </select>

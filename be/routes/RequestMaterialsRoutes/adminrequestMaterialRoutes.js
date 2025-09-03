@@ -6,7 +6,7 @@ const {
   getRequestedMaterialsHistory,
   approveRequest,
   rejectRequest,
-} = require("../controllers/requestMaterialController"); 
+} = require("../../controllers/RequestMaterials/adminrequestMaterialController"); 
 
 
 router.post("/create", createRequestedMaterials);
