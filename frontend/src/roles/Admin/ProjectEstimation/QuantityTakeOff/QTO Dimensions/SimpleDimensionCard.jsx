@@ -7,107 +7,75 @@ const calculateVolume = (length, width, depth, count) => {
     const d = parseFloat(depth);
     const c = parseFloat(count) || 1;
 
-    if (d === null || isNaN(d) || d === 0) {
-        return l * w * c;
-    }
-
+    if (d === null || isNaN(d) || d === 0) return l * w * c;
     return l * w * d * c;
 };
 
-
-const SimpleDimensionCard = ({
-    selectedItems = [],
-    parent = {},
-    updateChildDimensions
-}) => {
-
+const SimpleDimensionCard = ({ selectedItems = [], parent = {}, updateChildDimensions }) => {
     const pendingUpdatesRef = useRef({});
 
     const [dimensionsData, setDimensionsData] = useState(() => {
         const initial = {};
         selectedItems.forEach(item => {
             const itemId = item.work_item_id;
+            const sowProposalId = parent.sow_proposal_id || item.sow_proposal_id || null;
+
             const existing = parent.children?.find(child => child.work_item_id === itemId)?.simple_item_dimensions || [];
 
-            initial[itemId] = existing.length === 0 && (item.length || item.width || item.depth || item.units)
-                ? [{
-                    id: uuidv4(),
-                    label: 'Default Entry',
-                    length: item.length || '',
-                    width: item.width || '',
-                    depth: item.depth || '',
-                    count: item.units || '1'
-                }]
-                : existing;
+            initial[itemId] =
+                existing.length === 0 && (item.length || item.width || item.depth || item.units)
+                    ? [{
+                        id: uuidv4(),
+                        label: 'Default Entry',
+                        length: item.length || '',
+                        width: item.width || '',
+                        depth: item.depth || '',
+                        count: item.units || '1',
+                        sow_proposal_id: sowProposalId
+                    }]
+                    : existing.map(row => ({ ...row, sow_proposal_id: sowProposalId }));
         });
         return initial;
     });
 
-
-
-
-
     const addRow = useCallback((itemId) => {
-        console.log(`➕ Adding row for item: ${itemId}`);
         setDimensionsData(prev => {
-            const newRow = {
-                id: uuidv4(),
-                label: '',
-                length: '',
-                width: '',
-                depth: '',
-                count: '1'
-            };
-
-            const currentItemDimensions = prev[itemId] || [];
-
-            const updated = {
-                ...prev,
-                [itemId]: [...currentItemDimensions, newRow]
-            };
-
-            console.log("📦 Updated dimensionsData after addRow:", updated);
+            const newRow = { id: uuidv4(), label: '', length: '', width: '', depth: '', count: '1', sow_proposal_id: parent.sow_proposal_id };
+            const updated = { ...prev, [itemId]: [...(prev[itemId] || []), newRow] };
             return updated;
         });
-    }, []);
-
+    }, [parent.sow_proposal_id]);
 
     const removeRow = useCallback((itemId, rowId) => {
-        setDimensionsData(prev => {
-            const updatedRows = (prev[itemId] || []).filter(row => row.id !== rowId);
-            return {
-                ...prev,
-                [itemId]: updatedRows
-            };
-        });
+        setDimensionsData(prev => ({ ...prev, [itemId]: (prev[itemId] || []).filter(row => row.id !== rowId) }));
     }, []);
 
     const handleFieldChange = useCallback((itemId, rowId, fieldName, value) => {
         setDimensionsData(prev => {
             const updatedRows = (prev[itemId] || []).map(row =>
-row.id === rowId ? { ...row, [fieldName]: value === '' ? null : value } : row
+                row.id === rowId ? { ...row, [fieldName]: value === '' ? null : value } : row
             );
 
-            // store it for syncing in next render
             pendingUpdatesRef.current[itemId] = updatedRows;
 
-            return {
-                ...prev,
-                [itemId]: updatedRows
-            };
+            return { ...prev, [itemId]: updatedRows };
         });
     }, []);
 
     useEffect(() => {
         const pending = pendingUpdatesRef.current;
         if (Object.keys(pending).length > 0) {
-            for (const [itemId, updatedRows] of Object.entries(pending)) {
-                updateChildDimensions({ work_item_id: itemId }, { [itemId]: updatedRows });
-            }
-            pendingUpdatesRef.current = {}; // clear it
+            Object.entries(pending).forEach(([itemId, rows]) => {
+                // Ensure sow_proposal_id is included
+                const rowsWithProposalId = rows.map(row => ({
+                    ...row,
+                    sow_proposal_id: parent.sow_proposal_id
+                }));
+                updateChildDimensions({ work_item_id: itemId }, { [itemId]: rowsWithProposalId });
+            });
+            pendingUpdatesRef.current = {};
         }
-    }, [dimensionsData]); // runs after dimensionsData update
-
+    }, [dimensionsData, parent.sow_proposal_id, updateChildDimensions]);
 
     const calculateItemTotalVolume = useCallback((itemId) => {
         return (dimensionsData[itemId] || []).reduce(
@@ -123,38 +91,19 @@ row.id === rowId ? { ...row, [fieldName]: value === '' ? null : value } : row
         );
     }, [dimensionsData, calculateItemTotalVolume]);
 
-const isInvalid = (val) => val !== '' && isNaN(parseFloat(val));
-
-    useEffect(() => {
-        console.log("🧮 SimpleDimensionCard - initial selectedItems:", selectedItems);
-    }, [selectedItems]);
-
-    useEffect(() => {
-        console.log("📤 SimpleDimensionCard sending dimensionsData...");
-    }, [/* trigger when updating */]);
-
-    const onChange = (newDimensions) => {
-        const dimensionsData = {
-            [item.work_item_id]: newDimensions  // should be something like {119: [...]}
-        };
-
-        console.log("📤 Sending from SimpleDimensionCard:", dimensionsData);
-        updateChildDimensions(item, dimensionsData);
-    };
-
+    const isInvalid = val => val !== '' && isNaN(parseFloat(val));
 
     return (
-        <div className="space-y-8 p-4 bg-white dark:bg-gray-800  max-h-[450px] overflow-y-auto custom-scrollable-box">
+        <div className="space-y-8 p-4 bg-white dark:bg-gray-800 max-h-[450px] overflow-y-auto custom-scrollable-box">
             <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Simple Item Dimensions</h3>
 
             {selectedItems.length === 0 ? (
-                <p className="text-lg text-gray-500 dark:text-gray-400">No simple dimension items selected. Please select at least one item with 'simple' compute type.</p>
+                <p className="text-lg text-gray-500 dark:text-gray-400">
+                    No simple dimension items selected. Please select at least one item with 'simple' compute type.
+                </p>
             ) : (
                 selectedItems.map(item => (
-                    <div
-                        key={item.work_item_id}
-                        className="border border-gray-200 rounded-xl shadow-inner p-6 bg-gray-50 dark:bg-gray-700 dark:border-gray-700 mb-6"
-                    >
+                    <div key={item.work_item_id} className="border border-gray-200 rounded-xl shadow-inner p-6 bg-gray-50 dark:bg-gray-700 dark:border-gray-700 mb-6">
                         <h4 className="text-xl font-semibold mb-4 text-blue-700 dark:text-blue-400">
                             Item: {item.item_title || item.name || "Unnamed Item"}
                         </h4>

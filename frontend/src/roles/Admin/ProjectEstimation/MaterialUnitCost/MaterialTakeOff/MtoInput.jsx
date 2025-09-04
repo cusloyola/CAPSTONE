@@ -5,8 +5,8 @@ const MtoInput = ({ parent, onBack, onDone }) => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [resources, setResources] = useState([]);
   const [mtoFormState, setMtoFormState] = useState({}); // State to hold form data from MUCInputForm
-const [grandTotals, setGrandTotals] = useState([]);
-const [selectedChild, setSelectedChild] = useState(null);
+  const [grandTotals, setGrandTotals] = useState([]);
+  const [selectedChild, setSelectedChild] = useState(null);
 
 
   useEffect(() => {
@@ -58,8 +58,10 @@ const [selectedChild, setSelectedChild] = useState(null);
           return {
             ...item,
             total_volume: isNaN(volume) ? 0 : volume,
+            sow_proposal_id: parent?.sow_proposal_id,   // 👈 inject it here
           };
         });
+
 
         console.log("📌 Updated selectedItems with total_volume:", updatedItems);
         setSelectedItems(updatedItems);
@@ -72,136 +74,136 @@ const [selectedChild, setSelectedChild] = useState(null);
     fetchWithVolumes();
   }, [parent]);
 
-useEffect(() => {
-  const fetchResources = async () => {
-    try {
-   if (!selectedItems.length) return;
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        if (!selectedItems.length) return;
 
-const firstChild = selectedItems.find(item => item.work_item_id); 
-const workItemId = firstChild?.work_item_id;
+        const firstChild = selectedItems.find(item => item.work_item_id);
+        const workItemId = firstChild?.work_item_id;
 
-const response = await fetch(`http://localhost:5000/api/mto/resources?work_item_id=${workItemId}`);
+        const response = await fetch(`http://localhost:5000/api/mto/resources?work_item_id=${workItemId}`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log("✅ All resources fetched:", data.data);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("✅ All resources fetched:", data.data);
 
-      const usedResourceIds = new Set();
-      selectedItems.forEach(item => {
-        (item.existing_materials || []).forEach(row => {
-          if (row.resource_id) usedResourceIds.add(row.resource_id);
+        const usedResourceIds = new Set();
+        selectedItems.forEach(item => {
+          (item.existing_materials || []).forEach(row => {
+            if (row.resource_id) usedResourceIds.add(row.resource_id);
+          });
         });
-      });
 
-      const filtered = data.data.filter(resource => !usedResourceIds.has(resource.resource_id));
-      console.log("🎯 Filtered resources (frontend):", filtered);
+        const filtered = data.data.filter(resource => !usedResourceIds.has(resource.resource_id));
+        console.log("🎯 Filtered resources (frontend):", filtered);
 
-      setResources(filtered);
-    } catch (error) {
-      console.error("Failed to fetch resources", error);
-    }
-  };
+        setResources(filtered);
+      } catch (error) {
+        console.error("Failed to fetch resources", error);
+      }
+    };
 
-  fetchResources();
-}, [selectedItems]); 
+    fetchResources();
+  }, [selectedItems]);
 
 
   const handleMUCFormChange = useCallback((newFormState) => {
     setMtoFormState(newFormState);
   }, []);
 
- const generatePayload = useCallback(() => {
-  const payload = [];
+  const generatePayload = useCallback(() => {
+    const payload = [];
 
-  selectedItems.forEach(item => {
-    const workItemId = item.work_item_id;
-    const sowProposalId = item.sow_proposal_id;
-    const qto = typeof item.total_volume === "number" ? item.total_volume : 0;
-    const parentId = item.parent_id || parent?.work_item_id || null; // 👈 Get parent
+    selectedItems.forEach(item => {
+      const workItemId = item.work_item_id;
+      const sowProposalId = item.sow_proposal_id;
+      const qto = typeof item.total_volume === "number" ? item.total_volume : 0;
+      const parentId = item.parent_id || parent?.work_item_id || null; // 👈 Get parent
 
-    const materialRows = mtoFormState[workItemId] || [];
+      const materialRows = mtoFormState[workItemId] || [];
 
-    materialRows.forEach(row => {
-      if (row.resource_id && row.multiplier > 0) {
-        const actualQty = qto * row.multiplier;
-        const materialCost = actualQty * row.unit_cost;
+      materialRows.forEach(row => {
+        if (row.resource_id && row.multiplier > 0) {
+          const actualQty = qto * row.multiplier;
+          const materialCost = actualQty * row.unit_cost;
 
-        payload.push({
-          sow_proposal_id: sowProposalId,
-          work_item_id: workItemId,         
-          parent_work_item_id: parentId,   
-          resource_id: row.resource_id,
-          multiplier: row.multiplier,
-          actual_qty: parseFloat(actualQty.toFixed(2)),
-          material_cost: parseFloat(materialCost.toFixed(2)),
-        });
+          payload.push({
+            sow_proposal_id: sowProposalId,
+            work_item_id: workItemId,
+            parent_work_item_id: parentId,
+            resource_id: row.resource_id,
+            multiplier: row.multiplier,
+            actual_qty: parseFloat(actualQty.toFixed(2)),
+            material_cost: parseFloat(materialCost.toFixed(2)),
+          });
+        }
+      });
+    });
+
+    return payload;
+  }, [mtoFormState, selectedItems, parent]);
+
+
+
+  const handleSaveMTO = async () => {
+    const proposal_id = parent?.proposal_id;
+    const materialTakeOff = generatePayload();
+    console.log("📦 Generated MTO Payload:", materialTakeOff);
+
+    if (!proposal_id) {
+      alert("Error: Proposal ID is missing. Cannot save MTO.");
+      return;
+    }
+
+    if (materialTakeOff.length === 0) {
+      alert("No valid material take-off data to save. Please select materials and multipliers.");
+      return;
+    }
+
+    const parentTotals = [];
+    console.log("📊 Computed Parent Totals:", parentTotals);
+
+    const parentMap = {};
+
+    materialTakeOff.forEach(item => {
+      const parentId = parent.work_item_id;
+      const key = `${item.sow_proposal_id}-${parentId}`;
+
+      if (!parentMap[key]) {
+        parentMap[key] = {
+          sow_proposal_id: item.sow_proposal_id,
+          work_item_id: parentId,
+          mto_parent_grandTotal: 0,
+        };
       }
-    });
-  });
 
-  return payload;
-}, [mtoFormState, selectedItems, parent]);
-
-
-
-const handleSaveMTO = async () => {
-  const proposal_id = parent?.proposal_id;
-  const materialTakeOff = generatePayload();
-console.log("📦 Generated MTO Payload:", materialTakeOff);
-
-  if (!proposal_id) {
-    alert("Error: Proposal ID is missing. Cannot save MTO.");
-    return;
-  }
-
-  if (materialTakeOff.length === 0) {
-    alert("No valid material take-off data to save. Please select materials and multipliers.");
-    return;
-  }
-
-  const parentTotals = [];
-  console.log("📊 Computed Parent Totals:", parentTotals);
-
-  const parentMap = {};
-
-  materialTakeOff.forEach(item => {
-    const parentId = parent.work_item_id;
-    const key = `${item.sow_proposal_id}-${parentId}`;
-
-    if (!parentMap[key]) {
-      parentMap[key] = {
-        sow_proposal_id: item.sow_proposal_id,
-        work_item_id: parentId,
-        mto_parent_grandTotal: 0,
-      };
-    }
-
-    parentMap[key].mto_parent_grandTotal += item.material_cost;
-  });
-
-  Object.values(parentMap).forEach(entry => parentTotals.push(entry));
-
-  try {
-    const response = await fetch(`http://localhost:5000/api/mto/save/${proposal_id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ materialTakeOff, parentTotals }),
+      parentMap[key].mto_parent_grandTotal += item.material_cost;
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to save Material Take-Off");
-    }
+    Object.values(parentMap).forEach(entry => parentTotals.push(entry));
 
-    alert("Material Take-Off saved successfully! 🎉");
-    onDone();
-  } catch (error) {
-    console.error("Save MTO Error:", error);
-    alert(`An error occurred: ${error.message}`);
-  }
-};
+    try {
+      const response = await fetch(`http://localhost:5000/api/mto/save/${proposal_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ materialTakeOff, parentTotals }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to save Material Take-Off");
+      }
+
+      alert("Material Take-Off saved successfully! 🎉");
+      onDone();
+    } catch (error) {
+      console.error("Save MTO Error:", error);
+      alert(`An error occurred: ${error.message}`);
+    }
+  };
 
 
 
@@ -225,8 +227,8 @@ console.log("📦 Generated MTO Payload:", materialTakeOff);
         <MUCInputForm
           selectedItems={Array.isArray(selectedItems) ? selectedItems : []}
           resources={Array.isArray(resources) ? resources : []}
-          onUpdateItems={handleMUCFormChange} 
-            onUpdateGrandTotals={setGrandTotals} 
+          onUpdateItems={handleMUCFormChange}
+          onUpdateGrandTotals={setGrandTotals}
 
         />
       </div>

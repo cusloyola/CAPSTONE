@@ -1,4 +1,13 @@
 const db = require("../../config/db");
+const generateStructuredId = require("../../generated/GenerateCodes/generatecode");
+
+
+const query = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.query(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)));
+  });
+
+
 
 const getQtoChildrenTotalsByProposal = (req, res) => {
   const { proposal_id } = req.query;
@@ -60,100 +69,108 @@ const getResources = (req, res) => {
   });
 };
 
-const saveFullMaterialTakeOff = (req, res) => {
-  const { materialTakeOff } = req.body;
 
-  if (!Array.isArray(materialTakeOff) || materialTakeOff.length === 0) {
-    return res.status(400).json({ message: "Missing material takeoff data" });
-  }
+const saveFullMaterialTakeOff = async (req, res) => {
+  try {
+    const { materialTakeOff } = req.body;
 
-  const sow_proposal_id = materialTakeOff[0].sow_proposal_id; // ✅ Real source
 
-  const mtoValues = materialTakeOff.map(item => [
-    item.sow_proposal_id,
-    item.work_item_id,
-    item.resource_id,
-    item.multiplier || 1,
-    item.actual_qty,
-    item.material_cost
-  ]);
-
-  const mtoQuery = `
-    INSERT INTO mto_materiallists (
-      sow_proposal_id,
-      work_item_id,
-      resource_id,
-      multiplier,
-      actual_qty,
-      material_cost
-    )
-    VALUES ?
-    ON DUPLICATE KEY UPDATE
-      actual_qty = actual_qty + VALUES(actual_qty),
-      material_cost = material_cost + VALUES(material_cost)
-  `;
-
-  db.query(mtoQuery, [mtoValues], (err1, result1) => {
-    if (err1) {
-      console.error("❌ Error saving MTO:", err1);
-      return res.status(500).json({ message: "Failed to save MTO", error: err1 });
+    if (!Array.isArray(materialTakeOff) || materialTakeOff.length === 0) {
+      return res.status(400).json({ message: "Missing material takeoff data" });
     }
 
-    console.log("✅ MTO Saved, running parent total query...");
 
-    const parentTotalQuery = `
-      SELECT 
-        m.sow_proposal_id,
-        p.work_item_id AS parent_work_item_id,
-        SUM(m.material_cost) AS mto_parent_grandTotal
-      FROM mto_materiallists m
-      JOIN sow_work_items c ON m.work_item_id = c.work_item_id
-      JOIN sow_work_items p ON c.parent_id = p.work_item_id
-      WHERE m.sow_proposal_id = ?
-      GROUP BY p.work_item_id
-    `;
+    const sow_proposal_id = materialTakeOff[0].sow_proposal_id;
 
-    db.query(parentTotalQuery, [sow_proposal_id], (err2, rows) => {
-      if (err2) {
-        console.error("❌ Error fetching parent totals:", err2);
-        return res.status(500).json({ message: "Failed to calculate parent totals", error: err2 });
-      }
 
-      if (!rows.length) {
-        console.warn("⚠️ No parent totals found to update.");
-        return res.status(200).json({
-          message: "MTO saved, but no parent totals to update.",
-          mtoInserted: result1.affectedRows,
-          parentUpdated: 0
-        });
-      }
+    // 1) build rows with generated mto_id (code 122)
+    const mtoValues = [];
+    for (const item of materialTakeOff) {
+      const mto_id = await generateStructuredId("122", "mto_materiallists", "mto_id");
+      mtoValues.push([
+        mto_id,
+        item.sow_proposal_id,
+        item.work_item_id,
 
-      const replaceValues = rows.map(row => [
-        row.sow_proposal_id,
-        row.parent_work_item_id,
-        row.mto_parent_grandTotal
+        item.resource_id,
+
+        item.multiplier || 1,
+        item.actual_qty,
+        item.material_cost
       ]);
+    }
 
-      const replaceQuery = `
-        REPLACE INTO mto_parent_totals (sow_proposal_id, work_item_id, mto_parent_grandTotal)
-        VALUES ?
-      `;
 
-      db.query(replaceQuery, [replaceValues], (err3, result3) => {
-        if (err3) {
-          console.error("❌ Error updating parent totals:", err3);
-          return res.status(500).json({ message: "Failed to update parent totals", error: err3 });
-        }
+    // 2) upsert into mto_materiallists
+    const insertMtoSql = `
+      INSERT INTO mto_materiallists
+        (mto_id, sow_proposal_id,work_item_id, resource_id, multiplier, actual_qty, material_cost)
+      VALUES ?
+      ON DUPLICATE KEY UPDATE
+        actual_qty   = VALUES(actual_qty),
+        material_cost = VALUES(material_cost)
+    `;
+    await query(insertMtoSql, [mtoValues]);
 
-        return res.status(201).json({
-          message: "Material Take-Off and Parent Totals saved successfully",
-          mtoInserted: result1.affectedRows,
-          parentUpdated: result3.affectedRows
-        });
+
+    // 3) recompute parent totals from the child MTOs
+   const parentAggSql = `
+  SELECT
+    m.sow_proposal_id,
+    p.work_item_id AS parent_work_item_id,   -- include this!
+    SUM(m.material_cost) AS mto_parent_grandTotal
+  FROM mto_materiallists m
+  JOIN sow_work_items c ON m.work_item_id = c.work_item_id
+  JOIN sow_work_items p ON c.parent_id = p.work_item_id
+  WHERE m.sow_proposal_id = ?
+  GROUP BY p.work_item_id
+`;
+
+    const parentRows = await query(parentAggSql, [sow_proposal_id]);
+
+
+    if (!parentRows.length) {
+      return res.status(200).json({
+        message: "MTO saved; no parent totals to update.",
+        parentUpdated: 0
       });
+    }
+
+
+    // 4) build parent upserts with generated mto_parent_id (code 123)
+   const parentValues = [];
+for (const row of parentRows) {
+  const mto_parent_id = await generateStructuredId("123", "mto_parent_totals", "mto_parent_id");
+  parentValues.push([
+    mto_parent_id,
+    row.sow_proposal_id,
+    row.parent_work_item_id,  // now this exists
+    row.mto_parent_grandTotal
+  ]);
+}
+
+    // 5) upsert parent totals
+    const upsertParentSql = `
+  INSERT INTO mto_parent_totals
+    (mto_parent_id, sow_proposal_id, work_item_id, mto_parent_grandTotal)
+  VALUES ?
+  ON DUPLICATE KEY UPDATE
+    mto_parent_grandTotal = VALUES(mto_parent_grandTotal)
+`;
+    await query(upsertParentSql, [parentValues]);
+
+
+
+    return res.status(201).json({
+      message: "Material Take-Off and Parent Totals saved successfully",
+      parentUpdated: parentValues.length
     });
-  });
+  } catch (err) {
+    console.error("❌ saveFullMaterialTakeOff error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
+
 
 
 
@@ -235,7 +252,7 @@ const updateFullMaterialTakeOff = (req, res) => {
   const { materialTakeOff, parentTotals } = req.body;
 
   if (!Array.isArray(materialTakeOff) || materialTakeOff.length === 0 ||
-      !Array.isArray(parentTotals) || parentTotals.length === 0) {
+    !Array.isArray(parentTotals) || parentTotals.length === 0) {
     return res.status(400).json({ message: "Missing material or parent total data" });
   }
 
@@ -256,7 +273,7 @@ const updateFullMaterialTakeOff = (req, res) => {
           item.multiplier,
           item.actual_qty,
           item.material_cost,
-          item.mto_id 
+          item.mto_id
         ], (err, result) => {
           if (err) return reject(err);
           resolve(result);

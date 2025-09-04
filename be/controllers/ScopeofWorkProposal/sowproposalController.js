@@ -1,4 +1,5 @@
 const db = require('../../config/db');
+const generateStructuredId = require("../../generated/GenerateCodes/generatecode"); 
 
 const getAllSOWWorkItems = (req, res) => {
  const sql = `
@@ -178,22 +179,28 @@ const addSOWWorkItems = async (req, res) => {
       return res.status(400).json({ message: "No work items selected" });
     }
 
-    const insertPromises = work_item_ids.map(work_item_id => {
-      return db.query(
-        "INSERT INTO sow_proposal (proposal_id, work_item_id) VALUES (?, ?)",
-        [proposal_id, work_item_id]
-      );
-    });
+    // 🔑 Instead of parallel insert, we’ll generate unique IDs one by one
+    for (const work_item_id of work_item_ids) {
+      const sow_proposal_id = await generateStructuredId("114", "sow_proposal", "sow_proposal_id");
 
-    await Promise.all(insertPromises);
+      await new Promise((resolve, reject) => {
+        db.query(
+          "INSERT INTO sow_proposal (sow_proposal_id, proposal_id, work_item_id) VALUES (?, ?, ?)",
+          [sow_proposal_id, proposal_id, work_item_id],
+          (err) => {
+            if (err) return reject(err);
+            resolve();
+          }
+        );
+      });
+    }
 
     res.status(201).json({ message: "Work items added to proposal successfully" });
   } catch (error) {
-    console.error("Error inserting work items:", error);
+    console.error("❌ Error inserting work items:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 
 

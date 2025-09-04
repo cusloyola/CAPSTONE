@@ -2,9 +2,8 @@ const express = require('express');
 const router = express.Router();
 const quantitytakeoffController = require('../../controllers/QuantityTakeOff/quantitytakeoffController');
 
-router.post('/add', quantitytakeoffController.addQtoEntries);
-router.post('/save-totals', quantitytakeoffController.saveQtoTotals); 
-router.post('/save-parent-totals', quantitytakeoffController.saveQtoParentTotals);
+router.post('/save-full', quantitytakeoffController.saveFullQto);
+
 router.get('/:proposal_id', quantitytakeoffController.getQtoDimensions);
 
 router.put('/update', quantitytakeoffController.UpdateQtoDimension);

@@ -187,17 +187,18 @@ const filteredByParent =
   selectedParent === "All" || !selectedParent
     ? nodes
     : nodes.filter((node) => node.data.name === selectedParent);
-
+    
 const filteredBySearch = filteredByParent.map((parent) => {
-  const parentMatches = parent.data.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const parentName = parent.data.name ?? "";
+  const parentMatches = parentName.toLowerCase().includes(searchTerm.toLowerCase());
 
   const matchingChildren = parent.children.map((child) => {
-    const childMatches = child.data.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const childName = child.data.name ?? "";
+    const childMatches = childName.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (childMatches || parentMatches) {
       return { ...child }; 
     }
-
     return null;
   }).filter(Boolean);
 
@@ -207,6 +208,7 @@ const filteredBySearch = filteredByParent.map((parent) => {
 
   return null;
 }).filter(Boolean);
+
 
 const paginatedNodes = filteredBySearch.slice(0, entriesCount);
 

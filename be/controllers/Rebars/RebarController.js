@@ -1,5 +1,6 @@
 const { parse } = require("dotenv");
 const db = require("../../config/db");
+const generateStructuredId = require("../../generated/GenerateCodes/generatecode");
 
 
 const getRebarMasterlist = (req, res) => {
@@ -29,7 +30,8 @@ const addRebarEntries = async (req, res) => {
       return res.status(400).json({ message: "No rebars to submit" });
     }
 
-    const insertPromises = rebar_entries.map(item => {
+    // 1️⃣ Insert rebar_details with generated IDs
+    for (const item of rebar_entries) {
       const {
         quantity,
         total_weight,
@@ -42,22 +44,26 @@ const addRebarEntries = async (req, res) => {
       const qty = parseFloat(quantity) || 0;
       const weight = parseFloat(total_weight) || 0;
 
-      if (!rebar_masterlist_id || qty <= 0) {
-        return Promise.resolve(); 
-      }
+      if (!rebar_masterlist_id || qty <= 0) continue;
 
-      return db.query(
-        `INSERT INTO rebar_details 
-          (rebar_masterlist_id, work_item_id, sow_proposal_id, total_weight, location, quantity, floor_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [rebar_masterlist_id, work_item_id, sow_proposal_id, weight, location, qty, floor_id]
+      // 🔑 Generate structured ID for rebar_details
+      const rebar_details_id = await generateStructuredId(
+        "127",
+        "rebar_details",
+        "rebar_details_id"
       );
-    });
 
-    await Promise.all(insertPromises);
-    console.log("✅ All rebar entries inserted.");
+      await db.query(
+        `INSERT INTO rebar_details 
+          (rebar_details_id, rebar_masterlist_id, work_item_id, sow_proposal_id, total_weight, location, quantity, floor_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [rebar_details_id, rebar_masterlist_id, work_item_id, sow_proposal_id, weight, location, qty, floor_id]
+      );
+    }
 
-   
+    console.log("✅ All rebar entries inserted with structured IDs.");
+
+    // 2️⃣ Calculate total weight
     const [rowsWeight] = await db.query(
       `SELECT SUM(total_weight) AS rebar_total
        FROM rebar_details
@@ -65,18 +71,31 @@ const addRebarEntries = async (req, res) => {
       [sow_proposal_id]
     );
 
-    console.log("DEBUG: rowsWeight from SUM query:", rowsWeight); // This correctly shows RowDataPacket { rebar_total: ... }
-
-    const totalWeight = parseFloat(rowsWeight?.rebar_total ?? 0); // Corrected line
+    const totalWeight = parseFloat(rowsWeight?.rebar_total ?? 0);
     console.log("📊 Total Rebar Weight:", totalWeight);
 
-    await db.query(
-      `INSERT INTO rebar_totals (sow_proposal_id, rebar_overall_weight)
-       VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE rebar_overall_weight = VALUES(rebar_overall_weight)`,
-      [sow_proposal_id, totalWeight]
+    // 🔑 Generate structured ID for rebar_totals if not exists
+    const [existingTotal] = await db.query(
+      `SELECT rebar_total_id FROM rebar_totals WHERE sow_proposal_id = ?`,
+      [sow_proposal_id]
     );
-    console.log("✅ Rebar total inserted/updated for sow_proposal_id", sow_proposal_id);
+
+    let rebar_total_id;
+    if (existingTotal?.length > 0) {
+      rebar_total_id = existingTotal[0].rebar_total_id;
+    } else {
+      rebar_total_id = await generateStructuredId("128", "rebar_totals", "rebar_total_id");
+    }
+
+    // 3️⃣ Insert or update total weight
+    await db.query(
+      `INSERT INTO rebar_totals (rebar_total_id, sow_proposal_id, rebar_overall_weight)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE rebar_overall_weight = VALUES(rebar_overall_weight)`,
+      [rebar_total_id, sow_proposal_id, totalWeight]
+    );
+
+    console.log("✅ Rebar total inserted/updated with structured ID for sow_proposal_id", sow_proposal_id);
 
     return res.status(201).json({ message: "Rebar successfully added and total updated" });
 
@@ -85,7 +104,6 @@ const addRebarEntries = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
 
 const getRebarByProposalId = (req, res) => {
   const { proposal_id } = req.params;

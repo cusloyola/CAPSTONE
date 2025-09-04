@@ -103,44 +103,13 @@ const QtoDimensionInput = ({
 
 
   const handleSubmitQTO = async () => {
-    const qto_entries = [];
-    const totalVolumes = {};
+  const qto_entries = [];
 
-    selectedItems.forEach(item => {
-      let total = 0;
-
-      if (
-        item.compute_type === "custom" &&
-        typeof qtoDimensions[item.work_item_id] === "object"
-      ) {
-        Object.entries(qtoDimensions[item.work_item_id]).forEach(([floorId, rows]) => {
-
-          rows.forEach(row => {
-            const computedValue = calculateVolume(row.length, row.width, row.depth, row.count);
-            total += computedValue;
-
-            qto_entries.push({
-              sow_proposal_id,
-              work_item_id: parseInt(item.work_item_id),
-              label: row.label || null,
-              length: parseFloat(row.length) || 0,
-              width: parseFloat(row.width) || 0,
-              depth: parseFloat(row.depth) || 0,
-              units: parseFloat(row.count) || 1,
-              computed_value: parseFloat(computedValue.toFixed(2)),
-              floor_id: parseInt(floorId) || null
-            });
-          });
-        });
-
-      } else if (
-        item.compute_type === "simple" &&
-        Array.isArray(qtoDimensions[item.work_item_id])
-      ) {
-        qtoDimensions[item.work_item_id].forEach(row => {
-          const computedValue = calculateVolume(row.length, row.width, row.depth, row.count || row.units);
-          total += computedValue;
-
+  selectedItems.forEach(item => {
+    if (item.compute_type === "custom" && typeof qtoDimensions[item.work_item_id] === "object") {
+      Object.entries(qtoDimensions[item.work_item_id]).forEach(([floorId, rows]) => {
+        rows.forEach(row => {
+          const computedValue = calculateVolume(row.length, row.width, row.depth, row.count);
           qto_entries.push({
             sow_proposal_id,
             work_item_id: parseInt(item.work_item_id),
@@ -148,67 +117,59 @@ const QtoDimensionInput = ({
             length: parseFloat(row.length) || 0,
             width: parseFloat(row.width) || 0,
             depth: parseFloat(row.depth) || 0,
-            units: parseFloat(row.count || row.units) || 1,
+            units: parseFloat(row.count) || 1,
             computed_value: parseFloat(computedValue.toFixed(2)),
-            floor_id: null
+            floor_id: parseInt(floorId) || null
           });
         });
-      }
+      });
+    } else if (item.compute_type === "simple" && Array.isArray(qtoDimensions[item.work_item_id])) {
+      qtoDimensions[item.work_item_id].forEach(row => {
+        const computedValue = calculateVolume(row.length, row.width, row.depth, row.count || row.units);
+        qto_entries.push({
+          sow_proposal_id,
+          work_item_id: parseInt(item.work_item_id),
+          label: row.label || null,
+          length: parseFloat(row.length) || 0,
+          width: parseFloat(row.width) || 0,
+          depth: parseFloat(row.depth) || 0,
+          units: parseFloat(row.count || row.units) || 1,
+          computed_value: parseFloat(computedValue.toFixed(2)),
+          floor_id: null
+        });
+      });
+    }
+  });
 
-      console.log("📌 Submitting QTO - current qtoDimensions:", qtoDimensions);
-      console.log("📋 Selected Items:", selectedItems);
+  if (qto_entries.length === 0) {
+    alert("❌ No QTO entries to submit.");
+    return;
+  }
 
-      console.log(`🧪 Found ${item.compute_type?.toUpperCase()} item:`, item.work_item_id, qtoDimensions[item.work_item_id]);
-      totalVolumes[item.work_item_id] = total;
+  try {
+    const response = await fetch("http://localhost:5000/api/qto/save-full", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ qto_entries })
     });
 
-    console.log("✅ Final QTO Entries (pre-submit):", qto_entries);
+    const data = await response.json();
 
-
-    if (qto_entries.length === 0) {
-      alert("❌ No QTO entries to submit.");
+    if (!response.ok) {
+      alert("❌ Failed to save QTO: " + data.message);
       return;
     }
 
-    try {
-      const response = await fetch("http://localhost:5000/api/qto/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ qto_entries }),
-      });
+    console.log("✅ QTO saved:", data);
+    alert("✅ QTO entries and totals saved successfully!");
 
-      const data = await response.json();
+    onDone(); // optional callback after success
+  } catch (error) {
+    console.error("❌ QTO submission error:", error);
+    alert("❌ An error occurred while saving QTO entries.");
+  }
+};
 
-    alert("✅ QTO entries submitted successfully!");
-
-
-    
-
-      onDone();
-    } catch (error) {
-      console.error("QTO submission error:", error);
-      alert("❌ An error occurred while submitting QTO entries.");
-    }
-
-    try {
-      const parentTotalsResponse = await fetch("http://localhost:5000/api/qto/save-parent-totals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposal_id: sow_proposal_id }),
-      });
-
-      const parentTotalsData = await parentTotalsResponse.json();
-
-      if (!parentTotalsResponse.ok) {
-        alert("⚠ Child totals saved, but failed to save parent totals: " + parentTotalsData.message);
-      } else {
-        console.log("✅ Parent totals saved.");
-      }
-    } catch (error) {
-      console.error("❌ Failed to save parent totals:", error);
-      alert("❌ An error occurred while saving parent totals.");
-    }
-  };
 
 
   const hasCustomChild = selectedItems.some(child => child.compute_type === "custom");

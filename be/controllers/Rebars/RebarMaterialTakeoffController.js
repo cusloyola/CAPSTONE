@@ -224,21 +224,17 @@ const updateRebarResources = async (req, res) => {
         console.log("📊 New total computed for sow_proposal_id", sow_proposal_id, ":", newTotal);
 
         // 3. Update the grand total table
-        // Assuming mto_rebar_totals has sow_proposal_id as a unique identifier (or primary key)
         const totalUpdateResult = await db.query(
             `UPDATE mto_rebar_totals
              SET rebar_grand_total = ?
-             WHERE sow_proposal_id = ?`, // This is likely fine if there's only one total per sow_proposal_id
+             WHERE sow_proposal_id = ?`, 
             [newTotal, sow_proposal_id]
         );
 
         console.log("🟢 Rebar grand total updated:", totalUpdateResult);
 
         if (totalUpdateResult.affectedRows === 0) {
-            // If mto_rebar_totals truly has a mto_rebar_total_id and you need to use it,
-            // you'd need to pass it from the frontend or fetch it first.
-            // For now, if no row is affected here, it means no existing total for that sow_proposal_id.
-            // You might need to INSERT if it doesn't exist, rather than just returning 404.
+          
             return res.status(404).json({ message: `No rebar total row found for sow_proposal_id ${sow_proposal_id} to update.` });
         }
 

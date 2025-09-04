@@ -38,30 +38,31 @@ const SimpleRebarDimensions = ({
         setRows(prevRows => prevRows.filter(row => row.id !== rowIdToRemove));
     };
 
-    const handleSimpleRebarChange = (rowId, selectedId) => {
-        const selectedRebar = rebarOptions.find(opt => opt.rebar_masterlist_id === parseInt(selectedId));
-        if (!selectedRebar) return;
+   const handleSimpleRebarChange = (rowId, selectedId) => {
+    const selectedRebar = rebarOptions.find(opt => String(opt.rebar_masterlist_id) === selectedId);
+    if (!selectedRebar) return;
 
-        setRows(prevRows => prevRows.map(row => {
-            if (row.id === rowId) {
-                const quantity = parseFloat(row.quantity) || 0;
-                const newTotalWeight =
-                    (parseFloat(selectedRebar.weight_per_meter) || 0) *
-                    (parseFloat(selectedRebar.length_m) || 0) *
-                    quantity;
+    setRows(prevRows => prevRows.map(row => {
+        if (row.id === rowId) {
+            const quantity = parseFloat(row.quantity) || 1; // default to 1
+            const newTotalWeight =
+                (parseFloat(selectedRebar.weight_per_meter) || 0) *
+                (parseFloat(selectedRebar.length_m) || 0) *
+                quantity;
 
-                return {
-                    ...row,
-                    rebar_masterlist_id: selectedRebar.rebar_masterlist_id,
-                    diameter_mm: selectedRebar.diameter_mm,
-                    length_m: selectedRebar.length_m,
-                    weight_per_meter: selectedRebar.weight_per_meter,
-                    total_weight: newTotalWeight,
-                };
-            }
-            return row;
-        }));
-    };
+            return {
+                ...row,
+                rebar_masterlist_id: selectedRebar.rebar_masterlist_id,
+                diameter_mm: selectedRebar.diameter_mm,
+                length_m: selectedRebar.length_m,
+                weight_per_meter: selectedRebar.weight_per_meter,
+                total_weight: newTotalWeight,
+            };
+        }
+        return row;
+    }));
+};
+
 
     const handleSimpleRebarQuantityChange = (rowId, value) => {
         const newQuantity = parseFloat(value) || 0;

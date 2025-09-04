@@ -1,126 +1,129 @@
-// const { use } = require('react');
 const db = require('../../config/db');
+const generateStructuredId = require("../../generated/GenerateCodes/generatecode"); 
 
-const addQtoEntries = async (req, res) => {
+
+const query = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.query(sql, params, (err, results) => {
+      if (err) return reject(err);
+      resolve(results);
+    });
+  });
+
+const saveFullQto = async (req, res) => {
   try {
     const { qto_entries } = req.body;
-
     if (!qto_entries || !Array.isArray(qto_entries) || qto_entries.length === 0) {
       return res.status(400).json({ message: "No QTO entries provided" });
     }
 
-    // Step 1: Insert entries sequentially
+    // 1️⃣ Insert / update QTO entries
     for (const entry of qto_entries) {
-     const {
-  sow_proposal_id,
-  label = null,
-  length = null,
-  width = null,
-  depth = null,
-  floor_id = null,
-  units = 1,
-  work_item_id = null
-} = entry;
+      const {
+        sow_proposal_id,
+        label = null,
+        length = null,
+        width = null,
+        depth = null,
+        floor_id = null,
+        units = 1,
+        work_item_id = null
+      } = entry;
 
-const l = length === null ? 0 : parseFloat(length);
-const w = width === null ? 0 : parseFloat(width);
-const d = depth === null ? null : parseFloat(depth);
-const u = units === null ? 1 : parseFloat(units);
+      const l = length === null ? 0 : parseFloat(length);
+      const w = width === null ? 0 : parseFloat(width);
+      const d = depth === null ? null : parseFloat(depth);
+      const u = units === null ? 1 : parseFloat(units);
+      const calculated_value = d === null || d === 0 ? l * w * u : l * w * d * u;
 
-const calculated_value = d === null || d === 0
-  ? l * w * u
-  : l * w * d * u;
-  
-    console.log('📦 Inserting with values:', {
-  label, length, width, depth, floor_id, units, calculated_value
-});
+      const qto_id = await generateStructuredId("131", "qto_dimensions", "qto_id");
 
-
-      await db.query(
+      await query(
         `INSERT INTO qto_dimensions 
-         (sow_proposal_id, work_item_id, label, length, width, depth, floor_id, units, calculated_value) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [sow_proposal_id, work_item_id, label, length, width, depth, floor_id, units, calculated_value]
+         (qto_id, sow_proposal_id, work_item_id, label, length, width, depth, floor_id, units, calculated_value)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [qto_id, sow_proposal_id, work_item_id, label, length, width, depth, floor_id, units, calculated_value]
       );
     }
 
-    // Step 2: Recalculate children totals (grouped by sow_proposal_id + work_item_id)
+    // 2️⃣ Recalculate and save children totals
     const uniquePairs = new Set(qto_entries.map(e => `${e.sow_proposal_id}-${e.work_item_id}`));
     for (const key of uniquePairs) {
       const [sow_proposal_id, work_item_id] = key.split("-");
-      await recalculateQtoChildrenTotal(sow_proposal_id, work_item_id);
-    }
 
-    // Step 3: Recalculate parent totals (only once per proposal)
-    const proposalIds = [...new Set(qto_entries.map(e => e.sow_proposal_id))];
-    for (const proposal_id of proposalIds) {
-      await recalculateQtoParentTotals(proposal_id);
-    }
-
-    res.status(201).json({ message: "QTO entries and totals added successfully" });
-
-  } catch (error) {
-    console.error("❌ Error adding QTO entries:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-
-const saveQtoTotals = async (req, res) => {
-  try {
-    const { totals } = req.body;
-
-    if (!totals || !Array.isArray(totals) || totals.length === 0) {
-      return res.status(400).json({ message: "No totals provided" });
-    }
-
-    const insertPromises = totals.map(({ sow_proposal_id, work_item_id, total_volume }) => {
-      return db.query(
-        `INSERT INTO qto_children_totals (sow_proposal_id, work_item_id, total_volume)
-         VALUES (?, ?, ?)
-         ON DUPLICATE KEY UPDATE total_volume = VALUES(total_volume)`,
-        [sow_proposal_id, work_item_id, total_volume]
+      const result = await query(
+        `SELECT SUM(calculated_value) AS total_volume
+         FROM qto_dimensions
+         WHERE sow_proposal_id = ? AND work_item_id = ?`,
+        [sow_proposal_id, work_item_id]
       );
+
+      const total_volume = result[0].total_volume || 0;
+
+      const existing = await query(
+        `SELECT qto_total_id FROM qto_children_totals WHERE sow_proposal_id = ? AND work_item_id = ?`,
+        [sow_proposal_id, work_item_id]
+      );
+
+      const qto_total_id = existing.length > 0
+        ? existing[0].qto_total_id
+        : await generateStructuredId("130", "qto_children_totals", "qto_total_id");
+
+      await query(
+        `INSERT INTO qto_children_totals (qto_total_id, sow_proposal_id, work_item_id, total_volume)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE total_volume = VALUES(total_volume)`,
+        [qto_total_id, sow_proposal_id, work_item_id, total_volume]
+      );
+    }
+
+    // 3️⃣ Recalculate and save parent totals
+    const proposalIds = [...new Set(qto_entries.map(e => e.sow_proposal_id))];
+    const savedParents = [];
+
+    for (const proposal_id of proposalIds) {
+      const parents = await query(
+        `SELECT sw.parent_id AS work_item_id, SUM(qct.total_volume) AS total_value
+         FROM qto_children_totals qct
+         JOIN sow_work_items sw ON qct.work_item_id = sw.work_item_id
+         WHERE qct.sow_proposal_id = ?
+         GROUP BY sw.parent_id`,
+        [proposal_id]
+      );
+
+      for (const row of parents) {
+        const existingParent = await query(
+          `SELECT qto_parent_total_id FROM qto_parent_totals WHERE sow_proposal_id = ? AND work_item_id = ?`,
+          [proposal_id, row.work_item_id]
+        );
+
+        const qto_parent_total_id = existingParent.length > 0
+          ? existingParent[0].qto_parent_total_id
+          : await generateStructuredId("129", "qto_parent_totals", "qto_parent_total_id");
+
+        await query(
+          `INSERT INTO qto_parent_totals (qto_parent_total_id, sow_proposal_id, work_item_id, total_value)
+           VALUES (?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE total_value = VALUES(total_value)`,
+          [qto_parent_total_id, proposal_id, row.work_item_id, row.total_value]
+        );
+
+        savedParents.push({
+          qto_parent_total_id,
+          sow_proposal_id: proposal_id,
+          work_item_id: row.work_item_id,
+          total_value: row.total_value
+        });
+      }
+    }
+
+    res.status(201).json({
+      message: "QTO entries and totals saved successfully",
+      savedParents
     });
-
-    await Promise.all(insertPromises);
-
-    res.status(201).json({ message: "QTO totals saved successfully" });
-
-  } catch (error) {
-    console.error("Error saving QTO totals:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-const saveQtoParentTotals = async (req, res = null) => {
-  const proposal_id = req.body?.proposal_id || req;
-
-  if (!proposal_id) {
-    if (res) return res.status(400).json({ message: "Missing proposal_id" });
-    throw new Error("Missing proposal_id");
-  }
-
-  try {
-    const sql = `
-      INSERT INTO qto_parent_totals (sow_proposal_id, work_item_id, total_value)
-      SELECT 
-        qct.sow_proposal_id,
-        sw.parent_id AS work_item_id,
-        SUM(qct.total_volume) AS total_value
-      FROM qto_children_totals qct
-      JOIN sow_work_items sw ON qct.work_item_id = sw.work_item_id
-      WHERE qct.sow_proposal_id = ?
-      GROUP BY qct.sow_proposal_id, sw.parent_id
-      ON DUPLICATE KEY UPDATE total_value = VALUES(total_value)
-    `;
-
-    await db.query(sql, [proposal_id]);
-
-    if (res) return res.status(200).json({ message: "Parent totals updated" });
   } catch (err) {
-    console.error("❌ Failed to save parent totals:", err);
-    if (res) return res.status(500).json({ message: "Error saving parent totals" });
+    console.error("❌ Error in saveFullQto:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -398,9 +401,7 @@ const getQtoParentTotals = (req, res) => {
 
 
 module.exports = {
-  addQtoEntries,
-  saveQtoTotals,
-  saveQtoParentTotals,
+  saveFullQto,
   getQtoDimensions,
   UpdateQtoDimension,
   deleteQtoDimension,

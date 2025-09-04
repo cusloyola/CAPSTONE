@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const generateStructuredId = require("../generated/GenerateCodes/generatecode"); 
 
 const getProposalByProject = (req, res) => {
   const { project_id } = req.params;
@@ -16,29 +17,38 @@ const getProposalByProject = (req, res) => {
 };
 
 
-
-const addProposalByProject = (req, res) => {
+const addProposalByProject = async (req, res) => {
   const { project_id } = req.params;
   const { proposal_title, description, proposalStatus = "pending" } = req.body;
 
-  const insertProposalSQL = `
-        INSERT INTO proposals (project_id, proposal_title, description, status)
-        VALUES (?, ?, ?, ?)
+  try {
+    // Generate structured proposal_id (103 prefix)
+    const proposal_id = await generateStructuredId("103", "proposals", "proposal_id");
+
+    const insertProposalSQL = `
+      INSERT INTO proposals (proposal_id, project_id, proposal_title, description, status)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
-  db.query(insertProposalSQL, [project_id, proposal_title, description, proposalStatus], (err, result) => {
-    if (err) {
-      console.error("Error adding proposal:", err);
-      return res.status(500).json({ error: "Failed to add proposal" });
-    }
+    db.query(
+      insertProposalSQL,
+      [proposal_id, project_id, proposal_title, description, proposalStatus],
+      (err) => {
+        if (err) {
+          console.error("❌ Error adding proposal:", err);
+          return res.status(500).json({ error: "Failed to add proposal" });
+        }
 
-    const proposal_id = result.insertId;
-
-    return res.status(201).json({
-      message: "Proposal created successfully",
-      proposal_id
-    });
-  });
+        return res.status(201).json({
+          message: "Proposal created successfully",
+          proposal_id
+        });
+      }
+    );
+  } catch (error) {
+    console.error("❌ Error generating proposal ID:", error);
+    return res.status(500).json({ error: "Error generating structured ID" });
+  }
 };
 
 const deleteProposalByProject = (req, res) => {

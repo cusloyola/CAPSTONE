@@ -1,12 +1,10 @@
 const db = require('../config/db');
+const generateStructuredId = require("../generated/GenerateCodes/generatecode"); 
 
-
-
-const createProject = (req, res) => {
+const createProject = async (req, res) => {
   const {
     project_name,
     category_id,
-    projectCategory,
     location,
     locationArea,
     priority,
@@ -18,7 +16,6 @@ const createProject = (req, res) => {
     client_id,
     number_of_floors
   } = req.body;
-
 
   // Check required fields
   if (
@@ -35,65 +32,75 @@ const createProject = (req, res) => {
     client_id == null ||
     number_of_floors == null
   ) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
+  try {
+    // Step 1: Generate Project ID
+    const project_id = await generateStructuredId("102", "projects", "project_id");
+
     const projectQuery = `
-    INSERT INTO projects 
-    (project_name, category_id, location, locationArea, priority, projectManager, start_date, end_date, status, budget, client_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+      INSERT INTO projects 
+      (project_id, project_name, category_id, location, locationArea, priority, projectManager, start_date, end_date, status, budget, client_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
-  db.query(
-    projectQuery,
-    [
-      project_name,
-      category_id,
-      location,
-      locationArea,
-      priority,
-      projectManager,
-      start_date,
-      end_date,
-      status,
-      budget,
-      client_id
-    ],
-    (err, result) => {
-      if (err) {
-        console.error('❌ Error inserting project:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-
-      const project_id = result.insertId;
-
-      // Step 2: Insert floors dynamically
-      const floorValues = [];
-      for (let i = 1; i <= number_of_floors; i++) {
-        const floorCode = `Floor ${i}`;
-        const floorLabel = `Floor ${i}`;
-        floorValues.push([project_id, floorCode, floorLabel]);
-      }
-
-      const floorQuery = `
-        INSERT INTO project_floors (project_id, floor_code, floor_label)
-        VALUES ?
-      `;
-
-      db.query(floorQuery, [floorValues], (floorErr) => {
-        if (floorErr) {
-          console.error('❌ Error inserting project floors:', floorErr);
-          return res.status(500).json({ error: 'Error inserting floors' });
+    db.query(
+      projectQuery,
+      [
+        project_id,
+        project_name,
+        category_id,
+        location,
+        locationArea,
+        priority,
+        projectManager,
+        start_date,
+        end_date,
+        status,
+        budget,
+        client_id
+      ],
+      async (err) => {
+        if (err) {
+          console.error("❌ Error inserting project:", err);
+          return res.status(500).json({ error: "Database error" });
         }
 
-        res.status(201).json({
-          message: 'Project and floors created successfully',
-          project_id
+        // Step 2: Insert floors dynamically with structured IDs
+        const floorValues = [];
+        for (let i = 1; i <= number_of_floors; i++) {
+          const floor_id = await generateStructuredId("105", "project_floors", "floor_id");
+          const floorCode = `Floor ${i}`;
+          const floorLabel = `Floor ${i}`;
+          floorValues.push([floor_id, project_id, floorCode, floorLabel]);
+        }
+
+        const floorQuery = `
+          INSERT INTO project_floors (floor_id, project_id, floor_code, floor_label)
+          VALUES ?
+        `;
+
+        db.query(floorQuery, [floorValues], (floorErr) => {
+          if (floorErr) {
+            console.error("❌ Error inserting project floors:", floorErr);
+            return res.status(500).json({ error: "Error inserting floors" });
+          }
+
+          res.status(201).json({
+            message: "Project and floors created successfully",
+            project_id
+          });
         });
-      });
-    }
-  );
+      }
+    );
+  } catch (error) {
+    console.error("❌ Error generating IDs:", error);
+    return res.status(500).json({ error: "Error generating structured IDs" });
+  }
 };
+
+
 
 
 const updateProject = (req, res) => {
