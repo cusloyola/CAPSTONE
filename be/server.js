@@ -29,6 +29,7 @@ const sowWorkTypesRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowWorkTy
 const sowproposalRoutes = require('./routes/ScopeOfWorkProposalRoutes/sowproposalRoutes')
 
 const safetyReportRoutes = require("./routes/safetyReportRoutes");
+const incidentreportRoutes = require('./routes/incidentReportRoutes');
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -43,8 +44,6 @@ const projectRoutes = require('./routes/projectRoutes');
 const checkListRoutes = require('./routes/checkListRoutes');
 const requestMaterialRoutes = require("./routes/RequestMaterialsRoutes/adminrequestMaterialRoutes");
 const materialtakeoffRoutes = require('./routes/MaterialTakeOffRoutes/materialtakeoffRoutes');
-
-
 
 
 const employeeManagementRoutes = require("./routes/employeeManagementRoutes");
@@ -85,7 +84,7 @@ const adminGanttChartRoutes = require('./routes/GanttChartRoutes/adminGanttChart
 
 const dashboardRoutes = require('./routes/DashboardRoutes/dashboardRoutes');
 
-const incidentreportRoutes = require('./routes/IncidentReportsRoutes/incidentreportRoutes');
+// const incidentreportRoutes = require('./routes/IncidentReportsRoutes/incidentreportRoutes');
 
 
 const projectInfoRoutes = require('./routes/ProjectInfoRoutes/projectInfoRoutes');
@@ -122,7 +121,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/work-types', sowWorkTypesRoutes);
 
 app.use("/api/safetyReports", safetyReportRoutes);
-
+app.use("/api/incidentReports", incidentreportRoutes);
 app.use("/api", employeeManagementRoutes);
 app.use("/api/request-materials", requestMaterialRoutes);
 app.use("/api/user-accounts", userManagementController);
@@ -200,7 +199,7 @@ app.use('/api/dashboard', dashboardRoutes);
 
 app.use('/api/auth', authRoutes); // Ensure auth routes are mounted
 
-app.use('/api/incident-report', incidentreportRoutes);
+// app.use('/api/incident-report', incidentreportRoutes);
 app.use('/api/project-info', projectInfoRoutes);
 
 // Use the clientInfoRoutes for the /api/client-info endpoint

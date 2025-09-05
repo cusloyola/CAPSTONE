@@ -42,9 +42,9 @@ import SiteWeeklyReport from "./roles/SiteEngineer/Site Weekly Report/SiteWeekly
 // safety
 import DailySafetyReport from "./roles/SafetyEngineer/Safety Reports/DailySafetyReport.jsx";
 import ViewSafetyHistory from "./roles/SafetyEngineer/ViewHistorySafetyReport.jsx";
-// import IncidentReport from "./roles/SafetyEngineer/Incident Report/IncidentReport.jsx";
+import IncidentReport from "./roles/SafetyEngineer/Incident Report/IncidentReport.jsx";
 // import ViewHistoryIncidentReport from "./roles/SafetyEngineer/Incident Report/ViewHistoryIncidentReport.jsx";
-// import InspectionChecklistReport from "./roles/SafetyEngineer/Inspection Checklist Report/InspectionChecklistReport.jsx";
+import InspectionChecklistReport from "./roles/SafetyEngineer/Inspection Checklist Report/InspectionChecklistReport.jsx";
 
 import LowStockInventory from "./roles/Admin/InventoryMonitoring.jsx";
 import UserManagement from "./roles/Admin/UserManagement.jsx";
@@ -270,9 +270,10 @@ export default function App() {
               <Route path="/SafetyReport" element={<DailySafetyReport />} />
               <Route path="/ViewHistorySafetyReport" element={<ViewSafetyHistory />} />
 
-              {/* <Route path="/IncidentReport" element={<IncidentReport />} />
-              <Route path="/ViewHistoryIncidentReport" element={<ViewHistoryIncidentReport />} />
-              <Route path="/InspectionChecklistReport" element={<InspectionChecklistReport />} /> */}
+              <Route path="/IncidentReport" element={<IncidentReport />} />
+              {/*<Route path="/ViewHistoryIncidentReport" element={<ViewHistoryIncidentReport />} />*/}
+              <Route path="/InspectionChecklistReport" element={<InspectionChecklistReport />} />
+
             </Route>
 
             {/* Other Pages (if you want these protected, wrap in ProtectedRoute) */}

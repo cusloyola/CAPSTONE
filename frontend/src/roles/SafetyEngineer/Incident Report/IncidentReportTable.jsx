@@ -4,8 +4,7 @@ import { StatusBadge } from "../../Admin/Site Report/dsrButtons";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-
-const DailySafetyReportTable = ({
+const IncidentReportTable = ({
   reports,
   searchQuery,
   setSearchQuery,
@@ -27,24 +26,18 @@ const DailySafetyReportTable = ({
   const [loadingDelete, setLoadingDelete] = useState(false);
 
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [openExportMenu, setOpenExportMenu] = useState(false);
   const menuRefs = useRef({});
   const reportRefs = useRef({});
-  const dailyRef = useRef();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Check if the currently open menu exists
       if (!openMenuId) return;
-
       const menuEl = menuRefs.current[openMenuId];
       if (menuEl && !menuEl.contains(event.target)) {
-        setOpenMenuId(null); // close the menu if clicked outside
+        setOpenMenuId(null);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -68,25 +61,24 @@ const DailySafetyReportTable = ({
     },
     { key: "project_name", label: "Project" },
     { key: "description", label: "Description" },
+    { key: "full_name", label: "Reported By" },
     {
       key: "status",
       label: "Status",
       customRender: (report) => <StatusBadge status={report.status} />,
-    },
-    { key: "full_name", label: "Prepared By" },
-  ];
+    },];
 
   const filteredReports = reports
     .filter((r) => {
-      const reportDate = new Date(r.report_date);
-      const matchQuery = r.project_name
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      const incidentDate = new Date(r.report_date);
+      const matchQuery =
+        r.project_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.incident_type?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = filterStatus === "all" || r.status === filterStatus;
       const matchMonth =
-        filterMonth === "" || reportDate.getMonth() === Number(filterMonth);
+        filterMonth === "" || incidentDate.getMonth() === Number(filterMonth);
       const matchYear =
-        filterYear === "" || reportDate.getFullYear() === Number(filterYear);
+        filterYear === "" || incidentDate.getFullYear() === Number(filterYear);
       return matchQuery && matchStatus && matchMonth && matchYear;
     })
     .sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
@@ -106,7 +98,7 @@ const DailySafetyReportTable = ({
 
   const handleBulkDelete = () => {
     if (selectedReports.length === 0) {
-      alert("Please select at least one report to delete.");
+      alert("Please select at least one incident to delete.");
       return;
     }
     setShowConfirm(true);
@@ -116,7 +108,7 @@ const DailySafetyReportTable = ({
     setLoadingDelete(true);
     try {
       const res = await fetch(
-        "http://localhost:5000/api/safetyReports/bulk-delete",
+        "http://localhost:5000/api/incidentReports/bulk-delete",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -130,7 +122,7 @@ const DailySafetyReportTable = ({
         data = null;
       }
       if (!res.ok) {
-        alert(data?.error || "Failed to delete reports");
+        alert(data?.error || "Failed to delete incidents");
         return;
       }
       await fetchReports();
@@ -139,7 +131,7 @@ const DailySafetyReportTable = ({
       setShowConfirm(false);
     } catch (error) {
       console.error("❌ Bulk delete error:", error);
-      alert("Error deleting reports");
+      alert("Error deleting incidents");
     } finally {
       setLoadingDelete(false);
     }
@@ -162,31 +154,39 @@ const DailySafetyReportTable = ({
     if (selectAll) {
       setSelectedReports([]);
     } else {
-      const allIds = filteredReports.map((r) => r.safety_report_id);
+      const allIds = filteredReports.map((r) => r.incident_report_id);
       setSelectedReports(allIds);
     }
     setSelectAll(!selectAll);
   };
 
-  // Helper: Convert image URL → Base64
   const getBase64Image = async (url) => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(blob);
-    });
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to read image'));
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error loading image:', error);
+      throw error;
+    }
   };
 
   const handlePrint = async () => {
     if (selectedReports.length === 0) {
-      alert("Please select at least one report to print.");
+      alert("Please select at least one incident to print.");
       return;
     }
 
     const reportsToPrint = reports.filter((r) =>
-      selectedReports.includes(r.safety_report_id)
+      selectedReports.includes(r.incident_report_id)
     );
 
     const doc = new jsPDF();
@@ -195,108 +195,191 @@ const DailySafetyReportTable = ({
       const report = reportsToPrint[i];
       if (i > 0) doc.addPage();
 
-      // ✅ Load Header Image
       const headerImg = new Image();
-      headerImg.src = "/images/assets/drl_construction_address.png"; // must be in public/
+      headerImg.src = "/images/assets/drl_construction_address.png";
 
       await new Promise((resolve) => {
         headerImg.onload = () => {
-          doc.addImage(headerImg, "PNG", 15, 5, 180, 25); // banner across top
+          doc.addImage(headerImg, "PNG", 15, 5, 180, 25);
           resolve();
         };
       });
 
-      // ✅ Title below image
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.text("Daily Safety Report", 105, 40, { align: "center" });
+      doc.text("Incident Report", 105, 40, { align: "center" });
 
-      // ✅ Generated On (below title)
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 48, {
         align: "center",
       });
 
-
-      let yPos = doc.lastAutoTable.finalY + 15;
-
-      // ✅ Images Section
-      if (report.image1 || report.image2) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.text("Attached Images", 14, yPos);
-        yPos += 8;
-
-        if (report.image1) {
-          try {
-            const img1 = await getBase64Image(
-              `http://localhost:5000/${report.image1}`
-            );
-            doc.addImage(img1, "JPEG", 14, yPos, 85, 65);
-          } catch (err) {
-            console.error("Error loading image1:", err);
-          }
-        }
-
-        if (report.image2) {
-          try {
-            const img2 = await getBase64Image(
-              `http://localhost:5000/${report.image2}`
-            );
-            doc.addImage(img2, "JPEG", 110, yPos, 85, 65);
-          } catch (err) {
-            console.error("Error loading image2:", err);
-          }
-        }
-
-        yPos += 75;
-      }
-
-      // ✅ Description Section (below images)
-      if (report.description) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.text("Description:", 14, yPos);
-        yPos += 6;
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-        const splitDescription = doc.splitTextToSize(report.description, 180); // wrap long text
-        doc.text(splitDescription, 14, yPos);
-        yPos += splitDescription.length * 6;
-      }
-
-      // ✅ Report Info Table
       autoTable(doc, {
         startY: 60,
         body: [
           ["Date:", new Date(report.report_date).toLocaleDateString("en-US")],
           ["Project:", report.project_name || "N/A"],
-          ["Prepared By:", report.full_name || "N/A"],
+          ["Reported By:", report.full_name || "N/A"],
+          ["Status:", report.status || "N/A"],
         ],
         theme: "grid",
         headStyles: {
-          fillColor: [255, 255, 255], // white header
-          textColor: 0,               // black text
-          lineColor: 0,               // black borders
+          fillColor: [255, 255, 255],
+          textColor: 0,
+          lineColor: 0,
           halign: "left",
         },
         styles: {
           fontSize: 11,
           cellPadding: 3,
-          textColor: 0, // black text
-          lineColor: 0, // black borders
+          textColor: 0,
+          lineColor: 0,
         },
         columnStyles: {
           0: { fontStyle: "bold", cellWidth: 40 },
           1: { cellWidth: 140 },
         },
-
       });
 
+      if (report.description) {
+        let yPos = doc.lastAutoTable.finalY + 10;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Description:", 14, yPos);
+        yPos += 6;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        const splitDescription = doc.splitTextToSize(report.description, 180);
+        doc.text(splitDescription, 14, yPos);
+      }
 
-      // ✅ Footer with page number
+      // Add incident images
+      const images = [report.image1, report.image2, report.image3, report.image4].filter(Boolean);
+      if (images.length > 0) {
+        let imageYPos = report.description 
+          ? doc.lastAutoTable.finalY + 40 + (doc.splitTextToSize(report.description, 180).length * 4)
+          : doc.lastAutoTable.finalY + 20;
+
+        // Check if we need a new page for images (more conservative check)
+        const imageSize = 80;
+        const verticalSpacing = 25;
+        const totalImageHeight = (2 * imageSize) + verticalSpacing + 40; // 2 rows + spacing + labels
+        
+        if (imageYPos + totalImageHeight > 280) {
+          doc.addPage();
+          imageYPos = 30;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Incident Images:", 14, imageYPos);
+        imageYPos += 20;
+
+        // Enhanced grid configuration for perfect 2x2 layout
+        const pageWidth = doc.internal.pageSize.getWidth() - 28; // Subtract left and right margins
+        const horizontalSpacing = (pageWidth - (2 * imageSize)) / 3; // Space between and around images
+
+        // Calculate positions for 2x2 grid
+        const positions = [
+          // Row 1
+          { x: 14 + horizontalSpacing, y: imageYPos }, // Top left
+          { x: 14 + horizontalSpacing + imageSize + horizontalSpacing, y: imageYPos }, // Top right
+          // Row 2  
+          { x: 14 + horizontalSpacing, y: imageYPos + imageSize + verticalSpacing }, // Bottom left
+          { x: 14 + horizontalSpacing + imageSize + horizontalSpacing, y: imageYPos + imageSize + verticalSpacing } // Bottom right
+        ];
+
+        // Process first 4 images on current page
+        for (let j = 0; j < Math.min(images.length, 4); j++) {
+          const pos = positions[j];
+          
+          try {
+            const imageUrl = `http://localhost:5000/${images[j]}`;
+            const base64Image = await getBase64Image(imageUrl);
+            
+            // Add image with fixed square dimensions
+            doc.addImage(base64Image, "JPEG", pos.x, pos.y, imageSize, imageSize);
+            
+            // Add centered label below image
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text(`Image ${j + 1}`, pos.x + (imageSize / 2), pos.y + imageSize + 10, { align: "center" });
+            
+          } catch (error) {
+            console.warn(`Could not load image ${j + 1}:`, error);
+            
+            // Draw placeholder rectangle with border
+            doc.setDrawColor(150, 150, 150);
+            doc.setFillColor(240, 240, 240);
+            doc.rect(pos.x, pos.y, imageSize, imageSize, 'FD');
+            
+            // Add placeholder text
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(120, 120, 120);
+            doc.text("Image Not", pos.x + (imageSize / 2), pos.y + (imageSize / 2) - 5, { align: "center" });
+            doc.text("Available", pos.x + (imageSize / 2), pos.y + (imageSize / 2) + 5, { align: "center" });
+            doc.setTextColor(0, 0, 0); // Reset text color
+            
+            // Add centered label below placeholder
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text(`Image ${j + 1}`, pos.x + (imageSize / 2), pos.y + imageSize + 10, { align: "center" });
+          }
+        }
+
+        // Handle more than 4 images - continue on next page
+        if (images.length > 4) {
+          doc.addPage();
+          imageYPos = 30;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.text("Incident Images (continued):", 14, imageYPos);
+          imageYPos += 20;
+
+          // Recalculate positions for new page
+          const newPositions = [
+            { x: 14 + horizontalSpacing, y: imageYPos },
+            { x: 14 + horizontalSpacing + imageSize + horizontalSpacing, y: imageYPos },
+            { x: 14 + horizontalSpacing, y: imageYPos + imageSize + verticalSpacing },
+            { x: 14 + horizontalSpacing + imageSize + horizontalSpacing, y: imageYPos + imageSize + verticalSpacing }
+          ];
+
+          for (let j = 4; j < Math.min(images.length, 8); j++) {
+            const gridIndex = j - 4; // Reset index for second page
+            const pos = newPositions[gridIndex];
+
+            try {
+              const imageUrl = `http://localhost:5000/${images[j]}`;
+              const base64Image = await getBase64Image(imageUrl);
+              doc.addImage(base64Image, "JPEG", pos.x, pos.y, imageSize, imageSize);
+              
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(9);
+              doc.text(`Image ${j + 1}`, pos.x + (imageSize / 2), pos.y + imageSize + 10, { align: "center" });
+              
+            } catch (error) {
+              console.warn(`Could not load image ${j + 1}:`, error);
+              doc.setDrawColor(150, 150, 150);
+              doc.setFillColor(240, 240, 240);
+              doc.rect(pos.x, pos.y, imageSize, imageSize, 'FD');
+              
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(10);
+              doc.setTextColor(120, 120, 120);
+              doc.text("Image Not", pos.x + (imageSize / 2), pos.y + (imageSize / 2) - 5, { align: "center" });
+              doc.text("Available", pos.x + (imageSize / 2), pos.y + (imageSize / 2) + 5, { align: "center" });
+              doc.setTextColor(0, 0, 0);
+              
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(9);
+              doc.text(`Image ${j + 1}`, pos.x + (imageSize / 2), pos.y + imageSize + 10, { align: "center" });
+            }
+          }
+        }
+      }
+
       const pageCount = doc.internal.getNumberOfPages();
       doc.setFontSize(9);
       doc.setTextColor(100);
@@ -308,14 +391,13 @@ const DailySafetyReportTable = ({
       );
     }
 
-    doc.save("safety-reports.pdf");
+    doc.save("incident-reports.pdf");
   };
-
 
   return (
     <div className="min-h-screen p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-10">Weekly Safety Report</h1>
+        <h1 className="text-3xl font-bold mb-10">Incident Reports</h1>
 
         {/* Dashboard Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
@@ -406,11 +488,11 @@ const DailySafetyReportTable = ({
           />
         </div>
 
-        {/* Reports Table */}
+        {/* Table */}
         <div className="max-w-7xl mx-auto bg-white p-6 mt-6 md:p-8 rounded-md shadow-lg">
           <div className="mb-6 pb-2 flex justify-between items-center">
             <h2 className="text-2xl font-semibold text-gray-900">
-              Safety Reports Overview
+              Incident Reports Overview
             </h2>
             <div className="flex gap-2">
               <button
@@ -420,7 +502,6 @@ const DailySafetyReportTable = ({
               >
                 <FaTrash />
               </button>
-
               <button
                 onClick={handlePrint}
                 className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 text-sm flex items-center gap-2 disabled:opacity-50"
@@ -428,22 +509,20 @@ const DailySafetyReportTable = ({
               >
                 <FaPrint />
               </button>
-
               <button
                 onClick={onAdd}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
               >
-                + Add Report
+                + Add Incident
               </button>
             </div>
-
           </div>
 
           <div className="overflow-visible shadow-md rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3">
                     <input
                       type="checkbox"
                       checked={
@@ -466,62 +545,55 @@ const DailySafetyReportTable = ({
                   </th>
                 </tr>
               </thead>
-
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentReports.map((report) => (
                   <tr
-                    key={report.safety_report_id}
+                    key={report.incident_report_id}
                     ref={(el) =>
-                      (reportRefs.current[`table-${report.safety_report_id}`] = el)
+                    (reportRefs.current[`table-${report.incident_report_id}`] =
+                      el)
                     }
                     className="hover:bg-gray-50"
                   >
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
-                        checked={selectedReports.includes(
-                          report.safety_report_id
-                        )}
-                        onChange={() =>
-                          handleSelectReport(report.safety_report_id)
-                        }
+                        checked={selectedReports.includes(report.incident_report_id)}
+                        onChange={() => handleSelectReport(report.incident_report_id)}
                       />
                     </td>
-
                     {columns.map((col, i) => (
                       <td
                         key={i}
                         className="px-6 py-4 text-sm text-gray-700 whitespace-pre-wrap"
                       >
-                        {col.customRender
+                        {col.customRender 
                           ? col.customRender(report)
                           : col.format
-                            ? col.format(report[col.key])
-                            : report[col.key]}
+                          ? col.format(report[col.key])
+                          : report[col.key]}
                       </td>
                     ))}
-
                     <td className="px-6 py-4 text-sm relative">
                       <div
                         className="relative inline-block text-left overflow-visible"
                         ref={(el) =>
-                          (menuRefs.current[report.safety_report_id] = el)
+                          (menuRefs.current[report.incident_report_id] = el)
                         }
                       >
                         <button
                           onClick={() =>
                             setOpenMenuId(
-                              openMenuId === report.safety_report_id
+                              openMenuId === report.incident_report_id
                                 ? null
-                                : report.safety_report_id
+                                : report.incident_report_id
                             )
                           }
-                          className="text-gray-600 hover:text-gray-900 focus:outline-none"
+                          className="text-gray-600 hover:text-gray-900"
                         >
                           <FaEllipsisV />
                         </button>
-
-                        {openMenuId === report.safety_report_id && (
+                        {openMenuId === report.incident_report_id && (
                           <div className="absolute right-0 z-50 mt-2 w-36 origin-top-right rounded-md bg-white border border-gray-200 shadow-lg">
                             <div className="py-1">
                               <button
@@ -530,7 +602,7 @@ const DailySafetyReportTable = ({
                               >
                                 View
                               </button>
-                              {["pending", "draft", "open"].includes(
+                              {["pending"].includes(
                                 report.status?.toLowerCase()
                               ) && (
                                   <button
@@ -588,7 +660,7 @@ const DailySafetyReportTable = ({
           </div>
         </div>
 
-        {/* Confirm Modal */}
+        {/* Confirm Delete Modal */}
         {showConfirm && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
             <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full">
@@ -597,8 +669,8 @@ const DailySafetyReportTable = ({
               </h3>
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete{" "}
-                <span className="font-bold">{selectedReports.length}</span> report(s)? This
-                action cannot be undone.
+                <span className="font-bold">{selectedReports.length}</span>{" "}
+                incident(s)? This action cannot be undone.
               </p>
               <div className="flex justify-end gap-3">
                 <button
@@ -624,4 +696,4 @@ const DailySafetyReportTable = ({
   );
 };
 
-export default DailySafetyReportTable;
+export default IncidentReportTable;
