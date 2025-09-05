@@ -1,29 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import { FaEye, FaPencilAlt, FaTrashAlt } from 'react-icons/fa'; 
-import { Table, TableHeader, TableBody, TableRow, TableCell } from '../../components/ui/table';
+import React, { useEffect, useState } from "react";
+import { Modal } from "../../components/ui/modal";
+import Button from "../../components/ui/button/Button";
+import Input from "../../components/form/input/InputField";
+import Label from "../../components/form/Label";
+import ActionDropdownUserManagement from "./User Management/ActionDropwdownUserManagement";
+import AddUserModal from "./User Management/AddUser";
 
+// API endpoint for users
+const USERS_API_URL = "http://localhost:5000/api/user-accounts";
 
-function UserManagement() {
+const SuccessMessageModal = ({ isOpen, onClose, message }) => (
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-xs m-4" aria-modal="true" role="dialog">
+        <div className="relative w-full max-w-xs overflow-y-auto rounded-2xl bg-white p-4 text-center shadow-lg">
+            <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h4 className="mt-3 text-lg font-semibold text-gray-800">Success!</h4>
+            <p className="mt-2 text-sm text-gray-600">{message}</p>
+            <div className="mt-4 flex justify-center">
+                <Button onClick={onClose} size="sm" variant="outline">
+                    Close
+                </Button>
+            </div>
+        </div>
+    </Modal>
+);
+
+const UserManagement = () => {
     const [users, setUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState(null);
+    const [userToEdit, setUserToEdit] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
+    const [viewedUser, setViewedUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showModal, setShowModal] = useState(false);
+
+    // Add/Edit form state
     const [newUser, setNewUser] = useState({
-        full_name: '',
-        email: '',
-        phone_number: '',
-        role: '',
-        password: '',
+        full_name: "",
+        email: "",
+        phone_number: "",
+        role: "",
+        password: "",
     });
-    const [showViewModal, setShowViewModal] = useState(false);
-    const [viewedUser, setViewedUser] = useState(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState(null);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editUser, setEditUser] = useState(null);
+
+    // Search/filter/pagination
+    const [search, setSearch] = useState("");
+    const [roleFilter, setRoleFilter] = useState("");
+    const [entriesPerPage, setEntriesPerPage] = useState(25);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const startIdx = (currentPage - 1) * entriesPerPage;
+    const endIdx = startIdx + entriesPerPage;
+    const visibleUsers = filteredUsers.slice(startIdx, endIdx);
+    const totalPages = Math.ceil(filteredUsers.length / entriesPerPage);
 
     useEffect(() => {
         fetchUsers();
@@ -32,12 +67,11 @@ function UserManagement() {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/user-accounts');
-            if (!response.ok) {
-                throw new Error('Failed to fetch users');
-            }
+            const response = await fetch(USERS_API_URL);
+            if (!response.ok) throw new Error("Failed to fetch users");
             const data = await response.json();
             setUsers(data);
+            setFilteredUsers(data);
             setLoading(false);
         } catch (err) {
             setError(err.message);
@@ -45,648 +79,243 @@ function UserManagement() {
         }
     };
 
-    const handleChange = (e) => {
-        setNewUser({ ...newUser, [e.target.name]: e.target.value });
-    };
+    useEffect(() => {
+        let filtered = users;
+        if (search) {
+            filtered = filtered.filter(
+                (u) =>
+                    u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+                    u.email?.toLowerCase().includes(search.toLowerCase()) ||
+                    u.phone_number?.toLowerCase().includes(search.toLowerCase())
+            );
+        }
+        if (roleFilter) {
+            filtered = filtered.filter((u) => u.role === roleFilter);
+        }
+        setFilteredUsers(filtered);
+        setCurrentPage(1);
+    }, [search, roleFilter, users]);
 
-    const handleSubmit = async (e) => {
+    // Add User
+    const handleAddUser = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:5000/api/user-accounts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const response = await fetch(USERS_API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(newUser),
             });
-            if (!response.ok) {
-                throw new Error('Failed to add user');
-            }
-            setShowModal(false);
-            setSuccessMessage('User added successfully!');
-            setShowSuccessModal(true);
+            if (!response.ok) throw new Error("Failed to add user");
+            setShowAddModal(false);
+            setSuccessMessage("User added successfully!");
             fetchUsers();
             setNewUser({
-                full_name: '',
-                email: '',
-                phone_number: '',
-                role: '',
-                password: '',
+                full_name: "",
+                email: "",
+                phone_number: "",
+                role: "",
+                password: "",
             });
         } catch (err) {
             setError(err.message);
         }
     };
 
-    const handleViewUserInfo = (user) => {
-        setViewedUser(user);
-        setShowViewModal(true);
-    };
-
-    const closeViewModal = () => {
-        setShowViewModal(false);
-        setViewedUser(null);
-    };
-
-    const handleDeleteClick = (user) => {
-        setUserToDelete(user);
-        setIsDeleteModalOpen(true);
-    };
-
-    const confirmDelete = async () => {
-        try {
-            const response = await fetch(`http://localhost:5000/api/user-accounts/${userToDelete.user_id}`, {
-                method: 'DELETE',
-            });
-            if (!response.ok) {
-                throw new Error('Failed to delete user');
-            }
-            setIsDeleteModalOpen(false);
-            setSuccessMessage('User deleted successfully!');
-            setShowSuccessModal(true);
-            fetchUsers();
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    const closeDeleteModal = () => {
-        setIsDeleteModalOpen(false);
-        setUserToDelete(null);
-    };
-
-    const handleEdit = (user) => {
-        setEditUser({ ...user });
-        setIsEditModalOpen(true);
-    };
-
-    const handleEditChange = (e) => {
-        setEditUser({ ...editUser, [e.target.name]: e.target.value });
-    };
-
-    const handleEditSubmit = async (e) => {
+    // Edit User
+    const handleEditUser = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch(`http://localhost:5000/api/user-accounts/${editUser.user_id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(editUser),
+            const response = await fetch(`${USERS_API_URL}/${userToEdit.user_id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(userToEdit),
             });
-            if (!response.ok) {
-                throw new Error('Failed to update user');
-            }
-            setIsEditModalOpen(false);
-            setSuccessMessage('User updated successfully!');
-            setShowSuccessModal(true);
+            if (!response.ok) throw new Error("Failed to update user");
+            setShowEditModal(false);
+            setSuccessMessage("User updated successfully!");
             fetchUsers();
         } catch (err) {
             setError(err.message);
         }
     };
 
-    const filteredUsers = users.filter((user) =>
-        user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.phone_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Delete User
+    const confirmDelete = async () => {
+        try {
+            const response = await fetch(`${USERS_API_URL}/${userToDelete.user_id}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) throw new Error("Failed to delete user");
+            setShowDeleteModal(false);
+            setSuccessMessage("User deleted successfully!");
+            fetchUsers();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // Pagination handlers
+    const handlePrevious = () => {
+        if (currentPage > 1) setCurrentPage((prev) => prev - 1);
+    };
+    const handleNext = () => {
+        if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+    };
 
     return (
         <div>
-            <h1>
-                <span style={{ marginLeft: "25px", fontSize: '1.75em' }}><strong>User Management</strong></span>
-            </h1>
-
-            <br />
-            {error && <p style={{ color: "red" }}>⚠️ {error}</p>}
-
-            <button
-                onClick={() => setShowModal(true)}
-                style={{ padding: "10px", marginLeft: "20px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer", borderRadius: "4px" }}
-            >
-                + Add User
-            </button>
-
-            <input
-                type="text"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ padding: "8px", margin: "10px 0", marginLeft: "10px", width: "750px", borderRadius: "10px" }}
-            />
-
-            <select
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                    padding: "8px",
-                    margin: "10px 0",
-                    marginLeft: "10px",
-                    width: "590px",
-                    borderRadius: "10px",
-                }}
-            >
-                <option value="">All Roles</option>
-                <option value="Admin">Admin</option>
-                <option value="Site Engineer">Site Engineer</option>
-                <option value="Safety Engineer">Safety Engineer</option>
-            </select>
-
-            {showModal && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: "0",
-                        left: "0",
-                        width: "100%",
-                        height: "100%",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }}
+            <h2 className="text-2xl font-bold mb-4">User Management</h2>
+        <div className="p-4 space-y-6 bg-white shadow rounded">
+            <div className="bg-blue-600 text-white flex justify-between items-center p-4 rounded">
+                <h1 className="text-lg font-semibold">List of All Users</h1>
+                <button
+                    className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-100"
+                    onClick={() => setShowAddModal(true)}
                 >
-                    <div
-                        style={{
-                            backgroundColor: "white",
-                            padding: "20px",
-                            borderRadius: "5px",
-                            width: "400px",
-                        }}
+                    Add New User
+                </button>
+            </div>
+            <div className="flex flex-wrap gap-4">
+                <div className="flex flex-col gap-2">
+                    <label className="block font-medium text-gray-700">Role:</label>
+                    <select
+                        className="border p-2 rounded w-48"
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
                     >
-                        <h3>Add New User</h3>
-                        <form onSubmit={handleSubmit}>
-                            <div>
-                                <label>Full Name</label>
-                                <input
-                                    type="text"
-                                    name="full_name"
-                                    value={newUser.full_name}
-                                    onChange={handleChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
-                            </div>
-                            <div>
-                                <label>Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={newUser.email}
-                                    onChange={handleChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
-                            </div>
-                            <div>
-                                <label>Phone Number</label>
-                                <input
-                                    type="text"
-                                    name="phone_number"
-                                    value={newUser.phone_number}
-                                    onChange={handleChange}
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
-                            </div>
-                            <div>
-                                <label>Role</label>
-                                <select
-                                    name="role"
-                                    value={newUser.role}
-                                    onChange={handleChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                >
-                                    <option value="">Select Role</option>
-                                    <option value="Admin">Admin</option>
-                                    <option value="Site Engineer">Site Engineer</option>
-                                    <option value="Safety Engineer">Safety Engineer</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Password</label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    value={newUser.password}
-                                    onChange={handleChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
-                            </div>
-                            <div>
-                                <button type="submit" style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}>
-                                    Add User</button>
-                            </div>
-                        </form>
-                        <button
-                            onClick={() => setShowModal(false)}
-                            style={{
-                                padding: "5px 10px",
-                                backgroundColor: "#f44336",
-                                color: "white",
-                                border: "none",
-                                cursor: "pointer",
-                                marginTop: "10px",
+                        <option value="">All Roles</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Site Engineer">Site Engineer</option>
+                        <option value="Safety Engineer">Safety Engineer</option>
+                    </select>
+                </div>
+            </div>
+            <div className="flex justify-between items-center mt-4">
+                <div>
+                    <label className="text-sm">
+                        Show
+                        <select
+                            className="mx-2 border p-1 pr-8 rounded appearance-none"
+                            value={entriesPerPage}
+                            onChange={(e) => {
+                                setEntriesPerPage(Number(e.target.value));
+                                setCurrentPage(1);
                             }}
                         >
-                            Close
-                        </button>
-                    </div>
+                            <option value={1}>1</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                        </select>
+                        entries
+                    </label>
                 </div>
-            )}
-
-            {/* <h3 style={{ marginTop: '10px', marginLeft: '30px', fontSize: '1.5em' }}> <strong> User List</strong></h3> */}
+                <div className="flex items-center gap-2">
+                    <label className="block font-medium text-gray-700">Search:</label>
+                    <input
+                        id="searchInput"
+                        type="text"
+                        className="border p-2 rounded w-64"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search by Name, Email, Phone"
+                    />
+                </div>
+            </div>
             {loading ? (
                 <p>⏳ Loading users...</p>
-            ) : filteredUsers.length > 0 ? (
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="max-w-full overflow-x-auto">
-                  <div className="min-w-[1102px]">
-                    <Table>
-                      <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]" style={{ backgroundColor: "#e0e0e0" }}>
-                        <TableRow>
-                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Full Name</TableCell>
-                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Email</TableCell>
-                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Phone Number</TableCell>
-                          <TableCell isHeader className="px-5 py-3 text-start text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Role</TableCell>
-                          <TableCell isHeader className="px-5 py-3 text-center text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Is Active</TableCell>
-                          <TableCell isHeader className="px-5 py-3 text-center text-theme-sm dark:text-gray-400" style={{ fontWeight: "600", color: "black" }}>Actions</TableCell>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                        {filteredUsers.map((user) => (
-                          <TableRow key={user.user_id}>
-                            <TableCell className="px-5 py-4 sm:px-6 text-start text-black">{user.full_name}</TableCell>
-                            <TableCell className="px-4 py-3 text-black text-start text-theme-sm dark:text-gray-400">{user.email}</TableCell>
-                            <TableCell className="px-4 py-3 text-black text-start text-theme-sm dark:text-gray-400">{user.phone_number}</TableCell>
-                            <TableCell className="px-4 py-3 text-black text-start text-theme-sm dark:text-gray-400">{user.role}</TableCell>
-                            <TableCell className="px-4 py-3 text-black text-center text-theme-sm dark:text-gray-400">{user.is_active === 1 ? 'Yes' : 'No'}</TableCell>
-                            <TableCell className="px-4 py-3 text-black text-center">
-                              <div className="flex justify-center items-center">
-                                <button
-                                  onClick={() => handleViewUserInfo(user)}
-                                  style={{
-                                    width: "auto",
-                                    padding: "8px 10px",
-                                    backgroundColor: "#3498db",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "5px",
-                                    cursor: "pointer",
-                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                    marginRight: '5px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <FaEye style={{ marginRight: '5px' }} /> View
-                                </button>
-                                <button
-                                  onClick={() => handleEdit(user)}
-                                  style={{
-                                    width: "auto",
-                                    padding: "8px 10px",
-                                    backgroundColor: "#f1c40f",
-                                    color: "black",
-                                    border: "none",
-                                    borderRadius: "5px",
-                                    cursor: "pointer",
-                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                    marginRight: '5px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <FaPencilAlt style={{ marginRight: '5px' }} /> Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteClick(user)}
-                                  style={{
-                                    width: "auto",
-                                    padding: "8px 10px",
-                                    backgroundColor: "#e74c3c",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "5px",
-                                    cursor: "pointer",
-                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <FaTrashAlt style={{ marginRight: '5px' }} /> Delete
-                                </button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </div>
-//                 <table style={{ marginTop: "20px", width: "100%", height: "600px", borderCollapse: "collapse", borderRadius: "10px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", display: "block", overflowY: "auto" }}>
-//                     <thead>
-//                         <tr style={{ backgroundColor: "#e0e0e0", textAlign: "left" }}>
-//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Full Name</th>
-//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Email</th>
-//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Phone Number</th>
-//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Role</th>
-//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "auto" }}>Is Active</th>
-//                             <th style={{ padding: "12px 15px", borderBottom: "2px solid #ddd", fontWeight: "600", color: "black", width: "180px" }}>Actions</th>
-//                         </tr>
-//                     </thead>
-//                     <tbody>
-//                         {filteredUsers.map((user) => (
-//                             <tr key={user.user_id} style={{ borderBottom: "1px solid #eee", backgroundColor: "white" }}>
-//                                 <td style={{ padding: "12px 15px", color: "black", width: "20%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.full_name}</td>
-//                                 <td style={{ padding: "12px 15px", color: "black", width: "20%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</td>
-//                                 <td style={{ padding: "12px 15px", color: "black", width: "15%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.phone_number}</td>
-//                                 <td style={{ padding: "12px 15px", color: "black", width: "15%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.role}</td>
-//                                 <td style={{ padding: "12px 15px", color: "black", width: "10%", textAlign: 'center' }}>{user.is_active === 1 ? 'Yes' : 'No'}</td>
-//                                 <td style={{ padding: "12px 15px", width: "20%" }}>
-//                                     <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
-                                    
-// <button
-//   onClick={() => handleViewUserInfo(user)}
-//   style={{
-//     width: "85px", // Adjusted width to accommodate icon and text
-//     padding: "8px 12px",
-//     backgroundColor: "#3498db",
-//     color: "white",
-//     border: "none",
-//     borderRadius: "5px",
-//     cursor: "pointer",
-//     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-//     flex: '1',
-//     marginRight: '5px',
-//     display: 'flex',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   }}
-// >
-//   <FaEye className="mr-2" /> View
-// </button>
-// <button
-//   onClick={() => handleEdit(user)}
-//   style={{
-//     width: "85px", // Adjusted width
-//     padding: "8px 12px",
-//     backgroundColor: "#f1c40f",
-//     color: "black",
-//     border: "none",
-//     borderRadius: "5px",
-//     cursor: "pointer",
-//     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-//     flex: '1',
-//     marginRight: '5px',
-//     display: 'flex',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   }}
-// >
-//   <FaPencilAlt className="mr-2" /> Edit
-// </button>
-// <button
-//   onClick={() => handleDeleteClick(user)}
-//   style={{
-//     width: "90px", // Adjusted width for "Delete"
-//     padding: "8px 12px",
-//     backgroundColor: "#e74c3c",
-//     color: "white",
-//     border: "none",
-//     borderRadius: "5px",
-//     cursor: "pointer",
-//     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-//     flex: '1',
-//     marginRight: '5px',
-//     display: 'flex',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   }}
-// >
-//   <FaTrashAlt className="mr-2" /> Delete
-// </button>
-//                                     </div>
-//                                 </td>
-//                             </tr>
-//                         ))}
-//                     </tbody>
-//                 </table>
             ) : (
-                <p style={{
-                    textAlign: 'center',
-                    fontSize: '1.2em',
-                    fontWeight: 'bold',
-                    color: 'red',
-                    padding: '20px',
-                    margin: '20px auto',
-                    width: '80%',
-                    maxWidth: '600px',
-                }}>
-                    📭 No matching users found!
+                <table className="table-auto w-full border border-gray-300 text-sm">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th className="border px-4 py-2 text-center">Full Name</th>
+                            <th className="border px-4 py-2 text-center">Email</th>
+                            <th className="border px-4 py-2 text-center">Phone Number</th>
+                            <th className="border px-4 py-2 text-center">Role</th>
+                            <th className="border px-4 py-2 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {visibleUsers.length > 0 ? (
+                            visibleUsers.map((user) => (
+                                <tr key={user.user_id}>
+                                    <td className="border px-4 py-2">{user.full_name}</td>
+                                    <td className="border px-4 py-2">{user.email}</td>
+                                    <td className="border px-4 py-2">{user.phone_number}</td>
+                                    <td className="border px-4 py-2">{user.role}</td>
+                                    <td className="border px-4 py-2 text-center">
+                                        <ActionDropdownUserManagement
+                                            onEdit={() => {
+                                                setUserToEdit({ ...user });
+                                                setShowEditModal(true);
+                                            }}
+                                            onDelete={() => {
+                                                setUserToDelete(user);
+                                                setShowDeleteModal(true);
+                                            }}
+                                            onCopy={() => {}}
+                                        />
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="5" className="text-center border px-4 py-2">
+                                    No users found
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            )}
+            <div className="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm">
+                <p>
+                    Showing {startIdx + 1} to {Math.min(endIdx, filteredUsers.length)} of {filteredUsers.length} entries
                 </p>
-            )}
-
-            {isDeleteModalOpen && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: "0",
-                        left: "0",
-                        width: "100%",
-                        height: "100%",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: "white",
-                            padding: "25px",
-                            borderRadius: "8px",
-                            width: "350px",
-                            textAlign: "center",
-                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                        }}
+                <div className="flex gap-2 mt-2 sm:mt-0">
+                    <button
+                        onClick={handlePrevious}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
                     >
-                        <h3>Confirm Delete</h3>
-                        <p style={{ marginBottom: '20px' }}>Are you sure you want to delete {userToDelete.full_name}?</p>
-                        <div>
-                            <button
-                                onClick={confirmDelete}
-                                style={{
-                                    padding: "12px 20px",
-                                    backgroundColor: "#e74c3c",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    marginRight: "10px",
-                                    fontSize: '16px',
-                                }}
-                            >
-                                Confirm Delete
-                            </button>
-                            <button
-                                onClick={closeDeleteModal}
-                                style={{
-                                    padding: "12px 20px",
-                                    backgroundColor: "#3498db",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    fontSize: '16px',
-                                }}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {showSuccessModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '5px', width: '300px' }}>
-                        <p>{successMessage}</p>
-                        <button onClick={() => setShowSuccessModal(false)} style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '5px' }}>OK</button>
-                    </div>
-                </div>
-            )}
-            {showViewModal && viewedUser && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: "0",
-                        left: "0",
-                        width: "100%",
-                        height: "100%",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: "white",
-                            padding: "20px",
-                            borderRadius: "8px",
-                            width: "400px",
-                            textAlign: "left",
-                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                        }}
+                        Previous
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
                     >
-                        <h3 style={{ marginBottom: "15px", textAlign: "center" }}>User Information</h3>
-                        <p style={{ marginBottom: "8px" }}>
-                            <strong>Full Name:</strong> {viewedUser.full_name}
-                        </p>
-                        <p style={{ marginBottom: "8px" }}>
-                            <strong>Email:</strong> {viewedUser.email}
-                        </p>
-                        <p style={{ marginBottom: "8px" }}>
-                            <strong>Phone Number:</strong> {viewedUser.phone_number}
-                        </p>
-                        <p style={{ marginBottom: "8px" }}>
-                            <strong>Role:</strong> {viewedUser.role}
-                        </p>
-                        <p style={{ marginBottom: "15px" }}>
-                            <strong>Is Active:</strong> {viewedUser.is_active === 1 ? 'Yes' : 'No'}
-                        </p>
-                        <div style={{ textAlign: "center" }}>
-                            <button
-                                onClick={closeViewModal}
-                                style={{
-                                    padding: "12px 20px",
-                                    backgroundColor: "#4CAF50",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    fontSize: "16px",
-                                }}
-                            >
-                                OK
-                            </button>
-                        </div>
-                    </div>
+                        Next
+                    </button>
                 </div>
+            </div>
+            {/* Add User Modal */}
+            {showAddModal && (
+                <AddUserModal
+                    onClose={() => setShowAddModal(false)}
+                    onUserAdded={() => fetchUsers()}
+                />
             )}
-            {isEditModalOpen && editUser && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: "0",
-                        left: "0",
-                        width: "100%",
-                        height: "100%",
-                        backgroundColor: "rgba(0,0,0,0.5)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: "white",
-                            padding: "20px",
-                            borderRadius: "5px",
-                            width: "400px",
-                        }}
-                    >
-                        <h3>Edit User</h3>
-                        <form onSubmit={handleEditSubmit}>
+            {/* Edit User Modal */}
+            {showEditModal && userToEdit && (
+                <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} className="max-w-xs m-4" aria-modal="true" role="dialog">
+                    <div className="relative w-full max-w-xs overflow-y-auto rounded-2xl bg-white p-4 text-center shadow-lg">
+                        <h3 className="mb-4 text-lg font-semibold text-gray-800">Edit User</h3>
+                        <form onSubmit={handleEditUser}>
                             <div>
-                                <label>Full Name</label>
-                                <input
-                                    type="text"
-                                    name="full_name"
-                                    value={editUser.full_name}
-                                    onChange={handleEditChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
+                                <Label>Full Name</Label>
+                                <Input type="text" name="full_name" value={userToEdit.full_name} onChange={e => setUserToEdit({ ...userToEdit, full_name: e.target.value })} required />
                             </div>
                             <div>
-                                <label>Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={editUser.email}
-                                    onChange={handleEditChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
+                                <Label>Email</Label>
+                                <Input type="email" name="email" value={userToEdit.email} onChange={e => setUserToEdit({ ...userToEdit, email: e.target.value })} required />
                             </div>
                             <div>
-                                <label>Phone Number</label>
-                                <input
-                                    type="text"
-                                    name="phone_number"
-                                    value={editUser.phone_number}
-                                    onChange={handleEditChange}
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
+                                <Label>Phone Number</Label>
+                                <Input type="text" name="phone_number" value={userToEdit.phone_number} onChange={e => setUserToEdit({ ...userToEdit, phone_number: e.target.value })} />
                             </div>
                             <div>
-                                <label>Role</label>
-                                <select
-                                    name="role"
-                                    value={editUser.role}
-                                    onChange={handleEditChange}
-                                    required
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                >
+                                <Label>Role</Label>
+                                <select name="role" value={userToEdit.role} onChange={e => setUserToEdit({ ...userToEdit, role: e.target.value })} required className="w-full border p-2 rounded">
                                     <option value="">Select Role</option>
                                     <option value="Admin">Admin</option>
                                     <option value="Site Engineer">Site Engineer</option>
@@ -694,39 +323,65 @@ function UserManagement() {
                                 </select>
                             </div>
                             <div>
-                                <label>Password</label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    value={editUser.password}
-                                    onChange={handleEditChange}
-                                    style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-                                />
+                                <Label>Password</Label>
+                                <Input type="password" name="password" value={userToEdit.password || ""} onChange={e => setUserToEdit({ ...userToEdit, password: e.target.value })} />
                             </div>
-
-                            <div>
-                                <button type="submit" style={{ padding: "10px", backgroundColor: "#4CAF50", color: "white", border: "none", cursor: "pointer" }}>
-                                    Update User</button>
+                            <div className="mt-4 flex justify-center">
+                                <Button type="submit" size="sm" variant="primary">Update User</Button>
                             </div>
                         </form>
-                        <button
-                            onClick={() => setIsEditModalOpen(false)}
-                            style={{
-                                padding: "5px 10px",
-                                backgroundColor: "#f44336",
-                                color: "white",
-                                border: "none",
-                                cursor: "pointer",
-                                marginTop: "10px",
-                            }}
-                        >
-                            Close
-                        </button>
+                        <Button onClick={() => setShowEditModal(false)} size="sm" variant="outline" className="mt-2">Close</Button>
                     </div>
-                </div>
+                </Modal>
             )}
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && userToDelete && (
+                <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} className="max-w-xs m-4" aria-modal="true" role="dialog">
+                    <div className="relative w-full max-w-xs overflow-y-auto rounded-2xl bg-white p-4 text-center shadow-lg">
+                        <svg className="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+                        </svg>
+                        <h4 className="mt-3 text-lg font-semibold text-gray-800">Are you sure?</h4>
+                        <p className="mt-2 text-sm text-gray-600">
+                            Do you want to delete <b>{userToDelete.full_name}</b>?
+                        </p>
+                        <div className="mt-4 flex justify-center gap-2">
+                            <Button onClick={() => setShowDeleteModal(false)} size="sm" variant="outline">
+                                Cancel
+                            </Button>
+                            <Button onClick={confirmDelete} size="sm" variant="destructive">
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+            {/* View User Modal */}
+            {showViewModal && viewedUser && (
+                <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} className="max-w-xs m-4" aria-modal="true" role="dialog">
+                    <div className="relative w-full max-w-xs overflow-y-auto rounded-2xl bg-white p-4 text-left shadow-lg">
+                        <h3 className="mb-4 text-lg font-semibold text-gray-800 text-center">User Information</h3>
+                        <p><strong>Full Name:</strong> {viewedUser.full_name}</p>
+                        <p><strong>Email:</strong> {viewedUser.email}</p>
+                        <p><strong>Phone Number:</strong> {viewedUser.phone_number}</p>
+                        <p><strong>Role:</strong> {viewedUser.role}</p>
+                        <p><strong>Is Active:</strong> {viewedUser.is_active === 1 ? "Yes" : "No"}</p>
+                        <div className="mt-4 flex justify-center">
+                            <Button onClick={() => setShowViewModal(false)} size="sm" variant="outline">
+                                OK
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+            <SuccessMessageModal
+                isOpen={!!successMessage}
+                onClose={() => setSuccessMessage(null)}
+                message={successMessage}
+            />
+        </div>
         </div>
     );
-}
+};
 
 export default UserManagement;
